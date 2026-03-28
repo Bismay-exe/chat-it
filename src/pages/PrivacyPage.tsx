@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react';
+import { Fragment } from 'react';
 import { useNavigate } from 'react-router';
 import { ArrowLeft, Ban, Clock, ShieldCheck, EyeOff } from 'lucide-react';
 import { TopBar } from '@/components/layout/TopBar';
