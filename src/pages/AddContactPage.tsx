@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { ArrowLeft, Users, Search as SearchIcon, Globe, MessageSquare, ChevronRight, Share2, Loader2 } from 'lucide-react';
+import { ArrowLeft, Users, Search as SearchIcon, Globe, MessageSquare, ChevronRight, Share2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TopBar } from '@/components/layout/TopBar';
 import { Input } from '@/components/ui/Input';
@@ -8,6 +8,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/authStore';
 import { toast } from 'sonner';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 interface SearchResult {
   id: string;
@@ -142,7 +143,12 @@ export const AddContactPage = () => {
             className="pl-10 rounded-2xl bg-secondary/30 border-none focus:ring-1 focus:ring-primary/20"
             disabled={isSearching}
           />
-          <SearchIcon className={cn("w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground transition-opacity", isSearching && "opacity-50")} />
+          <SearchIcon className={cn("w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground transition-opacity", isSearching && "opacity-0")} />
+          {isSearching && (
+            <div className="absolute left-3.5 top-1/2 -translate-y-1/2">
+              <div className="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+            </div>
+          )}
         </div>
       </div>
 
@@ -189,8 +195,16 @@ export const AddContactPage = () => {
           </div>
         )}
         {isSearching && (
-          <div className="flex items-center justify-center p-8">
-            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          <div className="p-2 space-y-1">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="flex items-center gap-4 p-3">
+                <Skeleton className="w-12 h-12 rounded-full shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-[40%]" />
+                  <Skeleton className="h-3 w-[60%]" />
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

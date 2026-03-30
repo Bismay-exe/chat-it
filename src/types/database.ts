@@ -144,6 +144,7 @@ export type Database = {
           id: string
           is_muted: boolean | null
           joined_at: string | null
+          last_read_at: string | null
           role: string
           user_id: string | null
         }
@@ -152,6 +153,7 @@ export type Database = {
           id?: string
           is_muted?: boolean | null
           joined_at?: string | null
+          last_read_at?: string | null
           role?: string
           user_id?: string | null
         }
@@ -160,6 +162,7 @@ export type Database = {
           id?: string
           is_muted?: boolean | null
           joined_at?: string | null
+          last_read_at?: string | null
           role?: string
           user_id?: string | null
         }

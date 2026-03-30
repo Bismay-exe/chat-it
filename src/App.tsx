@@ -62,38 +62,26 @@ export const App: React.FC = () => {
   useAutoUpdate();
 
   useEffect(() => {
-    // Initial session check
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      try {
-        const user = session?.user ?? null;
-        setUser(user);
-        if (user) {
-          const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-          if (!error) useAuthStore.getState().setProfile(data);
-        }
-      } catch (err) {
-        console.error('Auth init error:', err);
-      } finally {
-        setLoading(false);
-      }
-    });
-
-    // Listen for auth changes
+    // Single listener for both initial session and changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      try {
-        const user = session?.user ?? null;
-        setUser(user);
-        if (user) {
-          const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-          if (!error) useAuthStore.getState().setProfile(data);
-        } else {
-          useAuthStore.getState().setProfile(null);
-        }
-      } catch (err) {
-        console.error('Auth change error:', err);
-      } finally {
-        setLoading(false);
+      const user = session?.user ?? null;
+      setUser(user);
+      
+      if (user) {
+        // Fetch profile in background without blocking isLoading
+        supabase.from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single()
+          .then(({ data, error }) => {
+            if (!error && data) useAuthStore.getState().setProfile(data);
+          });
+      } else {
+        useAuthStore.getState().setProfile(null);
       }
+      
+      // Mark auth as "ready" as soon as we have a session (or lack thereof)
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();

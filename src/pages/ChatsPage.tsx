@@ -1,71 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { Search, Plus, Settings, MessageSquareText, Loader2, List as ListIcon, Check } from 'lucide-react';
+import { Search, Plus, Settings, MessageSquareText, List as ListIcon, Check } from 'lucide-react';
 import { ChatListItem } from '@/components/chat/ChatListItem';
 import { cn } from '@/lib/utils';
 import { useChats } from '@/hooks/useChats';
-import { supabase } from '@/lib/supabase';
-import { useAuthStore } from '@/stores/authStore';
+import { useChatLists } from '@/hooks/useChatLists';
 import { BottomSheet } from '@/components/ui/BottomSheet';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 export const ChatsPage: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState('All');
-  const [customLists, setCustomLists] = useState<any[]>([]);
-  const { chats, isLoading, toggleArchive, toggleFavorite, toggleMute, deleteChat, refetch: refetchChats } = useChats();
-
-  const [memberships, setMemberships] = useState<Record<string, string[]>>({});
   const [managingChatId, setManagingChatId] = useState<string | null>(null);
-  const [isUpdatingMembership, setIsUpdatingMembership] = useState(false);
 
-  useEffect(() => {
-    const fetchLists = async () => {
-      if (!user) return;
-      const { data } = await supabase.from('lists').select('*').eq('user_id', user.id).order('sort_order', { ascending: true });
-      if (data) setCustomLists(data);
-    };
-    fetchLists();
-  }, [user]);
+  const { chats, isLoading: isChatsLoading, toggleArchive, toggleFavorite, toggleMute, deleteChat } = useChats();
+  const { customLists, memberships, isLoading: isListsLoading, toggleMembership } = useChatLists();
 
-  const fetchMemberships = async () => {
-    if (!user) return;
-    const { data } = await supabase.from('chat_list_memberships').select('list_id, chat_id').eq('user_id', user.id);
-    if (data) {
-      const map: Record<string, string[]> = {};
-      data.forEach((m: any) => {
-        if (m.list_id) {
-          if (!map[m.list_id]) map[m.list_id] = [];
-          map[m.list_id].push(m.chat_id || '');
-        }
-      });
-      setMemberships(map);
-    }
-  };
+  const isLoading = isChatsLoading || isListsLoading;
 
-  useEffect(() => {
-    fetchMemberships();
-  }, [user, activeTab, managingChatId]);
-
-  const toggleMembership = async (listId: string) => {
-    if (!user || !managingChatId) return;
-    setIsUpdatingMembership(true);
-    try {
-      const isMember = memberships[listId]?.includes(managingChatId);
-      if (isMember) {
-        await supabase.from('chat_list_memberships').delete().eq('list_id', listId).eq('chat_id', managingChatId).eq('user_id', user.id);
-      } else {
-        await supabase.from('chat_list_memberships').insert({ list_id: listId, chat_id: managingChatId, user_id: user.id });
-      }
-      fetchMemberships();
-      refetchChats();
-    } catch (err: any) {
-      console.error('Update failed:', err);
-    } finally {
-      setIsUpdatingMembership(false);
-    }
-  };
+  const handleChatClick = useCallback((chatId: string) => {
+    navigate(`/chats/${chatId}`);
+  }, [navigate]);
 
   const defaultTabs = ['All', 'Unread', 'Favourite', 'Groups'];
   const allTabs = [...defaultTabs, ...customLists.map(l => l.name), '+'];
@@ -97,7 +53,7 @@ export const ChatsPage: React.FC<{ children?: React.ReactNode }> = ({ children }
       )}>
         {/* Top Navigation */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-border bg-background/90 backdrop-blur-sm z-10 shrink-0">
-          <h1 className="text-xl font-bold bg-linear-to-r from-primary to-accent bg-clip-text text-transparent">
+          <h1 className="text-xl font-bold bg-linear-to-r from-primary to-[#aa3bffCC] bg-clip-text text-transparent">
             Chat-It
           </h1>
           <div className="flex items-center gap-1 text-muted-foreground">
@@ -130,8 +86,16 @@ export const ChatsPage: React.FC<{ children?: React.ReactNode }> = ({ children }
         {/* Chat List */}
         <div className="flex-1 overflow-y-auto p-2 pb-20 md:pb-2 space-y-0.5">
           {isLoading ? (
-            <div className="h-20 flex items-center justify-center">
-              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            <div className="space-y-1">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="flex items-center gap-3 p-3">
+                  <Skeleton className="w-12 h-12 rounded-full shrink-0" />
+                  <div className="flex-1 space-y-2 py-1">
+                    <Skeleton className="h-4 w-[40%]" />
+                    <Skeleton className="h-3 w-[70%]" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
             <>
@@ -140,12 +104,12 @@ export const ChatsPage: React.FC<{ children?: React.ReactNode }> = ({ children }
                   key={chat.chat_id}
                   {...chat}
                   isActive={id === chat.chat_id}
-                  onClick={() => navigate(`/chats/${chat.chat_id}`)}
-                  onArchive={() => toggleArchive(chat.chat_id, chat.is_archived)}
-                  onFavorite={() => toggleFavorite(chat.chat_id, chat.is_favorite)}
-                  onMute={() => toggleMute(chat.chat_id, chat.is_muted)}
-                  onDelete={() => deleteChat(chat.chat_id)}
-                  onManageLists={() => setManagingChatId(chat.chat_id)}
+                  onClick={() => handleChatClick(chat.chat_id)}
+                  onArchive={toggleArchive}
+                  onFavorite={toggleFavorite}
+                  onMute={toggleMute}
+                  onDelete={deleteChat}
+                  onManageLists={setManagingChatId}
                 />
               ))}
               {filteredChats.length === 0 && (
@@ -186,9 +150,8 @@ export const ChatsPage: React.FC<{ children?: React.ReactNode }> = ({ children }
             return (
               <button
                 key={list.id}
-                disabled={isUpdatingMembership}
-                onClick={() => toggleMembership(list.id)}
-                className="w-full flex items-center justify-between p-4 bg-secondary/30 rounded-2xl hover:bg-secondary/50 transition-all group"
+                onClick={() => toggleMembership(managingChatId || '', list.id)}
+                className="w-full flex items-center justify-between p-3 hover:bg-secondary rounded-xl transition-colors group"
               >
                 <div className="flex items-center gap-3">
                   <ListIcon className="w-5 h-5 text-muted-foreground" />

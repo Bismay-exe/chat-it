@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { ArrowLeft, Search, MessageSquare, Users, Globe, Loader2 } from 'lucide-react';
+import { ArrowLeft, Search, MessageSquare, Users, Globe } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Avatar } from '@/components/ui/Avatar';
 import { TopBar } from '@/components/layout/TopBar';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/authStore';
 import { toast } from 'sonner';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 interface SearchResult {
   id: string;
@@ -175,14 +176,28 @@ export const SearchPage = () => {
           <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
           {isSearching && (
             <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
-              <Loader2 className="w-4 h-4 animate-spin text-primary" />
+              <div className="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
             </div>
           )}
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        {localResults.length > 0 && (
+        {isSearching && (
+          <div className="p-2 space-y-1">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="flex items-center gap-4 p-3">
+                <Skeleton className="w-12 h-12 rounded-full shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-[40%]" />
+                  <Skeleton className="h-3 w-[60%]" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!isSearching && localResults.length > 0 && (
           <div className="p-2 space-y-1">
             <h3 className="px-4 py-3 text-[10px] font-black text-primary uppercase tracking-[0.2em] opacity-60">Your Chats</h3>
             {localResults.map(r => (

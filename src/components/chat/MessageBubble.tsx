@@ -1,20 +1,20 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { Check, CheckCheck } from 'lucide-react';
+import { Check, CheckCheck, AlertCircle, RefreshCw } from 'lucide-react';
 
 export interface MessageBubbleProps {
   id: string;
   content: string;
   timestamp: string;
   isSentByMe: boolean;
-  status?: 'sent' | 'delivered' | 'read';
+  status?: 'sending' | 'sent' | 'delivered' | 'read' | 'error';
   senderName?: string; // For group chats
   isSequence?: boolean; // If part of a sequence of messages from same sender
   highlight?: string | boolean;
   isCurrentHighlight?: boolean;
 }
 
-export const MessageBubble: React.FC<MessageBubbleProps> = ({
+export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
   content,
   timestamp,
   isSentByMe,
@@ -59,13 +59,22 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         )}>
           <span>{timestamp}</span>
           {isSentByMe && status && (
-            <span>
+            <span className="flex items-center">
               {status === 'read' ? (
-                <CheckCheck className="w-3.5 h-3.5 text-blue-300" />
+                <CheckCheck className="w-3.5 h-3.5 text-blue-400 drop-shadow-sm" />
               ) : status === 'delivered' ? (
-                <CheckCheck className="w-3.5 h-3.5" />
+                <CheckCheck className="w-3.5 h-3.5 opacity-70" />
+              ) : status === 'sent' ? (
+                <Check className="w-3.5 h-3.5 opacity-70" />
+              ) : status === 'sending' ? (
+                <RefreshCw className="w-2.5 h-2.5 animate-spin opacity-50" />
+              ) : status === 'error' ? (
+                <div className="flex items-center gap-0.5 text-red-300">
+                  <span className="text-[9px] font-bold">Failed</span>
+                  <AlertCircle className="w-3 h-3" />
+                </div>
               ) : (
-                <Check className="w-3.5 h-3.5" />
+                <Check className="w-3.5 h-3.5 opacity-70" />
               )}
             </span>
           )}
@@ -73,4 +82,4 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
       </div>
     </div>
   );
-};
+});

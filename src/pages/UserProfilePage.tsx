@@ -5,10 +5,13 @@ import { TopBar } from '@/components/layout/TopBar';
 import { Avatar } from '@/components/ui/Avatar';
 import { supabase } from '@/lib/supabase';
 
+import { useUserActions } from '@/hooks/useUserActions';
+
 export const UserProfilePage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [profile, setProfile] = useState<any>(null);
+  const { isBlocked, blockUser, unblockUser, reportUser, isLoading } = useUserActions();
 
   useEffect(() => {
     if (!id) return;
@@ -18,6 +21,23 @@ export const UserProfilePage = () => {
     };
     fetchProfile();
   }, [id]);
+
+  const handleBlockToggle = async () => {
+    if (!id) return;
+    if (isBlocked(id)) {
+      await unblockUser(id);
+    } else {
+      await blockUser(id);
+    }
+  };
+
+  const handleReport = async () => {
+    if (!id) return;
+    const reason = window.prompt("Reason for reporting (Spam, Harassment, Inappropriate, etc.):");
+    if (reason && reason.trim()) {
+      await reportUser(id, reason.trim());
+    }
+  };
 
   return (
     <div className="flex flex-col h-full bg-secondary/10 absolute inset-0 z-50 overflow-y-auto">
@@ -46,7 +66,7 @@ export const UserProfilePage = () => {
       <div className="max-w-2xl w-full mx-auto p-4 space-y-4">
         {/* Actions Grid */}
         <div className="grid grid-cols-4 gap-2 bg-background p-4 rounded-2xl shadow-sm border border-border">
-          <button className="flex flex-col items-center gap-2 p-2 hover:bg-secondary rounded-xl premium-transition text-primary">
+          <button onClick={() => navigate(`/chats/${id}`)} className="flex flex-col items-center gap-2 p-2 hover:bg-secondary rounded-xl premium-transition text-primary">
              <MessageSquare className="w-6 h-6" />
              <span className="text-[11px] font-medium">Message</span>
           </button>
@@ -70,12 +90,20 @@ export const UserProfilePage = () => {
         </div>
 
         <div className="bg-background rounded-2xl shadow-sm border border-border overflow-hidden mt-6">
-          <button className="w-full p-4 flex items-center gap-4 hover:bg-red-500/10 premium-transition text-left text-red-500">
+          <button 
+            disabled={isLoading}
+            onClick={handleBlockToggle}
+            className="w-full p-4 flex items-center gap-4 hover:bg-red-500/10 premium-transition text-left text-red-500 disabled:opacity-50"
+          >
             <div className="p-2 bg-red-500/10 rounded-full"><Ban className="w-5 h-5" /></div>
-            <span className="font-medium text-[15px]">Block User</span>
+            <span className="font-medium text-[15px]">{id && isBlocked(id) ? 'Unblock User' : 'Block User'}</span>
           </button>
           <div className="w-full h-px bg-border ml-14" />
-          <button className="w-full p-4 flex items-center gap-4 hover:bg-red-500/10 premium-transition text-left text-red-500">
+          <button 
+            disabled={isLoading}
+            onClick={handleReport}
+            className="w-full p-4 flex items-center gap-4 hover:bg-red-500/10 premium-transition text-left text-red-500 disabled:opacity-50"
+          >
             <div className="p-2 bg-red-500/10 rounded-full"><UserX className="w-5 h-5" /></div>
             <span className="font-medium text-[15px]">Report User</span>
           </button>
@@ -84,3 +112,5 @@ export const UserProfilePage = () => {
     </div>
   );
 };
+
+export default UserProfilePage;

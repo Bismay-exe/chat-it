@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Download } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
 
 // This should match the latest STABLE tag you've released (e.g., v1.0.0)
 // For beta builds, the CI/CD will append -beta.RUN_ID
@@ -11,6 +12,10 @@ export const useAutoUpdate = () => {
   const [isChecking, setIsChecking] = useState(false);
 
   const checkForUpdates = useCallback(async (manual = false) => {
+    // Only check automatically if on a native platform (Android/iOS)
+    const isNative = Capacitor.isNativePlatform();
+    if (!isNative && !manual) return;
+
     const channel = localStorage.getItem('chat-it-update-channel') || 'stable';
     if (manual) setIsChecking(true);
 
@@ -26,21 +31,33 @@ export const useAutoUpdate = () => {
       
       const data = await response.json();
       const latestRelease = Array.isArray(data) ? data[0] : data;
-      const latestVersion = latestRelease.tag_name;
+      const latestVersion = latestRelease.tag_name?.trim().toLowerCase();
+      const currentVersion = CURRENT_VERSION.trim().toLowerCase();
 
-      if (latestVersion && latestVersion !== CURRENT_VERSION) {
-        const apkAsset = latestRelease.assets.find((asset: any) => asset.name.endsWith('.apk'));
-        const downloadUrl = apkAsset ? apkAsset.browser_download_url : latestRelease.html_url;
+      if (latestVersion && latestVersion !== currentVersion) {
+        // If it's the web version, we don't show the update notification automatically
+        // but if they click manually, we show a message that updates are for the app
+        if (!isNative && manual) {
+          toast.info(`New version available: ${latestVersion}`, {
+            description: "Updates are provided via the Android/iOS app. Please check your mobile device for the latest APK/Build."
+          });
+          return;
+        }
 
-        toast.info(`New ${channel.charAt(0).toUpperCase() + channel.slice(1)} Update (${latestVersion})`, {
-          description: "A newer version is available. Download the latest APK to stay up to date.",
-          duration: manual ? 15000 : 8000,
-          action: {
-            label: "Download",
-            onClick: () => window.open(downloadUrl, '_blank')
-          },
-          icon: <Download className="w-4 h-4" />
-        });
+        if (isNative) {
+          const apkAsset = latestRelease.assets.find((asset: any) => asset.name.endsWith('.apk'));
+          const downloadUrl = apkAsset ? apkAsset.browser_download_url : latestRelease.html_url;
+
+          toast.info(`New ${channel.charAt(0).toUpperCase() + channel.slice(1)} Update (${latestVersion})`, {
+            description: "A newer version is available. Download the latest APK to stay up to date.",
+            duration: manual ? 15000 : 8000,
+            action: {
+              label: "Download",
+              onClick: () => window.open(downloadUrl, '_blank')
+            },
+            icon: <Download className="w-4 h-4" />
+          });
+        }
       } else if (manual) {
         toast.success("You're on the latest version!", {
            description: `Current version ${CURRENT_VERSION} is up to date.`
@@ -55,7 +72,7 @@ export const useAutoUpdate = () => {
   }, []);
 
   useEffect(() => {
-    // Check on mount
+    // Initial check (respecting platform rules inside checkForUpdates)
     checkForUpdates();
     const interval = setInterval(() => checkForUpdates(), 4 * 60 * 60 * 1000);
     return () => clearInterval(interval);

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
@@ -25,7 +25,7 @@ export interface ChatListItemProps {
   onManageLists?: (id: string) => void;
 }
 
-export const ChatListItem: React.FC<ChatListItemProps> = ({
+export const ChatListItem: React.FC<ChatListItemProps> = React.memo(({
   chat_id,
   name,
   avatar_url,
@@ -43,14 +43,23 @@ export const ChatListItem: React.FC<ChatListItemProps> = ({
   onDelete,
   onManageLists,
 }) => {
-  const timestamp = last_message_time ? new Date(last_message_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+  const timestamp = useMemo(() => {
+    if (!last_message_time) return '';
+    try {
+      const date = new Date(last_message_time);
+      if (isNaN(date.getTime())) return '';
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return '';
+    }
+  }, [last_message_time]);
   
   const handleAction = (fn?: () => void) => (e?: any) => {
     e?.stopPropagation();
     fn?.();
   };
 
-  const dropdownItems = [
+  const dropdownItems = useMemo(() => [
     { 
       label: is_favorite ? 'Remove from Favorites' : 'Add to Favorites', 
       onClick: handleAction(() => onFavorite?.(chat_id, is_favorite)),
@@ -77,7 +86,7 @@ export const ChatListItem: React.FC<ChatListItemProps> = ({
       textClass: 'text-red-500',
       icon: <Trash2 className="w-4 h-4" />
     },
-  ];
+  ], [chat_id, is_favorite, is_archived, is_muted, onFavorite, onArchive, onMute, onManageLists, onDelete]);
 
   return (
     <div className="relative group">
@@ -119,4 +128,4 @@ export const ChatListItem: React.FC<ChatListItemProps> = ({
       </div>
     </div>
   );
-};
+});

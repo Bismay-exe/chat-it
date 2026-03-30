@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { ArrowLeft, Bell, BellOff, MessageSquare, UserPlus, LogOut, Loader2, ShieldCheck, Trash2, Calendar, Info, Search, Shield, Link, ChevronRight, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Bell, BellOff, MessageSquare, UserPlus, LogOut, ShieldCheck, Trash2, Calendar, Info, Search, Shield, Link, ChevronRight, Image as ImageIcon } from 'lucide-react';
 import { TopBar } from '@/components/layout/TopBar';
 import { Avatar } from '@/components/ui/Avatar';
 import { supabase } from '@/lib/supabase';
@@ -11,6 +11,10 @@ import { format } from 'date-fns';
 import { DropdownMenu } from '@/components/ui/DropdownMenu';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Input } from '@/components/ui/Input';
+import { QRCodeSVG } from 'qrcode.react';
+import { useChatPermissions } from '@/hooks/useChatPermissions';
+import type { GroupPermissions } from '@/hooks/useChatPermissions';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 interface Member {
   user_id: string;
@@ -34,9 +38,6 @@ interface GroupDetails {
   } | null;
 }
 
-import { useChatPermissions } from '@/hooks/useChatPermissions';
-import type { GroupPermissions } from '@/hooks/useChatPermissions';
-
 export const GroupInfoPage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -48,8 +49,10 @@ export const GroupInfoPage = () => {
   const [isMuted, setIsMuted] = useState(false);
   const [showPermissions, setShowPermissions] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
+  const [showInvite, setShowInvite] = useState(false);
   const [recentContacts, setRecentContacts] = useState<any[]>([]);
   
+  const inviteUrl = `${window.location.origin}/chats/${id}`;
   const { permissions, isAdmin, canAdd, canEdit, isLoading: permsLoading } = useChatPermissions(id);
 
   useEffect(() => {
@@ -83,11 +86,13 @@ export const GroupInfoPage = () => {
       // Fetch Members
       const { data: memberData } = await supabase
         .from('chat_members')
-        .select('user_id, role, profiles(username, full_name, avatar_url)')
+        .select('user_id, role, is_muted, profiles(username, full_name, avatar_url)')
         .eq('chat_id', id);
         
       if (memberData) {
         setMembers(memberData as any[]);
+        const currentUserMember = memberData.find(m => m.user_id === user.id);
+        if (currentUserMember) setIsMuted(!!currentUserMember.is_muted);
       }
 
       setIsLoading(false);
@@ -99,7 +104,7 @@ export const GroupInfoPage = () => {
   useEffect(() => {
     if (showAddMember && user) {
       const fetchRecent = async () => {
-        const { data } = await (supabase.rpc as any)('get_recent_contacts', { user_id: user.id });
+        const { data } = await (supabase.rpc as any)('get_recent_contacts', { p_user_id: user.id });
         if (data) setRecentContacts(data);
       };
       fetchRecent();
@@ -116,7 +121,6 @@ export const GroupInfoPage = () => {
       });
       if (error) throw error;
       
-      // Refresh members
       const { data: updatedMembers } = await supabase
         .from('chat_members')
         .select('user_id, role, profiles(username, full_name, avatar_url)')
@@ -128,6 +132,24 @@ export const GroupInfoPage = () => {
       setShowAddMember(false);
     } catch (err: any) {
       toast.error("Failed to add: " + err.message);
+    }
+  };
+
+  const handleToggleMute = async () => {
+    if (!id || !user) return;
+    const newMuteState = !isMuted;
+    try {
+      const { error } = await supabase
+        .from('chat_members')
+        .update({ is_muted: newMuteState })
+        .eq('chat_id', id)
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      setIsMuted(newMuteState);
+      toast.success(newMuteState ? "Group muted" : "Group unmuted");
+    } catch (err: any) {
+      toast.error("Failed to update mute: " + err.message);
     }
   };
 
@@ -182,8 +204,23 @@ export const GroupInfoPage = () => {
 
   if (isLoading || permsLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="flex flex-col h-full bg-background absolute inset-0 z-50 overflow-y-auto">
+        <TopBar leftElement={<div className="w-20" />} />
+        <div className="flex flex-col items-center p-8 bg-background border-b border-border">
+          <Skeleton className="w-32 h-32 rounded-full" />
+          <Skeleton className="h-8 w-48 mt-4" />
+          <Skeleton className="h-4 w-24 mt-2" />
+        </div>
+        <div className="max-w-2xl w-full mx-auto p-4 space-y-4">
+          <div className="flex justify-around bg-background p-4 rounded-3xl border border-border">
+            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="w-16 h-16 rounded-2xl" />)}
+          </div>
+          <Skeleton className="h-20 w-full rounded-3xl" />
+          <div className="bg-background rounded-3xl p-5 border border-border space-y-4">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -200,14 +237,24 @@ export const GroupInfoPage = () => {
           </div>
         }
         rightElement={
-          isAdmin && (
-            <DropdownMenu 
-              items={[
-                { label: 'Group Permissions', icon: <ShieldCheck className="w-4 h-4" />, onClick: () => setShowPermissions(true) },
-                { label: 'Delete Group', icon: <Trash2 className="w-4 h-4" />, onClick: handleDeleteGroup, textClass: 'text-red-500' }
-              ]}
-            />
-          )
+          <div className="flex items-center gap-1">
+            {groupDetails?.is_public && (
+              <button 
+                onClick={() => setShowInvite(true)}
+                className="p-2 hover:bg-secondary rounded-full premium-transition text-primary"
+              >
+                <Link className="w-5 h-5" />
+              </button>
+            )}
+            {isAdmin && (
+              <DropdownMenu 
+                items={[
+                  { label: 'Group Permissions', icon: <ShieldCheck className="w-4 h-4" />, onClick: () => setShowPermissions(true) },
+                  { label: 'Delete Group', icon: <Trash2 className="w-4 h-4" />, onClick: handleDeleteGroup, textClass: 'text-red-500' }
+                ]}
+              />
+            )}
+          </div>
         }
       />
       
@@ -235,7 +282,7 @@ export const GroupInfoPage = () => {
           <ActionButton 
             Icon={isMuted ? BellOff : Bell} 
             label={isMuted ? "Unmute" : "Mute"} 
-            onClick={() => setIsMuted(!isMuted)} 
+            onClick={handleToggleMute} 
           />
           {canAdd && <ActionButton Icon={UserPlus} label="Add" onClick={() => setShowAddMember(true)} />}
           <ActionButton Icon={LogOut} label="Leave" onClick={handleLeaveGroup} color="text-red-500" />
@@ -293,6 +340,28 @@ export const GroupInfoPage = () => {
            </div>
         </div>
       </div>
+
+      <BottomSheet isOpen={showInvite} onClose={() => setShowInvite(false)} title="Group Invite">
+        <div className="p-8 flex flex-col items-center gap-6">
+          <div className="bg-white p-4 rounded-3xl shadow-inner border border-border">
+            <QRCodeSVG value={inviteUrl} size={200} />
+          </div>
+          <div className="w-full space-y-4">
+             <div className="p-4 bg-secondary/30 rounded-2xl border border-border/50 text-xs font-mono break-all text-center">
+               {inviteUrl}
+             </div>
+             <button 
+               onClick={() => {
+                 navigator.clipboard.writeText(inviteUrl);
+                 toast.success("Link copied!");
+               }}
+               className="w-full py-4 bg-primary text-primary-foreground rounded-2xl font-bold premium-transition active:scale-95"
+             >
+               Copy Link
+             </button>
+          </div>
+        </div>
+      </BottomSheet>
 
       <BottomSheet isOpen={showPermissions} onClose={() => setShowPermissions(false)} title="Group Permissions">
         <div className="p-4 space-y-6">

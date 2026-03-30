@@ -1,4 +1,5 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/authStore';
 import { toast } from 'sonner';
@@ -19,161 +20,156 @@ export interface ChatData {
 
 export function useChats() {
   const { user } = useAuthStore();
-  const [chats, setChats] = useState<ChatData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  const [isFetching, setIsFetching] = useState(false);
-
-  const fetchChats = useCallback(async () => {
-    if (!user || isFetching) return;
-    setIsFetching(true);
-    try {
-      const { data, error } = await supabase.rpc('get_user_chats', {
-        p_user_id: user.id
-      });
+  const { data: chats = [], isLoading, refetch } = useQuery({
+    queryKey: ['chats', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase.rpc('get_user_chats', { p_user_id: user.id });
       if (error) throw error;
-      setChats((data as ChatData[]) || []);
-    } catch (err: any) {
-      console.error('Failed to load chats:', err.message);
-    } finally {
-      setIsFetching(false);
-      setIsLoading(false);
-    }
-  }, [user, isFetching]);
+      return (data as any[]).map(c => ({
+        chat_id: c.res_chat_id,
+        chat_type: c.res_chat_type,
+        name: c.res_name,
+        avatar_url: c.res_avatar_url,
+        last_message: c.res_last_message,
+        last_message_time: c.res_last_message_time,
+        unread_count: Number(c.res_unread_count),
+        is_muted: c.res_is_muted,
+        is_archived: c.res_is_archived,
+        is_favorite: c.res_is_favorite,
+        other_user_id: c.res_other_user_id
+      })) as ChatData[];
+    },
+    enabled: !!user,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
   const timeoutRef = useRef<any>(null);
-
-  const debouncedFetch = useCallback(() => {
+  const debouncedRefetch = useCallback(() => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(fetchChats, 300);
-  }, [fetchChats]);
+    timeoutRef.current = setTimeout(() => refetch(), 300);
+  }, [refetch]);
 
   useEffect(() => {
-    fetchChats();
-
     if (!user) return;
 
-    // Realtime subscription for messages dropping in to update last_message
     const msgSub = supabase.channel('public:messages')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
-        const newMessage = payload.new;
-        if (newMessage.sender_id !== user.id) {
-          // Check if this chat is muted in our current state
-          setChats(prev => {
-             const chat = prev.find(c => c.chat_id === newMessage.chat_id);
-             if (!chat || !chat.is_muted) {
-               notificationService.play();
-             }
-             return prev;
-          });
-        }
-        debouncedFetch();
+        const newMessage = payload.new as any;
+        
+        queryClient.setQueryData(['chats', user.id], (prev: ChatData[] | undefined) => {
+          if (!prev) return prev;
+          const chatIndex = prev.findIndex(c => c.chat_id === newMessage.chat_id);
+          if (chatIndex === -1) {
+            debouncedRefetch();
+            return prev;
+          }
+
+          const existingChat = prev[chatIndex];
+          const isMe = newMessage.sender_id === user.id;
+
+          if (!isMe && !existingChat.is_muted) {
+            notificationService.play();
+          }
+
+          const updatedChat: ChatData = {
+            ...existingChat,
+            last_message: newMessage.content,
+            last_message_time: newMessage.created_at,
+            unread_count: isMe ? existingChat.unread_count : Number(existingChat.unread_count) + 1
+          };
+
+          const newChats = [...prev];
+          newChats.splice(chatIndex, 1);
+          return [updatedChat, ...newChats];
+        });
       })
       .subscribe();
 
+    // Only keeping critical subscriptions. Others will be handled by mutations or manual invalidation.
     const memSub = supabase.channel('public:chat_members')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_members', filter: `user_id=eq.${user.id}` }, debouncedFetch)
-      .subscribe();
-
-    const readSub = supabase.channel('public:message_reads')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'message_reads', filter: `user_id=eq.${user.id}` }, debouncedFetch)
-      .subscribe();
-
-    const archSub = supabase.channel('public:archived_chats')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'archived_chats', filter: `user_id=eq.${user.id}` }, debouncedFetch)
-      .subscribe();
-
-    const listSub = supabase.channel('public:chat_list_memberships')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_list_memberships', filter: `user_id=eq.${user.id}` }, debouncedFetch)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_members', filter: `user_id=eq.${user.id}` }, debouncedRefetch)
       .subscribe();
 
     return () => {
       supabase.removeChannel(msgSub);
       supabase.removeChannel(memSub);
-      supabase.removeChannel(readSub);
-      supabase.removeChannel(archSub);
-      supabase.removeChannel(listSub);
     };
   }, [user]);
 
-  const toggleArchive = async (chatId: string, isArchived: boolean) => {
-    if (!user) return;
-    try {
+  const toggleArchiveMutation = useMutation({
+    mutationFn: async ({ chatId, isArchived }: { chatId: string; isArchived: boolean }) => {
+      if (!user) return;
       if (isArchived) {
         await supabase.from('archived_chats').delete().eq('chat_id', chatId).eq('user_id', user.id);
-        toast.success('Chat unarchived');
       } else {
         await supabase.from('archived_chats').insert({ chat_id: chatId, user_id: user.id });
-        toast.success('Chat archived');
       }
-      fetchChats();
-    } catch (err: any) {
-      toast.error('Action failed: ' + err.message);
-    }
-  };
+    },
+    onSuccess: (_, { isArchived }) => {
+      toast.success(isArchived ? 'Chat unarchived' : 'Chat archived');
+      queryClient.invalidateQueries({ queryKey: ['chats', user?.id] });
+    },
+    onError: (err: any) => toast.error('Action failed: ' + err.message)
+  });
 
-  const toggleFavorite = async (chatId: string, isFavorite: boolean) => {
-    if (!user) return;
-    try {
+  const toggleFavoriteMutation = useMutation({
+    mutationFn: async ({ chatId, isFavorite }: { chatId: string; isFavorite: boolean }) => {
+      if (!user) return;
       if (isFavorite) {
-        // Find the Favorites list ID first
         const { data: list } = await supabase.from('lists').select('id').eq('user_id', user.id).eq('name', 'Favorites').single();
-        if (list) {
-          await supabase.from('chat_list_memberships').delete().eq('chat_id', chatId).eq('list_id', list.id);
-        }
-        toast.success('Removed from Favorites');
+        if (list) await supabase.from('chat_list_memberships').delete().eq('chat_id', chatId).eq('list_id', list.id);
       } else {
-        // Find or create Favorites list
         let { data: list } = await supabase.from('lists').select('id').eq('user_id', user.id).eq('name', 'Favorites').single();
         if (!list) {
           const { data: newList } = await supabase.from('lists').insert({ user_id: user.id, name: 'Favorites' }).select().single();
           list = newList;
         }
-        if (list) {
-          await supabase.from('chat_list_memberships').insert({ chat_id: chatId, list_id: list.id, user_id: user.id });
-        }
-        toast.success('Added to Favorites');
+        if (list) await supabase.from('chat_list_memberships').insert({ chat_id: chatId, list_id: list.id, user_id: user.id });
       }
-      fetchChats();
-    } catch (err: any) {
-      toast.error('Action failed: ' + err.message);
-    }
-  };
+    },
+    onSuccess: (_, { isFavorite }) => {
+      toast.success(isFavorite ? 'Removed from Favorites' : 'Added to Favorites');
+      queryClient.invalidateQueries({ queryKey: ['chats', user?.id] });
+    },
+    onError: (err: any) => toast.error('Action failed: ' + err.message)
+  });
 
-  const toggleMute = async (chatId: string, isMuted: boolean) => {
-    if (!user) return;
-    try {
-      const { error } = await supabase
-        .from('chat_members')
-        .update({ is_muted: !isMuted })
-        .eq('chat_id', chatId)
-        .eq('user_id', user.id);
-      
+  const toggleMuteMutation = useMutation({
+    mutationFn: async ({ chatId, isMuted }: { chatId: string; isMuted: boolean }) => {
+      if (!user) return;
+      const { error } = await supabase.from('chat_members').update({ is_muted: !isMuted }).eq('chat_id', chatId).eq('user_id', user.id);
       if (error) throw error;
+    },
+    onSuccess: (_, { isMuted }) => {
       toast.success(isMuted ? 'Unmuted' : 'Muted');
-      fetchChats();
-    } catch (err: any) {
-      toast.error('Action failed: ' + err.message);
-    }
-  };
+      queryClient.invalidateQueries({ queryKey: ['chats', user?.id] });
+    },
+    onError: (err: any) => toast.error('Action failed: ' + err.message)
+  });
 
-  const deleteChat = async (chatId: string) => {
-    if (!user) return;
-    try {
-      // For now, "Delete Chat" means leaving the chat (removing membership)
-      const { error } = await supabase
-        .from('chat_members')
-        .delete()
-        .eq('chat_id', chatId)
-        .eq('user_id', user.id);
-      
+  const deleteChatMutation = useMutation({
+    mutationFn: async (chatId: string) => {
+      if (!user) return;
+      const { error } = await supabase.from('chat_members').delete().eq('chat_id', chatId).eq('user_id', user.id);
       if (error) throw error;
+    },
+    onSuccess: () => {
       toast.success('Chat removed');
-      fetchChats();
-    } catch (err: any) {
-      toast.error('Action failed: ' + err.message);
-    }
-  };
+      queryClient.invalidateQueries({ queryKey: ['chats', user?.id] });
+    },
+    onError: (err: any) => toast.error('Action failed: ' + err.message)
+  });
 
-  return { chats, isLoading, refetch: fetchChats, toggleArchive, toggleFavorite, toggleMute, deleteChat };
+  return { 
+    chats, 
+    isLoading, 
+    refetch, 
+    toggleArchive: (chatId: string, isArchived: boolean) => toggleArchiveMutation.mutate({ chatId, isArchived }),
+    toggleFavorite: (chatId: string, isFavorite: boolean) => toggleFavoriteMutation.mutate({ chatId, isFavorite }),
+    toggleMute: (chatId: string, isMuted: boolean) => toggleMuteMutation.mutate({ chatId, isMuted }),
+    deleteChat: (chatId: string) => deleteChatMutation.mutate(chatId)
+  };
 }

@@ -95,40 +95,70 @@ export const NewGroupPage = () => {
     setIsCreating(true);
 
     try {
+      console.log('Starting group creation...');
       // 1. Create chat
       const { data: chatData, error: chatError } = await supabase
         .from('chats')
         .insert({ type: 'group', created_by: user.id })
         .select()
         .single();
-      if (chatError) throw chatError;
+      
+      if (chatError) {
+        console.error('Chat creation error:', chatError);
+        throw new Error('Failed to initialize group chat: ' + chatError.message);
+      }
+      if (!chatData) throw new Error('No chat data returned after creation');
+
+      console.log('Chat created:', chatData.id);
 
       // 2. Group info
-      await supabase.from('group_info').insert({ 
+      const { error: infoError } = await supabase.from('group_info').insert({ 
         chat_id: chatData.id, 
         name: name.trim(), 
         about: about.trim(),
         is_public: isPublic,
         avatar_url: avatarUrl
       });
+      
+      if (infoError) {
+        console.error('Group info error:', infoError);
+        throw new Error('Failed to save group details: ' + infoError.message);
+      }
+
+      console.log('Group info saved');
 
       // 3. Permissions
-      await supabase.from('group_permissions').insert({
+      const { error: permError } = await supabase.from('group_permissions').insert({
         chat_id: chatData.id,
         ...permissions
       });
+
+      if (permError) {
+        console.error('Group permissions error:', permError);
+        throw new Error('Failed to set group permissions: ' + permError.message);
+      }
+
+      console.log('Permissions saved');
 
       // 4. Members (self as admin + selected members)
       const members = [
         { chat_id: chatData.id, user_id: user.id, role: 'admin' },
         ...selectedUsers.map(u => ({ chat_id: chatData.id, user_id: u.id, role: 'member' }))
       ];
-      await supabase.from('chat_members').insert(members);
+      
+      const { error: membersError } = await supabase.from('chat_members').insert(members);
+      
+      if (membersError) {
+        console.error('Members insertion error:', membersError);
+        throw new Error('Failed to add group members: ' + membersError.message);
+      }
 
+      console.log('Group members added. Success!');
       toast.success('Group created!');
       navigate(`/chats/${chatData.id}`);
     } catch (err: any) {
-      toast.error('Failed: ' + err.message);
+      console.error('Group creation failure:', err);
+      toast.error(err.message || 'An unexpected error occurred during group creation');
     } finally {
       setIsCreating(false);
     }
