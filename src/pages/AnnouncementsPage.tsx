@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { ArrowLeft, Megaphone, Loader2 } from 'lucide-react';
+import { ArrowLeft, Megaphone, Loader2, Settings } from 'lucide-react';
 import { TopBar } from '@/components/layout/TopBar';
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 import { Avatar } from '@/components/ui/Avatar';
+import { BottomSheet } from '@/components/ui/BottomSheet';
 
 interface Announcement {
   id: string;
@@ -22,6 +23,7 @@ export const AnnouncementsPage = () => {
   const navigate = useNavigate();
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
 
   useEffect(() => {
     const fetchAnnouncements = async () => {
@@ -58,6 +60,14 @@ export const AnnouncementsPage = () => {
             <span className="font-semibold text-lg leading-tight">Announcements</span>
           </div>
         }
+        rightElement={
+          <button 
+            onClick={() => navigate('/announcements/settings')}
+            className="p-2 hover:bg-secondary rounded-full premium-transition text-muted-foreground"
+          >
+            <Settings className="w-5 h-5" />
+          </button>
+        }
       />
       
       <div className="flex-1 p-4 flex flex-col items-center">
@@ -75,23 +85,71 @@ export const AnnouncementsPage = () => {
           </div>
         ) : (
           <div className="w-full space-y-4">
-             {announcements.map(ann => (
-               <div key={ann.id} className="bg-background p-4 rounded-2xl shadow-sm border border-border">
+              {announcements.map(ann => (
+                <div 
+                  key={ann.id} 
+                  onClick={() => setSelectedAnnouncement(ann)}
+                  className="bg-background p-4 rounded-2xl shadow-sm border border-border cursor-pointer hover:border-primary/30 transition-all active:scale-[0.98]"
+                >
                   <div className="flex items-center gap-2 mb-3">
                     <Avatar src={ann.group_info?.avatar_url} fallback={ann.group_info?.name} size="sm" />
                     <span className="text-xs font-semibold text-muted-foreground">{ann.group_info?.name}</span>
                   </div>
                   <h3 className="font-bold text-lg mb-1">{ann.title}</h3>
-                  <p className="text-sm text-foreground/80 whitespace-pre-wrap">{ann.body}</p>
+                  <p className="text-sm text-foreground/80 whitespace-pre-wrap line-clamp-3">{ann.body}</p>
                   <div className="mt-4 pt-3 border-t border-border flex justify-between items-center">
                      <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Expires {format(new Date(ann.expires_at), 'MMM d, h:mm a')}</span>
                      <span className="bg-green-500/10 text-green-600 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Active</span>
                   </div>
-               </div>
-             ))}
+                </div>
+              ))}
           </div>
         )}
       </div>
+
+      <BottomSheet
+        isOpen={!!selectedAnnouncement}
+        onClose={() => setSelectedAnnouncement(null)}
+        title="Announcement"
+      >
+        <div className="p-6">
+          {selectedAnnouncement && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-4">
+                <Avatar src={selectedAnnouncement.group_info?.avatar_url} fallback={selectedAnnouncement.group_info?.name} size="lg" />
+                <div className="flex flex-col">
+                  <span className="font-bold text-lg leading-tight">{selectedAnnouncement.title}</span>
+                  <span className="text-sm text-muted-foreground">{selectedAnnouncement.group_info?.name}</span>
+                </div>
+              </div>
+              
+              <div className="bg-secondary/30 rounded-2xl p-4">
+                <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">
+                  {selectedAnnouncement.body}
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                 <div className="flex justify-between items-center text-xs">
+                   <span className="text-muted-foreground font-medium">Valid Until</span>
+                   <span className="font-bold">{format(new Date(selectedAnnouncement.expires_at), 'MMMM d, yyyy h:mm a')}</span>
+                 </div>
+                 <div className="flex justify-between items-center text-xs">
+                   <span className="text-muted-foreground font-medium">Status</span>
+                   <span className="text-green-600 font-bold uppercase tracking-widest">Active / Platform-Wide</span>
+                 </div>
+              </div>
+
+              <button 
+                onClick={() => setSelectedAnnouncement(null)}
+                className="w-full bg-primary text-primary-foreground py-4 rounded-2xl font-bold shadow-lg shadow-primary/20"
+              >
+                Close
+              </button>
+            </div>
+          )}
+        </div>
+      </BottomSheet>
     </div>
   );
 };

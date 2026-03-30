@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/authStore';
 import { toast } from 'sonner';
@@ -22,8 +22,11 @@ export function useChats() {
   const [chats, setChats] = useState<ChatData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchChats = async () => {
-    if (!user) return;
+  const [isFetching, setIsFetching] = useState(false);
+
+  const fetchChats = useCallback(async () => {
+    if (!user || isFetching) return;
+    setIsFetching(true);
     try {
       const { data, error } = await supabase.rpc('get_user_chats', {
         p_user_id: user.id
@@ -31,11 +34,19 @@ export function useChats() {
       if (error) throw error;
       setChats((data as ChatData[]) || []);
     } catch (err: any) {
-      toast.error('Failed to load chats: ' + err.message);
+      console.error('Failed to load chats:', err.message);
     } finally {
+      setIsFetching(false);
       setIsLoading(false);
     }
-  };
+  }, [user, isFetching]);
+
+  const timeoutRef = useRef<any>(null);
+
+  const debouncedFetch = useCallback(() => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(fetchChats, 300);
+  }, [fetchChats]);
 
   useEffect(() => {
     fetchChats();
@@ -56,24 +67,24 @@ export function useChats() {
              return prev;
           });
         }
-        fetchChats();
+        debouncedFetch();
       })
       .subscribe();
 
     const memSub = supabase.channel('public:chat_members')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_members', filter: `user_id=eq.${user.id}` }, fetchChats)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_members', filter: `user_id=eq.${user.id}` }, debouncedFetch)
       .subscribe();
 
     const readSub = supabase.channel('public:message_reads')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'message_reads', filter: `user_id=eq.${user.id}` }, fetchChats)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'message_reads', filter: `user_id=eq.${user.id}` }, debouncedFetch)
       .subscribe();
 
     const archSub = supabase.channel('public:archived_chats')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'archived_chats', filter: `user_id=eq.${user.id}` }, fetchChats)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'archived_chats', filter: `user_id=eq.${user.id}` }, debouncedFetch)
       .subscribe();
 
     const listSub = supabase.channel('public:chat_list_memberships')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_list_memberships', filter: `user_id=eq.${user.id}` }, fetchChats)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_list_memberships', filter: `user_id=eq.${user.id}` }, debouncedFetch)
       .subscribe();
 
     return () => {

@@ -1,16 +1,74 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { Search, Plus, Settings, MessageSquareText, Loader2 } from 'lucide-react';
+import { Search, Plus, Settings, MessageSquareText, Loader2, List as ListIcon, Check } from 'lucide-react';
 import { ChatListItem } from '@/components/chat/ChatListItem';
 import { cn } from '@/lib/utils';
 import { useChats } from '@/hooks/useChats';
+import { supabase } from '@/lib/supabase';
+import { useAuthStore } from '@/stores/authStore';
+import { BottomSheet } from '@/components/ui/BottomSheet';
 
 export const ChatsPage: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState('All');
-  const tabs = ['All', 'Unread', 'Favourite', 'Groups', '+'];
-  const { chats, isLoading, toggleArchive, toggleFavorite, toggleMute, deleteChat } = useChats();
+  const [customLists, setCustomLists] = useState<any[]>([]);
+  const { chats, isLoading, toggleArchive, toggleFavorite, toggleMute, deleteChat, refetch: refetchChats } = useChats();
+
+  const [memberships, setMemberships] = useState<Record<string, string[]>>({});
+  const [managingChatId, setManagingChatId] = useState<string | null>(null);
+  const [isUpdatingMembership, setIsUpdatingMembership] = useState(false);
+
+  useEffect(() => {
+    const fetchLists = async () => {
+      if (!user) return;
+      const { data } = await supabase.from('lists').select('*').eq('user_id', user.id).order('sort_order', { ascending: true });
+      if (data) setCustomLists(data);
+    };
+    fetchLists();
+  }, [user]);
+
+  const fetchMemberships = async () => {
+    if (!user) return;
+    const { data } = await supabase.from('chat_list_memberships').select('list_id, chat_id').eq('user_id', user.id);
+    if (data) {
+      const map: Record<string, string[]> = {};
+      data.forEach((m: any) => {
+        if (m.list_id) {
+          if (!map[m.list_id]) map[m.list_id] = [];
+          map[m.list_id].push(m.chat_id || '');
+        }
+      });
+      setMemberships(map);
+    }
+  };
+
+  useEffect(() => {
+    fetchMemberships();
+  }, [user, activeTab, managingChatId]);
+
+  const toggleMembership = async (listId: string) => {
+    if (!user || !managingChatId) return;
+    setIsUpdatingMembership(true);
+    try {
+      const isMember = memberships[listId]?.includes(managingChatId);
+      if (isMember) {
+        await supabase.from('chat_list_memberships').delete().eq('list_id', listId).eq('chat_id', managingChatId).eq('user_id', user.id);
+      } else {
+        await supabase.from('chat_list_memberships').insert({ list_id: listId, chat_id: managingChatId, user_id: user.id });
+      }
+      fetchMemberships();
+      refetchChats();
+    } catch (err: any) {
+      console.error('Update failed:', err);
+    } finally {
+      setIsUpdatingMembership(false);
+    }
+  };
+
+  const defaultTabs = ['All', 'Unread', 'Favourite', 'Groups'];
+  const allTabs = [...defaultTabs, ...customLists.map(l => l.name), '+'];
 
   const isChildActive = !!children;
 
@@ -22,6 +80,11 @@ export const ChatsPage: React.FC<{ children?: React.ReactNode }> = ({ children }
     if (activeTab === 'Favourite') return chat.is_favorite;
     if (activeTab === 'Groups') return chat.chat_type === 'group';
     
+    const customList = customLists.find(l => l.name === activeTab);
+    if (customList) {
+      return memberships[customList.id]?.includes(chat.chat_id);
+    }
+
     return true;
   });
 
@@ -47,12 +110,12 @@ export const ChatsPage: React.FC<{ children?: React.ReactNode }> = ({ children }
         {/* Filter Tabs */}
         <div className="px-3 py-2 border-b border-border overflow-x-auto no-scrollbar shrink-0">
           <div className="flex gap-2 min-w-max">
-            {tabs.map(tab => (
+            {allTabs.map(tab => (
               <button
                 key={tab}
                 onClick={() => tab === '+' ? navigate('/chats/lists') : setActiveTab(tab)}
                 className={cn(
-                  "px-3 py-1.5 rounded-full text-sm font-medium premium-transition",
+                  "px-3 py-1.5 rounded-full text-sm font-medium premium-transition whitespace-nowrap",
                   activeTab === tab 
                     ? "bg-primary/10 text-primary border border-primary/20" 
                     : "bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground border border-transparent"
@@ -82,6 +145,7 @@ export const ChatsPage: React.FC<{ children?: React.ReactNode }> = ({ children }
                   onFavorite={() => toggleFavorite(chat.chat_id, chat.is_favorite)}
                   onMute={() => toggleMute(chat.chat_id, chat.is_muted)}
                   onDelete={() => deleteChat(chat.chat_id)}
+                  onManageLists={() => setManagingChatId(chat.chat_id)}
                 />
               ))}
               {filteredChats.length === 0 && (
@@ -110,6 +174,49 @@ export const ChatsPage: React.FC<{ children?: React.ReactNode }> = ({ children }
         )}
         {children}
       </div>
+
+      <BottomSheet 
+        isOpen={!!managingChatId} 
+        onClose={() => setManagingChatId(null)}
+        title="Move to List"
+      >
+        <div className="p-4 space-y-2">
+          {customLists.map(list => {
+            const isMember = memberships[list.id]?.includes(managingChatId || '');
+            return (
+              <button
+                key={list.id}
+                disabled={isUpdatingMembership}
+                onClick={() => toggleMembership(list.id)}
+                className="w-full flex items-center justify-between p-4 bg-secondary/30 rounded-2xl hover:bg-secondary/50 transition-all group"
+              >
+                <div className="flex items-center gap-3">
+                  <ListIcon className="w-5 h-5 text-muted-foreground" />
+                  <span className="font-medium">{list.name}</span>
+                </div>
+                {isMember && <Check className="w-5 h-5 text-primary" />}
+              </button>
+            );
+          })}
+          {customLists.length === 0 && (
+            <div className="text-center p-8 text-muted-foreground">
+              <p>No custom lists yet.</p>
+              <button 
+                onClick={() => { setManagingChatId(null); navigate('/chats/lists'); }}
+                className="text-primary font-medium mt-2"
+              >
+                Create one now
+              </button>
+            </div>
+          )}
+          <button 
+            onClick={() => setManagingChatId(null)}
+            className="w-full bg-primary text-primary-foreground py-4 rounded-2xl font-bold mt-4 shadow-lg shadow-primary/20"
+          >
+            Done
+          </button>
+        </div>
+      </BottomSheet>
     </div>
   );
 };

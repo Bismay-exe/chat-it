@@ -10,6 +10,8 @@ export interface MessageBubbleProps {
   status?: 'sent' | 'delivered' | 'read';
   senderName?: string; // For group chats
   isSequence?: boolean; // If part of a sequence of messages from same sender
+  highlight?: string | boolean;
+  isCurrentHighlight?: boolean;
 }
 
 export const MessageBubble: React.FC<MessageBubbleProps> = ({
@@ -19,6 +21,8 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   status,
   senderName,
   isSequence = false,
+  highlight,
+  isCurrentHighlight = false,
 }) => {
   return (
     <div className={cn("flex flex-col w-full px-4", isSentByMe ? "items-end" : "items-start", isSequence ? "mt-1" : "mt-4")}>
@@ -31,10 +35,23 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           "relative max-w-[80%] md:max-w-[70%] px-4 py-2 text-[15px] leading-relaxed premium-transition shadow-sm",
           isSentByMe 
             ? "bg-primary text-primary-foreground rounded-2xl rounded-tr-sm" 
-            : "bg-card border border-border text-foreground rounded-2xl rounded-tl-sm"
+            : "bg-card border border-border text-foreground rounded-2xl rounded-tl-sm",
+          isCurrentHighlight && "ring-2 ring-accent ring-offset-2 ring-offset-background scale-[1.02]"
         )}
       >
-        <p className="whitespace-pre-wrap wrap-break-word">{content}</p>
+        <p className="whitespace-pre-wrap wrap-break-word">
+          {highlight && typeof highlight === 'string' ? (
+            content.split(new RegExp(`(${highlight})`, 'gi')).map((part, i) => 
+              part.toLowerCase() === highlight.toLowerCase() 
+                ? <span key={i} className="bg-accent text-accent-foreground font-bold rounded-sm px-0.5">{part}</span> 
+                : part
+            )
+          ) : highlight ? (
+             <span className="bg-accent/30 rounded-sm">{content}</span>
+          ) : (
+            content
+          )}
+        </p>
         
         <div className={cn(
           "flex items-center gap-1 mt-1 text-[11px] justify-end",

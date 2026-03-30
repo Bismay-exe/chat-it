@@ -1,9 +1,20 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { ArrowLeft } from 'lucide-react';
 import { TopBar } from '@/components/layout/TopBar';
+import { cn } from '@/lib/utils';
 
 export const AnnouncementsSettingsPage = () => {
   const navigate = useNavigate();
+  const [showNotifications, setShowNotifications] = useState(() => {
+    return localStorage.getItem('chat-it-announcements-notifications') !== 'false'; // Default to true
+  });
+
+  const toggleNotifications = () => {
+    const newValue = !showNotifications;
+    setShowNotifications(newValue);
+    localStorage.setItem('chat-it-announcements-notifications', String(newValue));
+  };
 
   return (
     <div className="flex flex-col h-full bg-secondary/10 absolute inset-0 z-50">
@@ -28,8 +39,17 @@ export const AnnouncementsSettingsPage = () => {
               Get push notifications for important updates from the Chat-It platform.
             </p>
           </div>
-          <div className="relative inline-block w-12 h-6 rounded-full bg-primary premium-transition cursor-pointer shrink-0">
-            <div className="absolute w-5 h-5 bg-white rounded-full top-0.5 right-0.5 shadow-sm transform transition-transform" />
+          <div 
+            onClick={toggleNotifications}
+            className={cn(
+              "relative inline-block w-12 h-6 rounded-full premium-transition cursor-pointer shrink-0",
+              showNotifications ? "bg-primary" : "bg-secondary"
+            )}
+          >
+            <div className={cn(
+              "absolute w-5 h-5 bg-white rounded-full top-0.5 shadow-sm transform transition-transform",
+              showNotifications ? "right-0.5" : "left-0.5"
+            )} />
           </div>
         </div>
       </div>

@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router';
 import { Toaster } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/authStore';
+import { useAutoUpdate } from '@/hooks/useAutoUpdate';
 
 import { AppShell } from '@/components/layout/AppShell';
 import { LandingPage } from '@/pages/LandingPage';
@@ -57,6 +58,7 @@ const RedirectIfSignedIn = ({ children }: { children: React.ReactNode }) => {
 
 export const App: React.FC = () => {
   const { setUser, setLoading } = useAuthStore();
+  useAutoUpdate();
 
   useEffect(() => {
     // Initial session check

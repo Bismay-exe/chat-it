@@ -1,9 +1,20 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { ArrowLeft } from 'lucide-react';
 import { TopBar } from '@/components/layout/TopBar';
+import { cn } from '@/lib/utils';
 
 export const ArchivedSettingsPage = () => {
   const navigate = useNavigate();
+  const [keepArchived, setKeepArchived] = useState(() => {
+    return localStorage.getItem('chat-it-keep-archived') === 'true';
+  });
+
+  const toggleKeepArchived = () => {
+    const newValue = !keepArchived;
+    setKeepArchived(newValue);
+    localStorage.setItem('chat-it-keep-archived', String(newValue));
+  };
 
   return (
     <div className="flex flex-col h-full bg-secondary/10 absolute inset-0 z-50">
@@ -25,8 +36,17 @@ export const ArchivedSettingsPage = () => {
             Archived chats will remain archived when you receive a new message.
           </p>
         </div>
-        <div className="relative inline-block w-12 h-6 rounded-full bg-primary premium-transition cursor-pointer">
-          <div className="absolute w-5 h-5 bg-white rounded-full top-0.5 right-0.5 shadow-sm transform transition-transform" />
+        <div 
+          onClick={toggleKeepArchived}
+          className={cn(
+            "relative inline-block w-12 h-6 rounded-full premium-transition cursor-pointer",
+            keepArchived ? "bg-primary" : "bg-secondary"
+          )}
+        >
+          <div className={cn(
+            "absolute w-5 h-5 bg-white rounded-full top-0.5 shadow-sm transform transition-transform",
+            keepArchived ? "right-0.5" : "left-0.5"
+          )} />
         </div>
       </div>
     </div>

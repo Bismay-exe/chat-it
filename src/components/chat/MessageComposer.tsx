@@ -1,20 +1,41 @@
 import React, { useState } from 'react';
 import { Send, Paperclip, Smile } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 export interface MessageComposerProps {
   onSendMessage: (content: string) => void;
   disabled?: boolean;
+  placeholder?: string;
 }
 
-export const MessageComposer: React.FC<MessageComposerProps> = ({ onSendMessage, disabled }) => {
+export const MessageComposer: React.FC<MessageComposerProps> = ({ onSendMessage, disabled, placeholder = "Type a message..." }) => {
   const [text, setText] = useState('');
+
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!text.trim() || disabled) return;
     onSendMessage(text.trim());
     setText('');
+  };
+
+  const handleFileClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      toast.info(`Attachment selected: ${file.name}. (File upload stub)`);
+      // In a real app, we would upload to Supabase Storage and send the URL
+      onSendMessage(`📎 Attached: ${file.name}`);
+    }
+  };
+
+  const handleEmojiClick = () => {
+    toast.info('Emoji picker coming soon! (Stub)');
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -26,9 +47,17 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({ onSendMessage,
 
   return (
     <div className="p-3 bg-background border-t border-border mt-auto">
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={handleFileChange} 
+        className="hidden" 
+        accept="image/*,video/*,video/mp4,.pdf,.doc,.docx"
+      />
       <form onSubmit={handleSubmit} className="flex items-end gap-2 max-w-4xl mx-auto">
         <button 
           type="button" 
+          onClick={handleFileClick}
           className="p-2.5 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-full premium-transition shrink-0 mb-0.5"
           disabled={disabled}
         >
@@ -40,7 +69,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({ onSendMessage,
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Type a message..."
+            placeholder={placeholder}
             disabled={disabled}
             className="w-full bg-transparent border-none outline-none resize-none py-3 px-4 max-h-30 min-h-11 text-[15px]"
             rows={1}
@@ -49,6 +78,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({ onSendMessage,
           />
           <button 
             type="button" 
+            onClick={handleEmojiClick}
             className="p-2 text-muted-foreground hover:text-foreground rounded-full premium-transition shrink-0"
             disabled={disabled}
           >

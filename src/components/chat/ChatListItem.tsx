@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { DropdownMenu } from '@/components/ui/DropdownMenu';
-import { Archive, Star, StarOff, BellOff, ArchiveRestore, Trash2 } from 'lucide-react';
+import { Archive, Star, StarOff, BellOff, ArchiveRestore, Trash2, Plus } from 'lucide-react';
 
 export interface ChatListItemProps {
   chat_id: string;
@@ -22,6 +22,7 @@ export interface ChatListItemProps {
   onFavorite?: (id: string, current: boolean) => void;
   onMute?: (id: string, current: boolean) => void;
   onDelete?: (id: string) => void;
+  onManageLists?: (id: string) => void;
 }
 
 export const ChatListItem: React.FC<ChatListItemProps> = ({
@@ -40,6 +41,7 @@ export const ChatListItem: React.FC<ChatListItemProps> = ({
   onFavorite,
   onMute,
   onDelete,
+  onManageLists,
 }) => {
   const timestamp = last_message_time ? new Date(last_message_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
   
@@ -63,6 +65,11 @@ export const ChatListItem: React.FC<ChatListItemProps> = ({
       label: is_muted ? 'Unmute' : 'Mute', 
       onClick: handleAction(() => onMute?.(chat_id, is_muted)),
       icon: <BellOff className="w-4 h-4" />
+    },
+    { 
+      label: 'Manage Lists', 
+      onClick: handleAction(() => onManageLists?.(chat_id)),
+      icon: <Plus className="w-4 h-4" />
     },
     { 
       label: 'Delete Chat', 
