@@ -28,6 +28,7 @@ import { InvitePage } from '@/pages/InvitePage';
 import { PrivacyPage } from '@/pages/PrivacyPage';
 import { AppearancePage } from '@/pages/AppearancePage';
 import { HelpPage } from '@/pages/HelpPage';
+import { AboutPage } from '@/pages/AboutPage';
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -134,6 +135,7 @@ export const App: React.FC = () => {
           <Route path="/settings/privacy" element={<PrivacyPage />} />
           <Route path="/settings/appearance" element={<AppearancePage />} />
           <Route path="/settings/help" element={<HelpPage />} />
+          <Route path="/about" element={<AboutPage />} />
           
           <Route path="/invite" element={<InvitePage />} />
         </Route>

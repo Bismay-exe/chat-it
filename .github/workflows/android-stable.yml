@@ -1,16 +1,15 @@
-name: Build Android APK
+name: Build Android Stable
 
 permissions:
   contents: write
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Stable version to release (e.g., 1.0.0)'
+        required: true
+        default: '1.0.0'
 
 jobs:
   build:
@@ -46,9 +45,9 @@ jobs:
 
       - name: Update Android version
         run: |
-          BUILD_NUMBER=${{ github.run_number }}
-          sed -i "s/versionCode [0-9]*/versionCode $BUILD_NUMBER/" android/app/build.gradle
-          sed -i "s/versionName \".*\"/versionName \"1.0.$BUILD_NUMBER\"/" android/app/build.gradle
+          # Use run_number for versionCode to ensure it's always increasing
+          sed -i "s/versionCode [0-9]*/versionCode ${{ github.run_number }}/" android/app/build.gradle
+          sed -i "s/versionName \".*\"/versionName \"${{ github.event.inputs.version }}\"/" android/app/build.gradle
 
       - name: Make gradlew executable
         working-directory: android
@@ -56,15 +55,15 @@ jobs:
 
       - name: Build Android APK
         working-directory: android
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleRelease
 
-      - name: Create Release and Upload APK
+      - name: Create Stable Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: Beta-v1.0.${{ github.run_number }}
-          name: Chat-It Beta-v1.0.${{ github.run_number }}
-          draft: false
-          prerelease: true
-          files: android/app/build/outputs/apk/debug/app-debug.apk
+          tag_name: v${{ github.event.inputs.version }}
+          name: Chat-It Stable v${{ github.event.inputs.version }}
+          prerelease: false
+          generate_release_notes: true
+          files: android/app/build/outputs/apk/release/app-release-unsigned.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

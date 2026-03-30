@@ -1,0 +1,88 @@
+name: Build Android Beta
+
+permissions:
+  contents: write
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Web App
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+      - name: Sync Capacitor
+        run: npx cap sync
+
+      - name: Determine Beta Version
+        id: versioning
+        run: |
+          # Fetch latest stable tag (vX.Y.Z)
+          LATEST_STABLE=$(git tag -l "v[0-9]*.[0-9]*.[0-9]*" | grep -v "beta" | sort -V | tail -n1)
+          if [ -z "$LATEST_STABLE" ]; then
+            LATEST_STABLE="v0.0.0"
+          fi
+          
+          # Increment patch version for beta
+          VERSION_BASE=$(echo $LATEST_STABLE | sed 's/v//')
+          MAJOR=$(echo $VERSION_BASE | cut -d. -f1)
+          MINOR=$(echo $VERSION_BASE | cut -d. -f2)
+          PATCH=$(echo $VERSION_BASE | cut -d. -f3)
+          NEW_PATCH=$((PATCH + 1))
+          
+          BETA_VERSION="$MAJOR.$MINOR.$NEW_PATCH-beta.${{ github.run_number }}"
+          echo "BETA_VERSION=$BETA_VERSION" >> $GITHUB_ENV
+          echo "SHORT_VERSION=$MAJOR.$MINOR.$NEW_PATCH" >> $GITHUB_ENV
+
+      - name: Update Android version
+        run: |
+          sed -i "s/versionCode [0-9]*/versionCode ${{ github.run_number }}/" android/app/build.gradle
+          sed -i "s/versionName \".*\"/versionName \"${{ env.BETA_VERSION }}\"/" android/app/build.gradle
+
+      - name: Make gradlew executable
+        working-directory: android
+        run: chmod +x gradlew
+
+      - name: Build Android APK
+        working-directory: android
+        run: ./gradlew assembleDebug
+
+      - name: Create Beta Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.BETA_VERSION }}
+          name: Chat-It Beta v${{ env.BETA_VERSION }}
+          prerelease: true
+          generate_release_notes: true
+          files: android/app/build/outputs/apk/debug/app-debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
