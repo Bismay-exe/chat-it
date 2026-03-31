@@ -41,7 +41,7 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
       - name: Sync Capacitor
-        run: npx cap sync
+        run: npx cap sync android
 
       - name: Update Android version
         run: |
@@ -55,7 +55,7 @@ jobs:
 
       - name: Build Android APK
         working-directory: android
-        run: ./gradlew assembleRelease
+        run: ./gradlew clean assembleRelease
 
       - name: Create Stable Release
         uses: softprops/action-gh-release@v2

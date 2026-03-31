@@ -41,7 +41,7 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
       - name: Sync Capacitor
-        run: npx cap sync
+        run: npx cap sync android
 
       - name: Determine Beta Version
         id: versioning
@@ -74,7 +74,7 @@ jobs:
 
       - name: Build Android APK
         working-directory: android
-        run: ./gradlew assembleDebug
+        run: ./gradlew clean assembleDebug
 
       - name: Create Beta Release
         uses: softprops/action-gh-release@v2
