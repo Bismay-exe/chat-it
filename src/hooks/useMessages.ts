@@ -58,24 +58,6 @@ export function useMessages(chatId: string | undefined) {
   // Flatten messages for UI: Reverse pages so oldest page is first, then flatten
   const messages = data?.pages ? [...data.pages].reverse().flat() : [];
 
-  // Mark as read whenever messages change or chat is opened
-  useEffect(() => {
-    if (!chatId || !user || !messages.length) return;
-
-    const lastMessage = messages[messages.length - 1];
-    // Only update if the last message is not from us
-    if (lastMessage.sender_id !== user.id) {
-      supabase
-        .from('chat_members')
-        .update({ last_read_at: new Date().toISOString() })
-        .eq('chat_id', chatId)
-        .eq('user_id', user.id)
-        .then(({ error }) => {
-          if (error) console.error('Failed to update last_read_at:', error);
-          else queryClient.invalidateQueries({ queryKey: ['chats', user.id] });
-        });
-    }
-  }, [chatId, user, messages.length]);
 
   useEffect(() => {
     if (!chatId || !user) return;
@@ -89,6 +71,13 @@ export function useMessages(chatId: string | undefined) {
 
         queryClient.setQueryData(['messages', chatId, user.id], (old: any) => {
           if (!old) return old;
+          
+          // Check for existing message to prevent duplicates (Realtime vs Fetching race)
+          const messageExists = old.pages.some((page: any[]) => 
+            page.some((m: any) => m.id === newMessage.id)
+          );
+          if (messageExists) return old;
+
           // Append to the most recent page (which is at index 0 in the pages array)
           const updatedPages = [...old.pages];
           updatedPages[0] = [...updatedPages[0], { ...newMessage, profiles: profile, status: 'sent' }];
@@ -122,19 +111,28 @@ export function useMessages(chatId: string | undefined) {
   useEffect(() => {
     if (!chatId || !user || messages.length === 0) return;
     
+    const lastMessage = messages[messages.length - 1];
+    // Only mark as read if the last message is not from us
+    if (lastMessage.sender_id === user.id) return;
+
     const markRead = async () => {
       try {
-        await (supabase as any)
+        const { error } = await supabase
           .from('chat_members')
           .update({ last_read_at: new Date().toISOString() })
           .eq('chat_id', chatId)
           .eq('user_id', user.id);
+        
+        if (!error) {
+          // Invalidate chats to update unread badges
+          queryClient.invalidateQueries({ queryKey: ['chats', user.id] });
+        }
       } catch (err) {
         console.error('Failed to update last_read_at:', err);
       }
     };
     markRead();
-  }, [messages.length, chatId, user?.id]);
+  }, [messages.length, chatId, user?.id, queryClient]);
 
   const sendMessageMutation = useMutation({
     mutationFn: async (content: string) => {

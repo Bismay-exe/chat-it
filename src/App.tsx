@@ -97,8 +97,9 @@ export const App: React.FC = () => {
 
         {/* Protected Routes inside AppShell */}
         <Route element={<ProtectedRoute><AppShell /></ProtectedRoute>}>
-          <Route path="/chats" element={<ChatsPage />} />
-          <Route path="/chats/:id" element={<ChatScreen />} />
+        <Route path="/chats" element={<ChatsPage />}>
+          <Route path=":id" element={<ChatScreen />} />
+        </Route>
           <Route path="/chats/:id/info" element={<GroupInfoPage />} />
           <Route path="/chats/:id/media" element={<GroupMediaPage />} />
           <Route path="/chats/lists" element={<ListsPage />} />

@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router';
+import { useParams, useNavigate, useOutletContext } from 'react-router';
 import { supabase } from '@/lib/supabase';
 import { TopBar } from '@/components/layout/TopBar';
 import { Avatar } from '@/components/ui/Avatar';
@@ -7,7 +7,7 @@ import {
   ArrowLeft, Phone, Video, Search, X, 
   ChevronUp, ChevronDown, MessageSquare, Image, 
   FileText, Link as LinkIcon, BellOff, Bell, Palette, 
-  MoreHorizontal, LogOut, Download, List as ListIcon, Star, Check 
+  MoreHorizontal, LogOut, Download, List as ListIcon, Star, Check, Info
 } from 'lucide-react';
 import { MessageBubble } from '@/components/chat/MessageBubble';
 import { MessageComposer } from '@/components/chat/MessageComposer';
@@ -25,6 +25,7 @@ import { useChatLists } from '@/hooks/useChatLists';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 
 export const ChatScreen: React.FC = () => {
+  const { showInfo, setShowInfo } = useOutletContext<{ showInfo: boolean; setShowInfo: (v: boolean) => void }>() || { showInfo: false, setShowInfo: () => {} };
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuthStore();
@@ -228,8 +229,19 @@ export const ChatScreen: React.FC = () => {
               >
                 <Search className="w-5 h-5" />
               </button>
+              
               <button className="p-2 hover:bg-secondary rounded-full premium-transition hidden md:block"><Video className="w-5 h-5" /></button>
               <button className="p-2 hover:bg-secondary rounded-full premium-transition hidden md:block"><Phone className="w-5 h-5" /></button>
+              
+              <button
+                onClick={() => setShowInfo?.(!showInfo)}
+                className={cn(
+                  "p-2 hover:bg-secondary rounded-full premium-transition hidden lg:block", 
+                  showInfo && "text-primary bg-primary/10"
+                )}
+              >
+                <Info className="w-5 h-5" />
+              </button>
               
               <DropdownMenu 
                 items={[

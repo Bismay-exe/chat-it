@@ -6,9 +6,14 @@ import { cn } from '@/lib/utils';
 import { useChats } from '@/hooks/useChats';
 import { useChatLists } from '@/hooks/useChatLists';
 import { BottomSheet } from '@/components/ui/BottomSheet';
+import { useAuthStore } from '@/stores/authStore';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { Outlet } from 'react-router';
+import { ChatInfoSidebar } from '@/components/chat/ChatInfoSidebar';
+import { supabase } from '@/lib/supabase';
+import { Avatar } from '@/components/ui/Avatar';
 
-export const ChatsPage: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
+export const ChatsPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState('All');
@@ -16,6 +21,11 @@ export const ChatsPage: React.FC<{ children?: React.ReactNode }> = ({ children }
 
   const { chats, isLoading: isChatsLoading, toggleArchive, toggleFavorite, toggleMute, deleteChat } = useChats();
   const { customLists, memberships, isLoading: isListsLoading, toggleMembership } = useChatLists();
+  
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [showInfo, setShowInfo] = useState(true);
 
   const isLoading = isChatsLoading || isListsLoading;
 
@@ -26,7 +36,7 @@ export const ChatsPage: React.FC<{ children?: React.ReactNode }> = ({ children }
   const defaultTabs = ['All', 'Unread', 'Favourite', 'Groups'];
   const allTabs = [...defaultTabs, ...customLists.map(l => l.name), '+'];
 
-  const isChildActive = !!children;
+  const isChildActive = !!id;
 
   const filteredChats = chats.filter(chat => {
     // Basic filter: only non-archived for these tabs
@@ -44,6 +54,41 @@ export const ChatsPage: React.FC<{ children?: React.ReactNode }> = ({ children }
     return true;
   });
 
+  // Sidebar Search Logic
+  const handleSearch = useCallback(async (q: string) => {
+    const trimmed = q.trim();
+    if (trimmed.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const { data, error } = await (supabase.rpc as any)('search_user_chats', {
+        p_user_id: useAuthStore.getState().user?.id,
+        p_query: trimmed
+      });
+
+      if (!error && data) {
+        setSearchResults(data.map((d: any) => ({
+          id: d.chat_id,
+          type: d.chat_type,
+          name: d.name,
+          avatar_url: d.avatar_url,
+          username: d.username
+        })));
+      }
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
+
+  const onSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setSearchQuery(val);
+    handleSearch(val);
+  };
+
   return (
     <div className="flex w-full h-full">
       {/* Sidebar Chat List */}
@@ -57,9 +102,25 @@ export const ChatsPage: React.FC<{ children?: React.ReactNode }> = ({ children }
             Chat-It
           </h1>
           <div className="flex items-center gap-1 text-muted-foreground">
-            <button onClick={() => navigate('/search')} className="p-2 hover:bg-secondary rounded-full premium-transition"><Search className="w-5 h-5" /></button>
             <button onClick={() => navigate('/add')} className="p-2 hover:bg-secondary rounded-full premium-transition"><Plus className="w-5 h-5" /></button>
             <button onClick={() => navigate('/settings')} className="p-2 hover:bg-secondary rounded-full premium-transition"><Settings className="w-5 h-5" /></button>
+          </div>
+        </div>
+
+        {/* Sidebar Search Bar */}
+        <div className="px-4 py-3 border-b border-border bg-background/50">
+          <div className="relative group">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={onSearchChange}
+              placeholder="Search chats..."
+              className="w-full h-10 pl-10 pr-4 rounded-xl bg-secondary/30 border-none text-sm font-medium focus:ring-1 focus:ring-primary/30 transition-all placeholder:text-muted-foreground/60"
+            />
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
+            {isSearching && (
+              <div className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            )}
           </div>
         </div>
 
@@ -83,39 +144,67 @@ export const ChatsPage: React.FC<{ children?: React.ReactNode }> = ({ children }
           </div>
         </div>
 
-        {/* Chat List */}
-        <div className="flex-1 overflow-y-auto p-2 pb-20 md:pb-2 space-y-0.5">
-          {isLoading ? (
+        {/* Chat List or Search Results */}
+        <div className="flex-1 overflow-y-auto p-2 pb-20 md:pb-2 space-y-0.5 no-scrollbar">
+          {searchQuery.trim().length >= 2 ? (
             <div className="space-y-1">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="flex items-center gap-3 p-3">
-                  <Skeleton className="w-12 h-12 rounded-full shrink-0" />
-                  <div className="flex-1 space-y-2 py-1">
-                    <Skeleton className="h-4 w-[40%]" />
-                    <Skeleton className="h-3 w-[70%]" />
-                  </div>
-                </div>
+              <div className="px-3 py-2 text-[10px] font-black text-primary uppercase tracking-[0.2em] opacity-60">Search Results</div>
+              {searchResults.map(r => (
+                 <button 
+                  key={r.id} 
+                  onClick={() => {
+                    handleChatClick(r.id);
+                    setSearchQuery('');
+                  }}
+                  className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-secondary/40 transition-all text-left"
+                 >
+                   <Avatar src={r.avatar_url} fallback={r.name} size="md" />
+                   <div className="flex-1 min-w-0">
+                     <div className="font-bold text-[15px] truncate">{r.name}</div>
+                     <div className="text-[10px] text-muted-foreground">@{r.username || r.type}</div>
+                   </div>
+                 </button>
               ))}
+              {searchResults.length === 0 && !isSearching && (
+                <div className="text-center p-8 text-muted-foreground text-sm">No results found</div>
+              )}
             </div>
           ) : (
             <>
-              {filteredChats.map(chat => (
-                <ChatListItem
-                  key={chat.chat_id}
-                  {...chat}
-                  isActive={id === chat.chat_id}
-                  onClick={() => handleChatClick(chat.chat_id)}
-                  onArchive={toggleArchive}
-                  onFavorite={toggleFavorite}
-                  onMute={toggleMute}
-                  onDelete={deleteChat}
-                  onManageLists={setManagingChatId}
-                />
-              ))}
-              {filteredChats.length === 0 && (
-                <div className="h-full flex flex-col items-center justify-center text-muted-foreground p-6 text-center">
-                  <p>No chats found. <br/><span className="text-sm">Click + to start one.</span></p>
+              {isLoading ? (
+                <div className="space-y-1">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="flex items-center gap-3 p-3">
+                      <Skeleton className="w-12 h-12 rounded-full shrink-0" />
+                      <div className="flex-1 space-y-2 py-1">
+                        <Skeleton className="h-4 w-[40%]" />
+                        <Skeleton className="h-3 w-[70%]" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
+              ) : (
+                <>
+                  {filteredChats.map(chat => (
+                    <ChatListItem
+                      key={chat.chat_id}
+                      {...chat}
+                      isActive={id === chat.chat_id}
+                      onClick={() => handleChatClick(chat.chat_id)}
+                      onArchive={toggleArchive}
+                      onFavorite={toggleFavorite}
+                      onMute={toggleMute}
+                      onDelete={deleteChat}
+                      onManageLists={setManagingChatId}
+                    />
+                  ))}
+                  {filteredChats.length === 0 && (
+                    <div className="h-full flex flex-col items-center justify-center text-muted-foreground p-6 text-center opacity-40">
+                      <MessageSquareText className="w-10 h-10 mb-3" />
+                      <p className="text-sm font-medium">No chats found in "{activeTab}"</p>
+                    </div>
+                  )}
+                </>
               )}
             </>
           )}
@@ -124,20 +213,26 @@ export const ChatsPage: React.FC<{ children?: React.ReactNode }> = ({ children }
 
       {/* Main Panel */}
       <div className={cn(
-        "flex-1 h-full bg-[#f4f3ec] dark:bg-[#16171d] relative overflow-hidden",
-        !isChildActive ? "hidden md:flex flex-col items-center justify-center p-8 text-center" : "flex flex-col"
+        "flex-1 h-full bg-[#f4f3ec] dark:bg-[#16171d] relative overflow-hidden flex flex-col shadow-inner",
+        !id ? "hidden md:flex flex-col items-center justify-center p-8 text-center" : "flex"
       )}>
-        {!isChildActive && (
-          <div className="max-w-md bg-background/50 p-8 rounded-3xl border border-border/50 shadow-sm backdrop-blur-sm">
+        {!id && (
+          <div className="max-w-md bg-background/50 p-8 rounded-3xl border border-border/50 shadow-sm backdrop-blur-sm animate-in fade-in zoom-in duration-500">
             <div className="w-20 h-20 bg-primary/10 rounded-2xl mx-auto mb-6 flex items-center justify-center mix-blend-multiply dark:mix-blend-screen">
               <MessageSquareText className="w-10 h-10 text-primary opacity-80" />
             </div>
-            <h2 className="text-2xl font-medium mb-3">Chat-It Web</h2>
-            <p className="text-muted-foreground">Select a chat from the sidebar to start messaging, or create a new conversation.</p>
+            <h2 className="text-2xl font-bold mb-3 tracking-tight">Chat-It Web</h2>
+            <p className="text-muted-foreground text-[15px] leading-relaxed">Select a chat from the sidebar to start messaging, or create a new conversation.</p>
           </div>
         )}
-        {children}
+        <Outlet context={{ showInfo, setShowInfo }} />
       </div>
+
+      {id && showInfo && (
+        <div className="hidden lg:block w-[320px] xl:w-80 shrink-0 h-full animate-in slide-in-from-right duration-300">
+          <ChatInfoSidebar chatId={id} onClose={() => setShowInfo(false)} />
+        </div>
+      )}
 
       <BottomSheet 
         isOpen={!!managingChatId} 
