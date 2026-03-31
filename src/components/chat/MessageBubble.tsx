@@ -11,7 +11,8 @@ import {
   Trash2, 
   Info, 
   FolderDown,
-  X
+  X,
+  FileText
 } from 'lucide-react';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
@@ -35,7 +36,6 @@ export interface MessageBubbleProps {
   onDelete?: (id: string) => void;
 }
 
-// Helper to format bytes like Telegram
 const formatBytes = (bytes: number, decimals = 1) => {
   if (!bytes) return '0 B';
   const k = 1024;
@@ -45,7 +45,6 @@ const formatBytes = (bytes: number, decimals = 1) => {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
 };
 
-// Circular Progress Component
 const ProgressCircle = ({ progress, size = 48, strokeWidth = 3, isDownloading = false, onCancel }: { 
   progress: number, 
   size?: number, 
@@ -64,14 +63,7 @@ const ProgressCircle = ({ progress, size = 48, strokeWidth = 3, isDownloading = 
     }}>
       <div className="absolute inset-0 bg-black/40 rounded-full backdrop-blur-sm group-hover/btn:bg-black/50 transition-colors" />
       <svg width={size} height={size} className="relative z-10 -rotate-90">
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke="rgba(255,255,255,0.2)"
-          strokeWidth={strokeWidth}
-          fill="none"
-        />
+        <circle cx={size / 2} cy={size / 2} r={radius} stroke="rgba(255,255,255,0.2)" strokeWidth={strokeWidth} fill="none" />
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -86,31 +78,14 @@ const ProgressCircle = ({ progress, size = 48, strokeWidth = 3, isDownloading = 
         />
       </svg>
       <div className="absolute inset-0 z-20 flex items-center justify-center text-white">
-        {isDownloading ? (
-          <X className="w-5 h-5 fill-white" />
-        ) : (
-          <Download className="w-5 h-5 fill-white" />
-        )}
+        {isDownloading ? <X className="w-5 h-5 fill-white" /> : <Download className="w-5 h-5 fill-white" />}
       </div>
     </div>
   );
 };
 
 export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
-  id,
-  content,
-  type = 'text',
-  media_url,
-  file_name,
-  file_size,
-  timestamp,
-  isSentByMe,
-  status,
-  senderName,
-  isSequence = false,
-  highlight,
-  isCurrentHighlight = false,
-  onDelete
+  id, content, type = 'text', media_url, file_name, file_size, timestamp, isSentByMe, status, senderName, isSequence = false, highlight, isCurrentHighlight = false, onDelete
 }) => {
   const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
   const [xhr, setXhr] = useState<XMLHttpRequest | null>(null);
@@ -118,6 +93,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
   const handleDownload = useCallback(async (saveAs = false) => {
     if (!media_url || downloadProgress !== null) return;
 
+    const isMobile = (window as any).Capacitor?.isNative;
     const request = new XMLHttpRequest();
     setXhr(request);
     setDownloadProgress(0);
@@ -137,16 +113,14 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
         const blob = request.response;
         const fileName = file_name || `file_${Date.now()}`;
 
-        // Platform detection
-        const isMobile = (window as any).Capacitor?.isNative;
-
         if (isMobile) {
           try {
+            const permissions = await Filesystem.checkPermissions();
+            if (permissions.publicStorage !== 'granted') await Filesystem.requestPermissions();
+
             const reader = new FileReader();
             reader.onloadend = async () => {
               const base64Data = (reader.result as string).split(',')[1];
-              
-              // On Mobile, we often just save to Documents or use Share API for "Save To"
               const savedFile = await Filesystem.writeFile({
                 path: fileName,
                 data: base64Data,
@@ -155,53 +129,50 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
               });
 
               if (saveAs) {
-                // If user specifically asked for "Save As", we can share the local file URI
-                await Share.share({
-                  title: fileName,
-                  url: savedFile.uri,
-                });
+                await Share.share({ title: fileName, url: savedFile.uri });
               } else {
                 toast.success('Saved to Documents');
               }
+              setDownloadProgress(null);
             };
             reader.readAsDataURL(blob);
           } catch (err: any) {
             toast.error('Mobile save failed: ' + err.message);
+            setDownloadProgress(null);
           }
         } else {
-          // Web version
-          if (saveAs && 'showSaveFilePicker' in window) {
-            try {
-              const handle = await (window as any).showSaveFilePicker({
-                suggestedName: fileName,
-              });
+          try {
+            if (saveAs && 'showSaveFilePicker' in window) {
+              const handle = await (window as any).showSaveFilePicker({ suggestedName: fileName });
               const writable = await handle.createWritable();
               await writable.write(blob);
               await writable.close();
-              toast.success('File saved successfully');
-            } catch (err: any) {
-              if (err.name !== 'AbortError') toast.error('Web save failed');
+              toast.success('File saved');
+            } else {
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = fileName;
+              document.body.appendChild(a);
+              a.click();
+              window.URL.revokeObjectURL(url);
+              toast.success('Download started');
             }
-          } else {
-            // Standard browser download
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            a.download = fileName;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            toast.success('Download started');
+          } catch (err: any) {
+            if (err.name !== 'AbortError') toast.error('Web save failed');
+          } finally {
+            setDownloadProgress(null);
           }
         }
+      } else {
+        toast.error('Download failed');
+        setDownloadProgress(null);
       }
-      setDownloadProgress(null);
       setXhr(null);
     };
 
     request.onerror = () => {
-      toast.error('Download failed');
+      toast.error('Network error');
       setDownloadProgress(null);
       setXhr(null);
     };
@@ -214,159 +185,110 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
       xhr.abort();
       setDownloadProgress(null);
       setXhr(null);
-      toast.info('Download cancelled');
+      toast.info('Cancelled');
     }
   };
 
   const handleShare = async () => {
     if (!media_url) return;
     try {
-      await Share.share({
-        title: file_name || 'Shared File',
-        text: content,
-        url: media_url,
-      });
-    } catch (err) {
-      // Fallback to clipboard
+      await Share.share({ title: file_name || 'File', text: content, url: media_url });
+    } catch {
       navigator.clipboard.writeText(media_url);
-      toast.success('Link copied to clipboard');
+      toast.success('Copied link');
     }
   };
 
   const menuItems = [
-    { label: 'Save to...', icon: <FolderDown className="w-4 h-4" />, onClick: () => handleDownload(true) },
-    { label: 'Share', icon: <Share2 className="w-4 h-4" />, onClick: handleShare },
-    { divider: true },
-    { label: 'About File', icon: <Info className="w-4 h-4" />, onClick: () => toast.info(`Name: ${file_name}\nSize: ${formatBytes(file_size || 0)}`) },
+    ...(type !== 'text' ? [
+      { label: 'Save to...', icon: <FolderDown className="w-4 h-4" />, onClick: () => handleDownload(true) },
+      { label: 'Share', icon: <Share2 className="w-4 h-4" />, onClick: handleShare },
+      { divider: true },
+      { label: 'File Info', icon: <Info className="w-4 h-4" />, onClick: () => toast.info(`${file_name} (${formatBytes(file_size || 0)})`) },
+    ] : []),
     { label: 'Delete', icon: <Trash2 className="w-4 h-4" />, textClass: 'text-red-500', onClick: () => onDelete?.(id) },
   ];
 
   return (
-    <div className={cn("flex flex-col w-full px-4 group", isSentByMe ? "items-end" : "items-start", isSequence ? "mt-1" : "mt-4")}>
-      {!isSentByMe && senderName && !isSequence && (
-        <span className="text-xs text-muted-foreground ml-1 mb-1 font-medium">{senderName}</span>
-      )}
-      
-      <div className="flex items-start gap-2 max-w-[85%] md:max-w-[70%]">
-        {!isSentByMe && (
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity self-center">
-            <DropdownMenu items={menuItems} icon={<MoreHorizontal className="w-4 h-4" />} />
+    <div className={cn("flex flex-col w-full px-4 group", isSentByMe ? "items-end" : "items-start", isSequence ? "mt-1" : "mt-6")}>
+      {!isSentByMe && senderName && !isSequence && <span className="text-[11px] text-muted-foreground ml-1 mb-1 font-bold uppercase tracking-tighter opacity-70">{senderName}</span>}
+      <div className="flex items-end gap-1 max-w-[85%] md:max-w-[75%] group/bubble relative">
+        <div className={cn(
+          "relative px-4 py-2.5 text-[15px] leading-snug transition-all duration-300 shadow-sm flex flex-col min-w-45",
+          isSentByMe ? "bg-primary text-primary-foreground rounded-2xl rounded-tr-sm" : "bg-card border border-border text-foreground rounded-2xl rounded-tl-sm text-left",
+          isCurrentHighlight && "ring-2 ring-accent ring-offset-2 ring-offset-background scale-[1.02]",
+          (type === 'image' || type === 'video') && "p-1 overflow-hidden"
+        )}>
+          {/* Action Menu Inside Bubble */}
+          <div className="absolute top-1.5 right-1.5 z-30 opacity-0 group-hover/bubble:opacity-100 transition-opacity">
+            <DropdownMenu items={menuItems} icon={<MoreHorizontal className="w-5 h-5 bg-black/10 hover:bg-black/30 text-white rounded-full p-1 backdrop-blur-sm" />} />
           </div>
-        )}
 
-        <div 
-          className={cn(
-            "relative px-3 py-2 text-[15px] leading-relaxed premium-transition shadow-sm flex flex-col",
-            isSentByMe 
-              ? "bg-primary text-primary-foreground rounded-2xl rounded-tr-sm" 
-              : "bg-card border border-border text-foreground rounded-2xl rounded-tl-sm",
-            isCurrentHighlight && "ring-2 ring-accent ring-offset-2 ring-offset-background scale-[1.02]",
-            (type === 'image' || type === 'video') && "p-1 overflow-hidden"
-          )}
-        >
           {type === 'text' ? (
-            <p className="whitespace-pre-wrap wrap-break-word px-1">
-              {highlight && typeof highlight === 'string' ? (
-                content.split(new RegExp(`(${highlight})`, 'gi')).map((part, i) => 
-                  part.toLowerCase() === highlight.toLowerCase() 
-                    ? <span key={i} className="bg-accent text-accent-foreground font-bold rounded-sm px-0.5">{part}</span> 
-                    : part
-                )
-              ) : highlight ? (
-                 <span className="bg-accent/30 rounded-sm">{content}</span>
-              ) : (
-                content
-              )}
+            <p className="whitespace-pre-wrap wrap-break-word px-1 pr-6">
+              {highlight && typeof highlight === 'string' ? content.split(new RegExp(`(${highlight})`, 'gi')).map((p, i) => p.toLowerCase() === highlight.toLowerCase() ? <span key={i} className="bg-accent text-accent-foreground font-bold px-0.5">{p}</span> : p) : content}
             </p>
           ) : (
-            <div className="flex flex-col gap-1 min-w-45">
+            <div className="flex flex-col gap-1.5">
               {type === 'image' && media_url && (
-                <div className="relative group/media rounded-xl overflow-hidden bg-black/5 aspect-square max-h-80">
+                <div className="relative group/media rounded-xl overflow-hidden bg-black/5 aspect-square max-h-80 shadow-inner">
                   <img src={media_url} alt="Shared" className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <ProgressCircle 
-                      progress={downloadProgress || 0} 
-                      isDownloading={downloadProgress !== null} 
-                      onCancel={cancelDownload}
-                    />
-                  </div>
+                  {!isSentByMe && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/5">
+                      <ProgressCircle progress={downloadProgress || 0} isDownloading={downloadProgress !== null} onCancel={cancelDownload} />
+                    </div>
+                  )}
                 </div>
               )}
-              
               {type === 'video' && media_url && (
-                <div className="relative group/media rounded-xl overflow-hidden bg-black/5 aspect-video max-h-80 flex items-center justify-center">
+                <div className="relative group/media rounded-xl overflow-hidden bg-black/5 aspect-video max-h-80 flex items-center justify-center shadow-inner">
                   <video src={media_url} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/10">
-                    {downloadProgress !== null ? (
-                       <ProgressCircle 
-                        progress={downloadProgress} 
-                        isDownloading={true} 
-                        onCancel={cancelDownload}
-                      />
-                    ) : (
-                      <div className="w-12 h-12 bg-black/40 rounded-full flex items-center justify-center backdrop-blur-sm cursor-pointer" onClick={() => handleDownload()}>
-                        <Play className="w-6 h-6 text-white fill-white ml-0.5" />
-                      </div>
-                    )}
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                    {!isSentByMe ? (
+                      downloadProgress !== null ? <ProgressCircle progress={downloadProgress} isDownloading={true} onCancel={cancelDownload} /> : (
+                        <div className="w-14 h-14 bg-black/40 rounded-full flex items-center justify-center backdrop-blur-sm cursor-pointer hover:bg-black/60 transition-colors shadow-xl" onClick={() => handleDownload()}>
+                          <Play className="w-7 h-7 text-white fill-white ml-0.5" />
+                        </div>
+                      )
+                    ) : <Play className="w-10 h-10 text-white/30" />}
                   </div>
-                  <div className="absolute bottom-2 right-2 bg-black/40 px-1.5 py-0.5 rounded text-[10px] text-white backdrop-blur-sm font-bold">
+                  <div className="absolute bottom-2 right-2 bg-black/50 px-2 py-1 rounded text-[10px] text-white backdrop-blur-md font-bold tracking-tight">
                     {formatBytes(file_size || 0)}
                   </div>
                 </div>
               )}
-
               {type === 'file' && (
-                <div className="flex items-center gap-3 p-2 group/file cursor-pointer" onClick={() => handleDownload()}>
-                  <div className="shrink-0">
-                    <ProgressCircle 
-                      progress={downloadProgress || 0} 
-                      size={42} 
-                      strokeWidth={2.5}
-                      isDownloading={downloadProgress !== null}
-                      onCancel={cancelDownload}
-                    />
+                <div className={cn("flex items-center gap-4 p-2.5 rounded-xl transition-colors", !isSentByMe ? "cursor-pointer hover:bg-secondary/20" : "bg-primary-foreground/5")} onClick={() => !isSentByMe && handleDownload()}>
+                  <div className="shrink-0 relative">
+                    {!isSentByMe ? (
+                      <ProgressCircle progress={downloadProgress || 0} size={44} strokeWidth={2.5} isDownloading={downloadProgress !== null} onCancel={cancelDownload} />
+                    ) : (
+                      <div className="w-11 h-11 rounded-full bg-primary-foreground/10 flex items-center justify-center shadow-inner">
+                        <FileText className="w-5 h-5 text-primary-foreground/70" />
+                      </div>
+                    )}
                   </div>
-                  <div className="flex flex-col min-w-0 pr-4">
-                    <span className="text-[14px] font-bold truncate leading-tight">{file_name || 'Document'}</span>
-                    <span className="text-[11px] opacity-70 font-medium">
-                      {formatBytes(file_size || 0)} • {downloadProgress !== null ? `${downloadProgress}%` : 'Click to download'}
+                  <div className="flex flex-col min-w-0 pr-6">
+                    <span className="text-[14px] font-bold truncate tracking-tight">{file_name || 'Document'}</span>
+                    <span className="text-[11px] opacity-70 font-bold uppercase tracking-tighter">
+                      {formatBytes(file_size || 0)} • {downloadProgress !== null ? `${downloadProgress}%` : (isSentByMe ? 'Cloud Stored' : 'Download')}
                     </span>
                   </div>
                 </div>
               )}
-
-              {content && <p className="mt-1.5 px-1.5 text-sm whitespace-pre-wrap">{content}</p>}
+              {content && <p className="mt-1 px-1 text-[14px] whitespace-pre-wrap opacity-90 pr-6">{content}</p>}
             </div>
           )}
 
-          <div className={cn(
-            "flex items-center gap-1 mt-1 text-[10px] self-end pr-1",
-            isSentByMe ? "text-primary-foreground/70" : "text-muted-foreground"
-          )}>
+          <div className={cn("flex items-center gap-1 mt-1.5 text-[10px] self-end pr-0.5 opacity-60 font-bold", isSentByMe ? "text-primary-foreground" : "text-muted-foreground")}>
             <span>{timestamp}</span>
             {isSentByMe && status && (
               <span className="flex items-center">
-                {status === 'read' ? (
-                  <CheckCheck className="w-3.5 h-3.5 text-blue-400" />
-                ) : status === 'delivered' ? (
-                  <CheckCheck className="w-3.5 h-3.5 opacity-70" />
-                ) : status === 'sent' ? (
-                  <Check className="w-3.5 h-3.5 opacity-70" />
-                ) : status === 'sending' ? (
-                  <RefreshCw className="w-2.5 h-2.5 animate-spin opacity-50" />
-                ) : (
-                  <Check className="w-3.5 h-3.5 opacity-70" />
-                )}
+                {status === 'read' ? <CheckCheck className="w-3.5 h-3.5 text-blue-300" /> : status === 'delivered' ? <CheckCheck className="w-3.5 h-3.5" /> : status === 'sending' ? <RefreshCw className="w-2.5 h-2.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
               </span>
             )}
           </div>
         </div>
-
-        {isSentByMe && (
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity self-center">
-            <DropdownMenu items={menuItems} icon={<MoreHorizontal className="w-4 h-4" />} />
-          </div>
-        )}
       </div>
     </div>
   );
