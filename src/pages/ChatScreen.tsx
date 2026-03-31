@@ -37,6 +37,7 @@ export const ChatScreen: React.FC = () => {
     isLoading: isMessagesLoading, 
     sendMessage,
     sendFile,
+    deleteMessage,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage 
@@ -392,11 +393,11 @@ export const ChatScreen: React.FC = () => {
               <div key={msg.id} id={`msg-${msg.id}`} className="transition-all duration-300">
                 <MessageBubble
                   id={msg.id}
-                  chatId={id}
                   content={msg.content}
                   type={msg.type}
                   media_url={msg.media_url}
                   file_name={msg.file_name}
+                  file_size={msg.file_size}
                   timestamp={displayTime(msg.created_at)}
                   isSentByMe={msg.sender_id === user?.id}
                   senderName={msg.profiles?.full_name}
@@ -404,6 +405,7 @@ export const ChatScreen: React.FC = () => {
                   status={msg.status}
                   highlight={searchQuery}
                   isCurrentHighlight={isSearchVisible && searchResults[currentMatchIndex] === idx}
+                  onDelete={deleteMessage}
                 />
               </div>
             ))}

@@ -440,6 +440,7 @@ export type Database = {
           content: string | null
           created_at: string | null
           file_name: string | null
+          file_size: number | null
           id: string
           is_deleted: boolean | null
           media_url: string | null
@@ -453,6 +454,7 @@ export type Database = {
           content?: string | null
           created_at?: string | null
           file_name?: string | null
+          file_size?: number | null
           id?: string
           is_deleted?: boolean | null
           media_url?: string | null
@@ -466,6 +468,7 @@ export type Database = {
           content?: string | null
           created_at?: string | null
           file_name?: string | null
+          file_size?: number | null
           id?: string
           is_deleted?: boolean | null
           media_url?: string | null

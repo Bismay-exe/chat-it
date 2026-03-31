@@ -12,6 +12,7 @@ export interface MessageData {
   type: 'text' | 'image' | 'video' | 'file';
   media_url?: string | null;
   file_name?: string | null;
+  file_size?: number | null;
   created_at: string;
   profiles?: { full_name: string } | null;
   status?: 'sending' | 'sent' | 'error' | 'read';
@@ -221,7 +222,8 @@ export function useMessages(chatId: string | undefined) {
           content: '',
           type,
           media_url: publicUrl,
-          file_name: file.name
+          file_name: file.name,
+          file_size: file.size
         })
         .select()
         .single();
@@ -241,6 +243,7 @@ export function useMessages(chatId: string | undefined) {
         content: '',
         type,
         file_name: file.name,
+        file_size: file.size,
         media_url: URL.createObjectURL(file), // Local preview
         created_at: new Date().toISOString(),
         status: 'sending'
@@ -276,6 +279,27 @@ export function useMessages(chatId: string | undefined) {
     }
   });
 
+  const deleteMessageMutation = useMutation({
+    mutationFn: async (messageId: string) => {
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .eq('id', messageId);
+      if (error) throw error;
+      return messageId;
+    },
+    onSuccess: (messageId) => {
+      queryClient.setQueryData(['messages', chatId, user?.id], (old: any) => {
+        if (!old) return old;
+        const updatedPages = old.pages.map((page: any) => 
+          page.filter((m: any) => m.id !== messageId)
+        );
+        return { ...old, pages: updatedPages };
+      });
+      toast.success('Message deleted');
+    }
+  });
+
   return { 
     messages, 
     isLoading, 
@@ -283,6 +307,7 @@ export function useMessages(chatId: string | undefined) {
     hasNextPage,
     isFetchingNextPage,
     sendMessage: (content: string) => sendMessageMutation.mutate(content),
-    sendFile: (file: File, type: 'image' | 'video' | 'file') => sendFileMutation.mutate({ file, type })
+    sendFile: (file: File, type: 'image' | 'video' | 'file') => sendFileMutation.mutate({ file, type }),
+    deleteMessage: (id: string) => deleteMessageMutation.mutate(id)
   };
 }
