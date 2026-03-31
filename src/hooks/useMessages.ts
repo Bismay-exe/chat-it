@@ -9,6 +9,9 @@ export interface MessageData {
   chat_id: string;
   sender_id: string;
   content: string;
+  type: 'text' | 'image' | 'video' | 'file';
+  media_url?: string | null;
+  file_name?: string | null;
   created_at: string;
   profiles?: { full_name: string } | null;
   status?: 'sending' | 'sent' | 'error' | 'read';
@@ -155,13 +158,13 @@ export function useMessages(chatId: string | undefined) {
         chat_id: chatId!,
         sender_id: user!.id,
         content: content.trim(),
+        type: 'text',
         created_at: new Date().toISOString(),
         status: 'sending'
       };
 
       queryClient.setQueryData(['messages', chatId, user?.id], (old: any) => {
         if (!old) return { pages: [[optimisticMessage]], pageParams: [null] };
-        // Prepend optimistic message to the most recent page (index 0)
         const updatedPages = [...old.pages];
         updatedPages[0] = [...updatedPages[0], optimisticMessage];
         return { ...old, pages: updatedPages };
@@ -178,9 +181,91 @@ export function useMessages(chatId: string | undefined) {
     onSuccess: (data, _, context) => {
       queryClient.setQueryData(['messages', chatId, user?.id], (old: any) => {
         if (!old || !old.pages?.[0]) return old;
-        // The optimistic message was added to the most recent page (index 0)
         const updatedPages = [...old.pages];
         updatedPages[0] = updatedPages[0].map((m: MessageData) => 
+          m.id === context?.tempId ? { ...data, status: 'sent' as const, profiles: { full_name: user?.user_metadata?.full_name || 'Me' } } : m
+        );
+        return { ...old, pages: updatedPages };
+      });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['chats', user?.id] });
+    }
+  });
+
+  const sendFileMutation = useMutation({
+    mutationFn: async ({ file, type }: { file: File, type: 'image' | 'video' | 'file' }) => {
+      if (!chatId || !user) throw new Error('Not initialized');
+
+      // 1. Upload to Supabase Storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}${Date.now()}.${fileExt}`;
+      const filePath = `${chatId}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('chat-attachments')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('chat-attachments')
+        .getPublicUrl(filePath);
+
+      // 2. Insert Message
+      const { data, error } = await supabase
+        .from('messages')
+        .insert({
+          chat_id: chatId,
+          sender_id: user.id,
+          content: '',
+          type,
+          media_url: publicUrl,
+          file_name: file.name
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onMutate: async ({ file, type }) => {
+      await queryClient.cancelQueries({ queryKey: ['messages', chatId, user?.id] });
+      const previousData = queryClient.getQueryData(['messages', chatId, user?.id]);
+      
+      const tempId = `temp-${Date.now()}`;
+      const optimisticMessage: MessageData = {
+        id: tempId,
+        chat_id: chatId!,
+        sender_id: user!.id,
+        content: '',
+        type,
+        file_name: file.name,
+        media_url: URL.createObjectURL(file), // Local preview
+        created_at: new Date().toISOString(),
+        status: 'sending'
+      };
+
+      queryClient.setQueryData(['messages', chatId, user?.id], (old: any) => {
+        if (!old) return { pages: [[optimisticMessage]], pageParams: [null] };
+        const updatedPages = [...old.pages];
+        updatedPages[0] = [...updatedPages[0], optimisticMessage];
+        return { ...old, pages: updatedPages };
+      });
+
+      return { previousData, tempId };
+    },
+    onError: (err: any, _, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(['messages', chatId, user?.id], context.previousData);
+      }
+      toast.error('Upload failed: ' + err.message);
+    },
+    onSuccess: (data, _, context) => {
+      queryClient.setQueryData(['messages', chatId, user?.id], (old: any) => {
+        if (!old || !old.pages?.[0]) return old;
+        const updatedPages = [...old.pages];
+        updatedPages[0] = updatedPages[0].map((m: any) => 
           m.id === context?.tempId ? { ...data, status: 'sent' as const, profiles: { full_name: user?.user_metadata?.full_name || 'Me' } } : m
         );
         return { ...old, pages: updatedPages };
@@ -197,6 +282,7 @@ export function useMessages(chatId: string | undefined) {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-    sendMessage: (content: string) => sendMessageMutation.mutate(content) 
+    sendMessage: (content: string) => sendMessageMutation.mutate(content),
+    sendFile: (file: File, type: 'image' | 'video' | 'file') => sendFileMutation.mutate({ file, type })
   };
 }

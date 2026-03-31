@@ -36,6 +36,7 @@ export const ChatScreen: React.FC = () => {
     messages, 
     isLoading: isMessagesLoading, 
     sendMessage,
+    sendFile,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage 
@@ -391,7 +392,11 @@ export const ChatScreen: React.FC = () => {
               <div key={msg.id} id={`msg-${msg.id}`} className="transition-all duration-300">
                 <MessageBubble
                   id={msg.id}
+                  chatId={id}
                   content={msg.content}
+                  type={msg.type}
+                  media_url={msg.media_url}
+                  file_name={msg.file_name}
                   timestamp={displayTime(msg.created_at)}
                   isSentByMe={msg.sender_id === user?.id}
                   senderName={msg.profiles?.full_name}
@@ -409,6 +414,7 @@ export const ChatScreen: React.FC = () => {
 
       <MessageComposer
         onSendMessage={(text) => sendMessage(text)}
+        onSendFile={(file, type) => sendFile(file, type)}
         disabled={isLoading && messages.length === 0 || isRestricted}
         placeholder={isRestricted ? "Only admins can send messages" : "Type a message..."}
       />

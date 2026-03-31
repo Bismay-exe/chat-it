@@ -2,14 +2,21 @@ import React, { useState } from 'react';
 import { Send, Paperclip, Smile } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import imageCompression from 'browser-image-compression';
 
 export interface MessageComposerProps {
   onSendMessage: (content: string) => void;
+  onSendFile: (file: File, type: 'image' | 'video' | 'file') => void;
   disabled?: boolean;
   placeholder?: string;
 }
 
-export const MessageComposer: React.FC<MessageComposerProps> = ({ onSendMessage, disabled, placeholder = "Type a message..." }) => {
+export const MessageComposer: React.FC<MessageComposerProps> = ({ 
+  onSendMessage, 
+  onSendFile, 
+  disabled, 
+  placeholder = "Type a message..." 
+}) => {
   const [text, setText] = useState('');
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -25,12 +32,45 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({ onSendMessage,
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      toast.info(`Attachment selected: ${file.name}. (File upload stub)`);
-      // In a real app, we would upload to Supabase Storage and send the URL
-      onSendMessage(`📎 Attached: ${file.name}`);
+    if (!file) return;
+
+    // 1. Size Limit Check (50MB)
+    const MAX_SIZE = 50 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      toast.error('File too large. Max size is 50MB.');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      let fileToSend = file;
+      let type: 'image' | 'video' | 'file' = 'file';
+
+      if (file.type.startsWith('image/')) {
+        type = 'image';
+        // 2. Image Compression
+        const options = {
+          maxSizeMB: 1,
+          maxWidthOrHeight: 1920,
+          useWebWorker: true
+        };
+        toast.info('Compressing image...');
+        fileToSend = await imageCompression(file, options);
+      } else if (file.type.startsWith('video/')) {
+        type = 'video';
+      }
+
+      // 3. Send File
+      await onSendFile(fileToSend, type);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    } catch (error: any) {
+      toast.error('Error processing file: ' + error.message);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -58,10 +98,13 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({ onSendMessage,
         <button 
           type="button" 
           onClick={handleFileClick}
-          className="p-2.5 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-full premium-transition shrink-0 mb-0.5"
-          disabled={disabled}
+          className={cn(
+            "p-2.5 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-full premium-transition shrink-0 mb-0.5",
+            isUploading && "animate-pulse text-primary"
+          )}
+          disabled={disabled || isUploading}
         >
-          <Paperclip className="w-5 h-5" />
+          <Paperclip className={cn("w-5 h-5", isUploading && "animate-spin")} />
         </button>
 
         <div className="flex-1 bg-secondary/50 border border-border rounded-2xl flex items-center pr-1 premium-transition">
