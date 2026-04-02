@@ -16,7 +16,7 @@ const config: CapacitorConfig = {
       splashImmersive: true,
     },
     Keyboard: {
-      resize: 'body',
+      resize: 'none',
       style: 'dark',
       resizeOnFullScreen: true,
     },
