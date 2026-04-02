@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 import { Avatar } from '@/components/ui/Avatar';
 import { BottomSheet } from '@/components/ui/BottomSheet';
+import GradualBlur from '@/components/ui/GradualBlur';
 
 interface Announcement {
   id: string;
@@ -50,7 +51,7 @@ export const AnnouncementsPage = () => {
   }, []);
 
   return (
-    <div className="flex flex-col h-full bg-secondary/10 absolute inset-0 z-50 overflow-y-auto w-full md:w-80 lg:w-95 border-r border-border">
+    <div className="flex flex-col h-full bg-secondary/10 absolute inset-0 z-50 overflow-hidden w-full md:w-80 lg:w-95 border-r border-border">
       <TopBar 
         leftElement={
           <div className="flex items-center gap-4">
@@ -70,7 +71,7 @@ export const AnnouncementsPage = () => {
         }
       />
       
-      <div className="flex-1 p-4 flex flex-col items-center">
+      <div className="flex-1 p-4 flex flex-col items-center overflow-y-auto pb-20 md:pb-4">
         {isLoading ? (
           <div className="flex-1 flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>
         ) : announcements.length === 0 ? (
@@ -105,6 +106,10 @@ export const AnnouncementsPage = () => {
               ))}
           </div>
         )}
+      </div>
+
+      <div className="md:hidden block pointer-events-none">
+        <GradualBlur position="bottom" className="z-10" height="8rem" opacity={1} curve="ease-in-out" />
       </div>
 
       <BottomSheet

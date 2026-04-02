@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { Search, Plus, Settings, MessageSquareText, List as ListIcon, Check } from 'lucide-react';
+import { Search,   Settings, MessageSquareText, List as ListIcon, Check } from 'lucide-react';
 import { ChatListItem } from '@/components/chat/ChatListItem';
 import { cn } from '@/lib/utils';
 import { useChats } from '@/hooks/useChats';
@@ -12,6 +12,7 @@ import { Outlet } from 'react-router';
 import { ChatInfoSidebar } from '@/components/chat/ChatInfoSidebar';
 import { supabase } from '@/lib/supabase';
 import { Avatar } from '@/components/ui/Avatar';
+import GradualBlur from '@/components/ui/GradualBlur';
 
 export const ChatsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -21,7 +22,7 @@ export const ChatsPage: React.FC = () => {
 
   const { chats, isLoading: isChatsLoading, toggleArchive, toggleFavorite, toggleMute, deleteChat } = useChats();
   const { customLists, memberships, isLoading: isListsLoading, toggleMembership } = useChatLists();
-  
+
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -45,7 +46,7 @@ export const ChatsPage: React.FC = () => {
     if (activeTab === 'Unread') return (chat.unread_count || 0) > 0;
     if (activeTab === 'Favourite') return chat.is_favorite;
     if (activeTab === 'Groups') return chat.chat_type === 'group';
-    
+
     const customList = customLists.find(l => l.name === activeTab);
     if (customList) {
       return memberships[customList.id]?.includes(chat.chat_id);
@@ -93,16 +94,13 @@ export const ChatsPage: React.FC = () => {
     <div className="flex w-full h-full">
       {/* Sidebar Chat List */}
       <div className={cn(
-        "flex-col w-full md:w-[320px] lg:w-95 h-full bg-background border-r border-border shrink-0 top-0",
+        "flex-col w-full md:w-[320px] lg:w-95 h-full bg-background border-r border-border shrink-0 top-0 relative",
         isChildActive ? "hidden md:flex" : "flex"
       )}>
         {/* Top Navigation */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-border bg-background/90 backdrop-blur-sm z-10 shrink-0">
-          <h1 className="text-xl font-bold bg-linear-to-r from-primary to-[#aa3bffCC] bg-clip-text text-transparent">
-            Chat-It
-          </h1>
+          <img src="/logo/chat-it.svg" alt="Chat-It" className="h-8 w-auto xdark:invert" />
           <div className="flex items-center gap-1 text-muted-foreground">
-            <button onClick={() => navigate('/add')} className="p-2 hover:bg-secondary rounded-full premium-transition"><Plus className="w-5 h-5" /></button>
             <button onClick={() => navigate('/settings')} className="p-2 hover:bg-secondary rounded-full premium-transition"><Settings className="w-5 h-5" /></button>
           </div>
         </div>
@@ -133,8 +131,8 @@ export const ChatsPage: React.FC = () => {
                 onClick={() => tab === '+' ? navigate('/chats/lists') : setActiveTab(tab)}
                 className={cn(
                   "px-3 py-1.5 rounded-full text-sm font-medium premium-transition whitespace-nowrap",
-                  activeTab === tab 
-                    ? "bg-primary/10 text-primary border border-primary/20" 
+                  activeTab === tab
+                    ? "bg-primary/10 text-primary border border-primary/20"
                     : "bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground border border-transparent"
                 )}
               >
@@ -150,20 +148,20 @@ export const ChatsPage: React.FC = () => {
             <div className="space-y-1">
               <div className="px-3 py-2 text-[10px] font-black text-primary uppercase tracking-[0.2em] opacity-60">Search Results</div>
               {searchResults.map(r => (
-                 <button 
-                  key={r.id} 
+                <button
+                  key={r.id}
                   onClick={() => {
                     handleChatClick(r.id);
                     setSearchQuery('');
                   }}
                   className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-secondary/40 transition-all text-left"
-                 >
-                   <Avatar src={r.avatar_url} fallback={r.name} size="md" />
-                   <div className="flex-1 min-w-0">
-                     <div className="font-bold text-[15px] truncate">{r.name}</div>
-                     <div className="text-[10px] text-muted-foreground">@{r.username || r.type}</div>
-                   </div>
-                 </button>
+                >
+                  <Avatar src={r.avatar_url} fallback={r.name} size="md" />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-[15px] truncate">{r.name}</div>
+                    <div className="text-[10px] text-muted-foreground">@{r.username || r.type}</div>
+                  </div>
+                </button>
               ))}
               {searchResults.length === 0 && !isSearching && (
                 <div className="text-center p-8 text-muted-foreground text-sm">No results found</div>
@@ -209,6 +207,9 @@ export const ChatsPage: React.FC = () => {
             </>
           )}
         </div>
+        <div className="md:hidden block pointer-events-none">
+          <GradualBlur position="bottom" className="z-10" height="5rem" opacity={1} curve="ease-in-out" />
+        </div>
       </div>
 
       {/* Main Panel */}
@@ -234,8 +235,8 @@ export const ChatsPage: React.FC = () => {
         </div>
       )}
 
-      <BottomSheet 
-        isOpen={!!managingChatId} 
+      <BottomSheet
+        isOpen={!!managingChatId}
         onClose={() => setManagingChatId(null)}
         title="Move to List"
       >
@@ -259,7 +260,7 @@ export const ChatsPage: React.FC = () => {
           {customLists.length === 0 && (
             <div className="text-center p-8 text-muted-foreground">
               <p>No custom lists yet.</p>
-              <button 
+              <button
                 onClick={() => { setManagingChatId(null); navigate('/chats/lists'); }}
                 className="text-primary font-medium mt-2"
               >
@@ -267,7 +268,7 @@ export const ChatsPage: React.FC = () => {
               </button>
             </div>
           )}
-          <button 
+          <button
             onClick={() => setManagingChatId(null)}
             className="w-full bg-primary text-primary-foreground py-4 rounded-2xl font-bold mt-4 shadow-lg shadow-primary/20"
           >

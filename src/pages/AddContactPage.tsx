@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router';
-import { ArrowLeft, Users, Search as SearchIcon, Globe, MessageSquare, ChevronRight, Share2 } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router';
+import { ArrowLeft, Users, Search as SearchIcon, Globe, MessageSquare, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TopBar } from '@/components/layout/TopBar';
 import { Input } from '@/components/ui/Input';
@@ -21,6 +21,9 @@ interface SearchResult {
 
 export const AddContactPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const isChatOnly = searchParams.get('type') === 'chat';
   const { user: currentUser } = useAuthStore();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -180,13 +183,14 @@ export const AddContactPage = () => {
           </div>
         ) : !query.trim() && (
           <div className="p-4 space-y-6">
-            <div className="space-y-2">
-              <h3 className="px-1 text-xs font-bold text-muted-foreground uppercase tracking-widest">Quick Actions</h3>
-              <div className="grid grid-cols-1 gap-2">
-                <QuickActionButton icon={Users} label="New Group" onClick={() => navigate('/add/new-group')} sub="Create a group with friends" color="bg-primary/10 text-primary" />
-                <QuickActionButton icon={Share2} label="Invite a Friend" onClick={() => navigate('/invite')} sub="Share your link" color="bg-accent/10 text-accent" />
+            {!isChatOnly && (
+              <div className="space-y-2">
+                <h3 className="px-1 text-xs font-bold text-muted-foreground uppercase tracking-widest">Quick Actions</h3>
+                <div className="grid grid-cols-1 gap-2">
+                  <QuickActionButton icon={Users} label="New Group" onClick={() => navigate('/add/new-group')} sub="Create a group with friends" color="bg-primary/10 text-primary" />
+                </div>
               </div>
-            </div>
+            )}
             
             <div className="space-y-4">
                <h3 className="px-1 text-xs font-bold text-muted-foreground uppercase tracking-widest">Recent Chats</h3>
