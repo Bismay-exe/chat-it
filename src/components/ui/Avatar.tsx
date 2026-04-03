@@ -10,16 +10,16 @@ interface AvatarProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export const Avatar: React.FC<AvatarProps> = ({ src, fallback, size = 'md', className, ...props }) => {
   const sizeClasses = {
-    sm: 'w-8 h-8 text-xs',
-    md: 'w-10 h-10 text-sm',
-    lg: 'w-12 h-12 text-base',
-    xl: 'w-24 h-24 text-xl',
+    sm: 'w-13 h-13 text-xs',
+    md: 'w-16 h-16 text-sm',
+    lg: 'w-16 h-16 text-base',
+    xl: 'w-16 h-16 text-xl',
   };
 
   return (
     <div
       className={cn(
-        'relative inline-flex items-center justify-center rounded-full overflow-hidden bg-muted shrink-0',
+        'relative inline-flex items-center justify-center rounded-2xl overflow-hidden bg-muted border border-black/10 shrink-0',
         sizeClasses[size],
         className
       )}

@@ -1,0 +1,374 @@
+/* Font: Thunder (Added via NoBadFonts CLI) */
+
+@font-face {
+  font-family: "Thunder";
+  src: url("/fonts/thunder/thunder-Thin.woff2") format("woff2"),
+    url("/fonts/thunder/thunder-Thin.woff") format("woff"),
+    url("/fonts/thunder/thunder-Thin.ttf") format("truetype"),
+    url("/fonts/thunder/thunder-Thin.otf") format("opentype");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Thunder";
+  src: url("/fonts/thunder/thunder-Thin Italic.woff2") format("woff2"),
+    url("/fonts/thunder/thunder-Thin Italic.woff") format("woff"),
+    url("/fonts/thunder/thunder-Thin Italic.ttf") format("truetype"),
+    url("/fonts/thunder/thunder-Thin Italic.otf") format("opentype");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Thunder";
+  src: url("/fonts/thunder/thunder-Extra Light.woff2") format("woff2"),
+    url("/fonts/thunder/thunder-Extra Light.woff") format("woff"),
+    url("/fonts/thunder/thunder-Extra Light.ttf") format("truetype"),
+    url("/fonts/thunder/thunder-Extra Light.otf") format("opentype");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Thunder";
+  src: url("/fonts/thunder/thunder-Extra Light Italic.woff2") format("woff2"),
+    url("/fonts/thunder/thunder-Extra Light Italic.woff") format("woff"),
+    url("/fonts/thunder/thunder-Extra Light Italic.ttf") format("truetype"),
+    url("/fonts/thunder/thunder-Extra Light Italic.otf") format("opentype");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Thunder";
+  src: url("/fonts/thunder/thunder-Light Italic.woff2") format("woff2"),
+    url("/fonts/thunder/thunder-Light Italic.woff") format("woff"),
+    url("/fonts/thunder/thunder-Light Italic.ttf") format("truetype"),
+    url("/fonts/thunder/thunder-Light Italic.otf") format("opentype");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Thunder";
+  src: url("/fonts/thunder/thunder-Light.woff2") format("woff2"),
+    url("/fonts/thunder/thunder-Light.woff") format("woff"),
+    url("/fonts/thunder/thunder-Light.ttf") format("truetype"),
+    url("/fonts/thunder/thunder-Light.otf") format("opentype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Thunder";
+  src: url("/fonts/thunder/thunder-Regular.woff2") format("woff2"),
+    url("/fonts/thunder/thunder-Regular.woff") format("woff"),
+    url("/fonts/thunder/thunder-Regular.ttf") format("truetype"),
+    url("/fonts/thunder/thunder-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Thunder";
+  src: url("/fonts/thunder/thunder-Regular Italic.woff2") format("woff2"),
+    url("/fonts/thunder/thunder-Regular Italic.woff") format("woff"),
+    url("/fonts/thunder/thunder-Regular Italic.ttf") format("truetype"),
+    url("/fonts/thunder/thunder-Regular Italic.otf") format("opentype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Thunder";
+  src: url("/fonts/thunder/thunder-Medium.woff2") format("woff2"),
+    url("/fonts/thunder/thunder-Medium.woff") format("woff"),
+    url("/fonts/thunder/thunder-Medium.ttf") format("truetype"),
+    url("/fonts/thunder/thunder-Medium.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Thunder";
+  src: url("/fonts/thunder/thunder-Medium Italic.woff2") format("woff2"),
+    url("/fonts/thunder/thunder-Medium Italic.woff") format("woff"),
+    url("/fonts/thunder/thunder-Medium Italic.ttf") format("truetype"),
+    url("/fonts/thunder/thunder-Medium Italic.otf") format("opentype");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Thunder";
+  src: url("/fonts/thunder/thunder-Semi Bold.woff2") format("woff2"),
+    url("/fonts/thunder/thunder-Semi Bold.woff") format("woff"),
+    url("/fonts/thunder/thunder-Semi Bold.ttf") format("truetype"),
+    url("/fonts/thunder/thunder-Semi Bold.otf") format("opentype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Thunder";
+  src: url("/fonts/thunder/thunder-Semi Bold Italic.woff2") format("woff2"),
+    url("/fonts/thunder/thunder-Semi Bold Italic.woff") format("woff"),
+    url("/fonts/thunder/thunder-Semi Bold Italic.ttf") format("truetype"),
+    url("/fonts/thunder/thunder-Semi Bold Italic.otf") format("opentype");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Thunder";
+  src: url("/fonts/thunder/thunder-Bold.woff2") format("woff2"),
+    url("/fonts/thunder/thunder-Bold.woff") format("woff"),
+    url("/fonts/thunder/thunder-Bold.ttf") format("truetype"),
+    url("/fonts/thunder/thunder-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Thunder";
+  src: url("/fonts/thunder/thunder-Bold Italic.woff2") format("woff2"),
+    url("/fonts/thunder/thunder-Bold Italic.woff") format("woff"),
+    url("/fonts/thunder/thunder-Bold Italic.ttf") format("truetype"),
+    url("/fonts/thunder/thunder-Bold Italic.otf") format("opentype");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Thunder";
+  src: url("/fonts/thunder/thunder-Extra Bold.woff2") format("woff2"),
+    url("/fonts/thunder/thunder-Extra Bold.woff") format("woff"),
+    url("/fonts/thunder/thunder-Extra Bold.ttf") format("truetype"),
+    url("/fonts/thunder/thunder-Extra Bold.otf") format("opentype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Thunder";
+  src: url("/fonts/thunder/thunder-Extra Bold Italic.woff2") format("woff2"),
+    url("/fonts/thunder/thunder-Extra Bold Italic.woff") format("woff"),
+    url("/fonts/thunder/thunder-Extra Bold Italic.ttf") format("truetype"),
+    url("/fonts/thunder/thunder-Extra Bold Italic.otf") format("opentype");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Thunder";
+  src: url("/fonts/thunder/thunder-Black Italic.woff2") format("woff2"),
+    url("/fonts/thunder/thunder-Black Italic.woff") format("woff"),
+    url("/fonts/thunder/thunder-Black Italic.ttf") format("truetype"),
+    url("/fonts/thunder/thunder-Black Italic.otf") format("opentype");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Thunder";
+  src: url("/fonts/thunder/thunder-Black.woff2") format("woff2"),
+    url("/fonts/thunder/thunder-Black.woff") format("woff"),
+    url("/fonts/thunder/thunder-Black.ttf") format("truetype"),
+    url("/fonts/thunder/thunder-Black.otf") format("opentype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BricolageGrotesque";
+  src: url("/fonts/BricolageGrotesque/static/BricolageGrotesque-ExtraLight.ttf") format("truetype");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BricolageGrotesque";
+  src: url("/fonts/BricolageGrotesque/static/BricolageGrotesque-Light.ttf") format("truetype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BricolageGrotesque";
+  src: url("/fonts/BricolageGrotesque/static/BricolageGrotesque-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BricolageGrotesque";
+  src: url("/fonts/BricolageGrotesque/static/BricolageGrotesque-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BricolageGrotesque";
+  src: url("/fonts/BricolageGrotesque/static/BricolageGrotesque-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BricolageGrotesque";
+  src: url("/fonts/BricolageGrotesque/static/BricolageGrotesque-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BricolageGrotesque";
+  src: url("/fonts/BricolageGrotesque/static/BricolageGrotesque-ExtraBold.ttf") format("truetype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BricolageGrotesqueCondensed";
+  src: url("/fonts/Bricolage_Grotesque/condensed/BricolageGrotesque_Condensed-ExtraLight.ttf") format("truetype");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BricolageGrotesqueCondensed";
+  src: url("/fonts/Bricolage_Grotesque/condensed/BricolageGrotesque_Condensed-Light.ttf") format("truetype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BricolageGrotesqueCondensed";
+  src: url("/fonts/Bricolage_Grotesque/condensed/BricolageGrotesque_Condensed-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BricolageGrotesqueCondensed";
+  src: url("/fonts/Bricolage_Grotesque/condensed/BricolageGrotesque_Condensed-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BricolageGrotesqueCondensed";
+  src: url("/fonts/Bricolage_Grotesque/condensed/BricolageGrotesque_Condensed-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BricolageGrotesqueCondensed";
+  src: url("/fonts/Bricolage_Grotesque/condensed/BricolageGrotesque_Condensed-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BricolageGrotesqueCondensed";
+  src: url("/fonts/Bricolage_Grotesque/condensed/BricolageGrotesque_Condensed-ExtraBold.ttf") format("truetype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BricolageGrotesqueSemiCondensed";
+  src: url("/fonts/Bricolage_Grotesque/semi-condensed/BricolageGrotesque_SemiCondensed-ExtraLight.ttf") format("truetype");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BricolageGrotesqueSemiCondensed";
+  src: url("/fonts/Bricolage_Grotesque/semi-condensed/BricolageGrotesque_SemiCondensed-Light.ttf") format("truetype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BricolageGrotesqueSemiCondensed";
+  src: url("/fonts/Bricolage_Grotesque/semi-condensed/BricolageGrotesque_SemiCondensed-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BricolageGrotesqueSemiCondensed";
+  src: url("/fonts/Bricolage_Grotesque/semi-condensed/BricolageGrotesque_SemiCondensed-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BricolageGrotesqueSemiCondensed";
+  src: url("/fonts/Bricolage_Grotesque/semi-condensed/BricolageGrotesque_SemiCondensed-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BricolageGrotesqueSemiCondensed";
+  src: url("/fonts/Bricolage_Grotesque/semi-condensed/BricolageGrotesque_SemiCondensed-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BricolageGrotesqueSemiCondensed";
+  src: url("/fonts/Bricolage_Grotesque/semi-condensed/BricolageGrotesque_SemiCondensed-ExtraBold.ttf") format("truetype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  --font-thunder: "Thunder", sans-serif;
+  --font-bricolage: "BricolageGrotesque", sans-serif;
+  --font-bricolage-condensed: "BricolageGrotesqueCondensed", sans-serif;
+  --font-bricolage-semi-condensed: "BricolageGrotesqueSemiCondensed", sans-serif;
+}

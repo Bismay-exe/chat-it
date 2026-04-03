@@ -199,15 +199,14 @@ export const ChatScreen: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full w-full bg-secondary/10 relative overflow-hidden">
-      <div className="flex flex-col shrink-0 z-20">
+      <div className="absolute left-0 top-0 right-0 flex flex-col shrink-0 z-20">
         <TopBar
-          className="bg-background/95 border-b border-border shadow-sm"
           leftElement={
             <div className="flex items-center gap-1">
-              <button onClick={() => navigate('/chats')} className="md:hidden p-2 mr-1 hover:bg-secondary rounded-full premium-transition">
+              <button onClick={() => navigate('/chats')} className="md:hidden mr-1 hover:bg-secondary rounded-full premium-transition">
                 <ArrowLeft className="w-5 h-5" />
               </button>
-              <div className="cursor-pointer" onClick={handleHeaderClick}>
+              <div className="flex items-center cursor-pointer" onClick={handleHeaderClick}>
                 <Avatar src={chatInfo?.avatar_url} fallback={chatInfo?.name || 'C'} size="sm" />
               </div>
             </div>

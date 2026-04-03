@@ -83,7 +83,7 @@ export const BottomDock: React.FC = () => {
         </>
       )}
 
-      <div className="md:hidden fixed bottom-0 left-0 right-0 h-16 flex items-center justify-between gap-15 z-50 px-10 pb-safe">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 h-16 flex items-center justify-around gap-10 z-50 px-10 pb-safe">
         <button
           onClick={() => navigate('/chats')}
           className={cn(
@@ -101,7 +101,7 @@ export const BottomDock: React.FC = () => {
         <button
           onClick={() => setShowNewMenu(!showNewMenu)}
           className={cn(
-            "flex items-center justify-center gap-2 h-10 w-full rounded-full hover:scale-105 active:scale-95 premium-transition shadow-lg",
+            "flex items-center justify-center gap-2 h-10 w-full rounded-full hover:scale-105 active:scale-95 premium-transition duration-300 shadow-lg",
             showNewMenu ? "bg-white text-black" : "bg-foreground text-background"
           )}
         >

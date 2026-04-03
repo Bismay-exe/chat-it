@@ -27,6 +27,7 @@ export const ChatsPage: React.FC = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showInfo, setShowInfo] = useState(true);
+  const [showSearchBar, setShowSearchBar] = useState(false);
 
   const isLoading = isChatsLoading || isListsLoading;
 
@@ -34,7 +35,7 @@ export const ChatsPage: React.FC = () => {
     navigate(`/chats/${chatId}`);
   }, [navigate]);
 
-  const defaultTabs = ['All', 'Unread', 'Favourite', 'Groups'];
+  const defaultTabs = ['All Chats', 'Unread', 'Favourite', 'Groups'];
   const allTabs = [...defaultTabs, ...customLists.map(l => l.name), '+'];
 
   const isChildActive = !!id;
@@ -98,52 +99,72 @@ export const ChatsPage: React.FC = () => {
         isChildActive ? "hidden md:flex" : "flex"
       )}>
         {/* Top Navigation */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-border bg-background/90 backdrop-blur-sm z-10 shrink-0">
-          <img src="/logo/chat-it.svg" alt="Chat-It" className="h-8 w-auto xdark:invert" />
+        <div className="h-20 flex items-center justify-between px-4 bg-background/90 backdrop-blur-sm z-10 shrink-0">
+          <img src="/logo/chat-it.svg" alt="Chat-It" className="h-10 w-auto xdark:invert" />
           <div className="flex items-center gap-1 text-muted-foreground">
+            <button 
+              onClick={() => {
+                setShowSearchBar(!showSearchBar);
+                if (showSearchBar) {
+                  setSearchQuery('');
+                  setSearchResults([]);
+                }
+              }} 
+              className={cn(
+                "p-2 rounded-full premium-transition", 
+                showSearchBar ? "bg-primary/10 text-primary" : "hover:bg-secondary"
+              )}
+            >
+              <Search className="w-5 h-5" />
+            </button>
             <button onClick={() => navigate('/settings')} className="p-2 hover:bg-secondary rounded-full premium-transition"><Settings className="w-5 h-5" /></button>
           </div>
         </div>
 
         {/* Sidebar Search Bar */}
-        <div className="px-4 py-3 border-b border-border bg-background/50">
-          <div className="relative group">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={onSearchChange}
-              placeholder="Search chats..."
-              className="w-full h-10 pl-10 pr-4 rounded-xl bg-secondary/30 border-none text-sm font-medium focus:ring-1 focus:ring-primary/30 transition-all placeholder:text-muted-foreground/60"
-            />
-            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
-            {isSearching && (
-              <div className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            )}
+        {showSearchBar && (
+          <div className="px-4 py-3 border-b border-border bg-background animate-in slide-in-from-top-2 duration-200">
+            <div className="relative group border border-black/10 rounded-full">
+              <input
+                type="text"
+                autoFocus
+                value={searchQuery}
+                onChange={onSearchChange}
+                placeholder="Search chats..."
+                className="w-full h-10 pl-10 pr-4 rounded-full bg-secondary/70 border-none text-sm font-medium outline-none transition-all placeholder:text-muted-foreground/60"
+              />
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
+              {isSearching && (
+                <div className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Filter Tabs */}
-        <div className="px-3 py-2 border-b border-border overflow-x-auto no-scrollbar shrink-0">
-          <div className="flex gap-2 min-w-max">
-            {allTabs.map(tab => (
-              <button
-                key={tab}
-                onClick={() => tab === '+' ? navigate('/chats/lists') : setActiveTab(tab)}
-                className={cn(
-                  "px-3 py-1.5 rounded-full text-sm font-medium premium-transition whitespace-nowrap",
-                  activeTab === tab
-                    ? "bg-primary/10 text-primary border border-primary/20"
-                    : "bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground border border-transparent"
-                )}
-              >
-                {tab}
-              </button>
-            ))}
+        <div className={cn("px-3 py-1", showSearchBar ? "hidden" : "block")}>
+          <div className="p-0.5 bg-muted-foreground/10 rounded-full border border-black/10 overflow-x-auto no-scrollbar shrink-0">
+            <div className="flex gap-2 min-w-max">
+              {allTabs.map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => tab === '+' ? navigate('/chats/lists') : setActiveTab(tab)}
+                  className={cn(
+                    "px-5 py-1 rounded-full text-sm font-bold premium-transition whitespace-nowrap",
+                    activeTab === tab
+                      ? "bg-primary/10 text-primary border border-primary/20"
+                      : "text-muted-foreground hover:bg-secondary hover:text-foreground border border-transparent"
+                  )}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Chat List or Search Results */}
-        <div className="flex-1 overflow-y-auto p-2 pb-20 md:pb-2 space-y-0.5 no-scrollbar">
+        <div className="flex-1 overflow-y-auto pb-20 md:pb-2 space-y-0.5 no-scrollbar">
           {searchQuery.trim().length >= 2 ? (
             <div className="space-y-1">
               <div className="px-3 py-2 text-[10px] font-black text-primary uppercase tracking-[0.2em] opacity-60">Search Results</div>
