@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { DropdownMenu } from '@/components/ui/DropdownMenu';
-import { Archive, Star, StarOff, BellOff, ArchiveRestore, Trash2, Plus } from 'lucide-react';
+import { Archive, Star, StarOff, BellOff, ArchiveRestore, Trash2, Plus, Pin } from 'lucide-react';
 
 export interface ChatListItemProps {
   chat_id: string;
@@ -15,6 +15,7 @@ export interface ChatListItemProps {
   is_muted?: boolean;
   is_archived?: boolean;
   is_favorite?: boolean;
+  is_pinned?: boolean;
   chat_type?: 'direct' | 'group';
   isActive?: boolean;
   onClick?: () => void;
@@ -23,6 +24,8 @@ export interface ChatListItemProps {
   onMute?: (id: string, current: boolean) => void;
   onDelete?: (id: string) => void;
   onManageLists?: (id: string) => void;
+  onPin?: (id: string, isPinned: boolean) => void;
+  currentListKey?: string;
 }
 
 export const ChatListItem: React.FC<ChatListItemProps> = React.memo(({
@@ -35,6 +38,7 @@ export const ChatListItem: React.FC<ChatListItemProps> = React.memo(({
   is_muted = false,
   is_archived = false,
   is_favorite = false,
+  is_pinned = false,
   isActive = false,
   onClick,
   onArchive,
@@ -42,6 +46,8 @@ export const ChatListItem: React.FC<ChatListItemProps> = React.memo(({
   onMute,
   onDelete,
   onManageLists,
+  onPin,
+  currentListKey = 'All Chats',
 }) => {
   const timestamp = useMemo(() => {
     if (!last_message_time) return '';
@@ -60,6 +66,11 @@ export const ChatListItem: React.FC<ChatListItemProps> = React.memo(({
   };
 
   const dropdownItems = useMemo(() => [
+    { 
+      label: is_pinned ? `Unpin from ${currentListKey}` : `Pin to ${currentListKey}`, 
+      onClick: handleAction(() => onPin?.(chat_id, is_pinned)),
+      icon: <Pin className={cn("w-4 h-4", is_pinned && "fill-primary")} />
+    },
     { 
       label: is_favorite ? 'Remove from Favorites' : 'Add to Favorites', 
       onClick: handleAction(() => onFavorite?.(chat_id, is_favorite)),
@@ -86,25 +97,27 @@ export const ChatListItem: React.FC<ChatListItemProps> = React.memo(({
       textClass: 'text-red-500',
       icon: <Trash2 className="w-4 h-4" />
     },
-  ], [chat_id, is_favorite, is_archived, is_muted, onFavorite, onArchive, onMute, onManageLists, onDelete]);
+  ], [chat_id, is_favorite, is_archived, is_muted, is_pinned, currentListKey, onFavorite, onArchive, onMute, onManageLists, onDelete, onPin]);
 
   return (
     <div className="relative group">
       <button
         onClick={onClick}
         className={cn(
-          'w-full flex gap-3 px-3 py-1 premium-transition text-left relative items-center',
-          isActive ? 'bg-primary/5' : 'hover:bg-secondary/40'
+          'w-full flex gap-3 px-4 py-2 premium-transition text-left relative items-center'
         )}
       >
-        <Avatar src={avatar_url} fallback={name} size="lg" className={cn(isActive && 'ring-2 ring-primary ring-offset-2 ring-offset-background')} />
+        <div className={cn(
+          'absolute left-1.5 right-1.5 top-0 bottom-0',
+          isActive ? 'bg-primary/20 border border-black/10 rounded-[20px]' : 'hover:bg-secondary/40'
+        )}></div>
+
+        <Avatar src={avatar_url} fallback={name} size="lg" className={cn(isActive ? 'scale-110' : '')} />
 
         <div className="flex-1 overflow-hidden pointer-events-none">
           <div className="flex justify-between items-baseline mb-0.5">
             <h3 className="font-bold font-bricolage-semi-condensed text-[20px] tracking-tight truncate flex items-center gap-2 text-foreground pr-2">
               {name}
-              {is_favorite && <Star className="w-3 h-3 text-primary fill-primary" />}
-              {is_muted && <BellOff className="w-3.5 h-3.5 text-muted-foreground/60" />}
             </h3>
             <span className={cn('text-[14px] font-semibold shrink-0', (unread_count || 0) > 0 ? 'text-primary' : 'text-muted-foreground')}>
               {timestamp}
@@ -117,6 +130,7 @@ export const ChatListItem: React.FC<ChatListItemProps> = React.memo(({
             </p>
 
             <div className="flex items-center gap-1.5 shrink-0">
+              {is_pinned && <Pin className="w-3.5 h-3.5 text-muted-foreground/60" />}
               {is_muted && <BellOff className="w-3.5 h-3.5 text-muted-foreground/60" />}
               {is_favorite && <Star className="w-3 h-3 text-primary fill-primary" />}
               <Badge count={unread_count} />
@@ -126,7 +140,7 @@ export const ChatListItem: React.FC<ChatListItemProps> = React.memo(({
         <div className="border-b border-secondary-foreground/5 absolute bottom-0 left-22 right-3"></div>
       </button>
 
-      <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 premium-transition">
+      <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-80 group-hover:opacity-100 premium-transition">
         <DropdownMenu items={dropdownItems} />
       </div>
     </div>

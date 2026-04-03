@@ -1,10 +1,11 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { Search,   Settings, MessageSquareText, List as ListIcon, Check } from 'lucide-react';
 import { ChatListItem } from '@/components/chat/ChatListItem';
 import { cn } from '@/lib/utils';
 import { useChats } from '@/hooks/useChats';
 import { useChatLists } from '@/hooks/useChatLists';
+import { usePinnedChats } from '@/hooks/usePinnedChats';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useAuthStore } from '@/stores/authStore';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -22,6 +23,7 @@ export const ChatsPage: React.FC = () => {
 
   const { chats, isLoading: isChatsLoading, toggleArchive, toggleFavorite, toggleMute, deleteChat } = useChats();
   const { customLists, memberships, isLoading: isListsLoading, toggleMembership } = useChatLists();
+  const { pins, togglePin } = usePinnedChats();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
@@ -55,6 +57,16 @@ export const ChatsPage: React.FC = () => {
 
     return true;
   });
+
+  const sortedChats = useMemo(() => {
+    return [...filteredChats].sort((a, b) => {
+      const isPinnedA = pins.some(p => p.chat_id === a.chat_id && p.list_key === activeTab);
+      const isPinnedB = pins.some(p => p.chat_id === b.chat_id && p.list_key === activeTab);
+      if (isPinnedA && !isPinnedB) return -1;
+      if (!isPinnedA && isPinnedB) return 1;
+      return 0;
+    });
+  }, [filteredChats, pins, activeTab]);
 
   // Sidebar Search Logic
   const handleSearch = useCallback(async (q: string) => {
@@ -93,7 +105,7 @@ export const ChatsPage: React.FC = () => {
 
   return (
     <div className="flex w-full h-full">
-      {/* Sidebar Chat List */}
+      {/* Sidebar Chat List */} 
       <div className={cn(
         "flex-col w-full md:w-[320px] lg:w-95 h-full bg-background border-r border-border shrink-0 top-0 relative",
         isChildActive ? "hidden md:flex" : "flex"
@@ -204,20 +216,23 @@ export const ChatsPage: React.FC = () => {
                 </div>
               ) : (
                 <>
-                  {filteredChats.map(chat => (
+                  {sortedChats.map(chat => (
                     <ChatListItem
                       key={chat.chat_id}
                       {...chat}
+                      is_pinned={pins.some(p => p.chat_id === chat.chat_id && p.list_key === activeTab)}
                       isActive={id === chat.chat_id}
+                      currentListKey={activeTab}
                       onClick={() => handleChatClick(chat.chat_id)}
                       onArchive={toggleArchive}
                       onFavorite={toggleFavorite}
                       onMute={toggleMute}
+                      onPin={(id, current) => togglePin(id, activeTab, current)}
                       onDelete={deleteChat}
                       onManageLists={setManagingChatId}
                     />
                   ))}
-                  {filteredChats.length === 0 && (
+                  {sortedChats.length === 0 && (
                     <div className="h-full flex flex-col items-center justify-center text-muted-foreground p-6 text-center opacity-40">
                       <MessageSquareText className="w-10 h-10 mb-3" />
                       <p className="text-sm font-medium">No chats found in "{activeTab}"</p>

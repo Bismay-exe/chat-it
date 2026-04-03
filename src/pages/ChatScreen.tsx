@@ -3,10 +3,10 @@ import { useParams, useNavigate, useOutletContext } from 'react-router';
 import { supabase } from '@/lib/supabase';
 import { TopBar } from '@/components/layout/TopBar';
 import { Avatar } from '@/components/ui/Avatar';
-import { 
-  ArrowLeft, Phone, Video, Search, X, 
-  ChevronUp, ChevronDown, MessageSquare, Image, 
-  FileText, Link as LinkIcon, BellOff, Bell, Palette, 
+import {
+  ArrowLeft, Phone, Video, Search, X,
+  ChevronUp, ChevronDown, MessageSquare, Image,
+  FileText, Link as LinkIcon, BellOff, Bell, Palette,
   MoreHorizontal, LogOut, Download, List as ListIcon, Star, Check, Info
 } from 'lucide-react';
 import { MessageBubble } from '@/components/chat/MessageBubble';
@@ -23,24 +23,25 @@ import { useChatPermissions } from '@/hooks/useChatPermissions';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useChatLists } from '@/hooks/useChatLists';
 import { BottomSheet } from '@/components/ui/BottomSheet';
+import GradualBlur from '@/components/ui/GradualBlur';
 
 export const ChatScreen: React.FC = () => {
-  const { showInfo, setShowInfo } = useOutletContext<{ showInfo: boolean; setShowInfo: (v: boolean) => void }>() || { showInfo: false, setShowInfo: () => {} };
+  const { showInfo, setShowInfo } = useOutletContext<{ showInfo: boolean; setShowInfo: (v: boolean) => void }>() || { showInfo: false, setShowInfo: () => { } };
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const { 
-    messages, 
-    isLoading: isMessagesLoading, 
+  const {
+    messages,
+    isLoading: isMessagesLoading,
     sendMessage,
     sendFile,
     deleteMessage,
     fetchNextPage,
     hasNextPage,
-    isFetchingNextPage 
+    isFetchingNextPage
   } = useMessages(id);
   const { chats, toggleMute } = useChats();
   const { customLists, memberships, toggleMembership } = useChatLists();
@@ -54,14 +55,36 @@ export const ChatScreen: React.FC = () => {
   const [isThemeOpen, setIsThemeOpen] = useState(false);
   const [mediaTab, setMediaTab] = useState<'media' | 'docs' | 'links'>('media');
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   const searchResults = useMemo(() => {
-    if (!searchQuery.trim()) return [];
-    return messages
-      .map((msg, index) => msg.content.toLowerCase().includes(searchQuery.toLowerCase()) ? index : -1)
-      .filter(index => index !== -1);
-  }, [messages, searchQuery]);
+    if (!debouncedQuery.trim()) return [];
+    const query = debouncedQuery.toLowerCase();
+    const matches: { messageIndex: number; matchIndexInContent: number }[] = [];
+
+    messages.forEach((msg, msgIndex) => {
+      // Fast check: Only search text messages or messages with content
+      if (msg.type !== 'text' && !msg.content) return;
+
+      const content = msg.content.toLowerCase();
+      let pos = content.indexOf(query);
+
+      while (pos !== -1) {
+        matches.push({ messageIndex: msgIndex, matchIndexInContent: pos });
+        pos = content.indexOf(query, pos + 1);
+      }
+    });
+
+    return matches.reverse();
+  }, [messages, debouncedQuery]);
 
   useEffect(() => {
     if (!isSearchVisible) {
@@ -71,14 +94,24 @@ export const ChatScreen: React.FC = () => {
   }, [isSearchVisible]);
 
   useEffect(() => {
-    if (searchResults.length > 0) {
-      const targetIndex = searchResults[currentMatchIndex];
-      const element = document.getElementById(`msg-${messages[targetIndex].id}`);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
+    if (isSearchVisible && searchResults.length > 0) {
+      // Small delay to ensure the DOM has updated with the ID "active-search-match"
+      requestAnimationFrame(() => {
+        const activeMatchElement = document.getElementById('active-search-match');
+        if (activeMatchElement) {
+          activeMatchElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+          // Fallback to bubble if word match element isn't found
+          const match = searchResults[currentMatchIndex];
+          const targetMessage = messages[match.messageIndex];
+          const element = document.getElementById(`msg-${targetMessage.id}`);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }
+      });
     }
-  }, [currentMatchIndex, searchResults, messages]);
+  }, [currentMatchIndex, searchResults, messages, isSearchVisible]);
 
   const handleNextMatch = () => {
     if (searchResults.length === 0) return;
@@ -96,7 +129,7 @@ export const ChatScreen: React.FC = () => {
     if (!isSearchVisible && !isLoading && !isFetchingNextPage) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [lastMessageId, id, isSearchVisible, isLoading, isFetchingNextPage]);
+  }, [lastMessageId, id, isLoading, isFetchingNextPage]);
 
   // Infinite Scroll Trigger
   const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -135,12 +168,35 @@ export const ChatScreen: React.FC = () => {
           .eq('chat_id', id)
           .neq('user_id', user.id)
           .single();
-        
+
         if (data) setOtherUserId(data.user_id);
       };
       getOtherUser();
     }
   }, [chatInfo?.chat_type, id, user?.id]);
+
+  const groupedMessages = useMemo(() => {
+    const groups: {
+      sender_id: string;
+      profile: any;
+      messages: { msg: any; originalIndex: number }[];
+    }[] = [];
+
+    messages.forEach((msg, idx) => {
+      const lastGroup = groups[groups.length - 1];
+      if (lastGroup && lastGroup.sender_id === msg.sender_id) {
+        lastGroup.messages.push({ msg, originalIndex: idx });
+      } else {
+        groups.push({
+          sender_id: msg.sender_id,
+          profile: msg.profiles,
+          messages: [{ msg, originalIndex: idx }]
+        });
+      }
+    });
+
+    return groups;
+  }, [messages]);
 
   const handleHeaderClick = () => {
     if (chatInfo?.chat_type === 'group') {
@@ -158,12 +214,12 @@ export const ChatScreen: React.FC = () => {
     try {
       const { error } = await supabase
         .from('cleared_chats')
-        .upsert({ 
-          chat_id: id, 
-          user_id: user.id, 
-          cleared_at: new Date().toISOString() 
+        .upsert({
+          chat_id: id,
+          user_id: user.id,
+          cleared_at: new Date().toISOString()
         }, { onConflict: 'chat_id,user_id' });
-      
+
       if (error) throw error;
       toast.success("Chat cleared");
       // Refresh messages
@@ -184,7 +240,7 @@ export const ChatScreen: React.FC = () => {
         .delete()
         .eq('chat_id', id)
         .eq('user_id', user.id);
-      
+
       if (error) throw error;
       toast.success("Exited group");
       navigate('/chats');
@@ -198,7 +254,7 @@ export const ChatScreen: React.FC = () => {
   const isFavorite = chatInfo?.is_favorite || false;
 
   return (
-    <div className="flex flex-col h-full w-full bg-secondary/10 relative overflow-hidden">
+    <div className="flex flex-col h-full w-full bg-secondary relative overflow-hidden">
       <div className="absolute left-0 top-0 right-0 flex flex-col shrink-0 z-20">
         <TopBar
           leftElement={
@@ -230,58 +286,58 @@ export const ChatScreen: React.FC = () => {
               >
                 <Search className="w-5 h-5" />
               </button>
-              
+
               <button className="p-2 hover:bg-secondary rounded-full premium-transition hidden md:block"><Video className="w-5 h-5" /></button>
               <button className="p-2 hover:bg-secondary rounded-full premium-transition hidden md:block"><Phone className="w-5 h-5" /></button>
-              
+
               <button
                 onClick={() => setShowInfo?.(!showInfo)}
                 className={cn(
-                  "p-2 hover:bg-secondary rounded-full premium-transition hidden lg:block", 
+                  "p-2 hover:bg-secondary rounded-full premium-transition hidden lg:block",
                   showInfo && "text-primary bg-primary/10"
                 )}
               >
                 <Info className="w-5 h-5" />
               </button>
-              
-              <DropdownMenu 
+
+              <DropdownMenu
                 items={[
-                  { 
-                    label: chatInfo?.chat_type === 'group' ? 'Group Media' : 'Media, Links, Docs', 
-                    icon: <Image className="w-4 h-4" />, 
-                    onClick: () => setIsMediaOpen(true) 
+                  {
+                    label: chatInfo?.chat_type === 'group' ? 'Group Media' : 'Media, Links, Docs',
+                    icon: <Image className="w-4 h-4" />,
+                    onClick: () => setIsMediaOpen(true)
                   },
-                  { 
-                    label: 'Search', 
-                    icon: <Search className="w-4 h-4" />, 
-                    onClick: () => setIsSearchVisible(true) 
+                  {
+                    label: 'Search',
+                    icon: <Search className="w-4 h-4" />,
+                    onClick: () => setIsSearchVisible(true)
                   },
-                  { 
-                    label: isMuted ? 'Unmute' : 'Mute notifications', 
-                    icon: isMuted ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />, 
+                  {
+                    label: isMuted ? 'Unmute' : 'Mute notifications',
+                    icon: isMuted ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />,
                     onClick: () => {
                       if (id) toggleMute(id, isMuted);
                     }
                   },
-                  { 
-                    label: 'Chat theme', 
-                    icon: <Palette className="w-4 h-4" />, 
-                    onClick: () => setIsThemeOpen(true) 
+                  {
+                    label: 'Chat theme',
+                    icon: <Palette className="w-4 h-4" />,
+                    onClick: () => setIsThemeOpen(true)
                   },
                   { divider: true },
                   {
                     label: 'More',
                     icon: <MoreHorizontal className="w-4 h-4" />,
                     subItems: [
-                      { 
-                        label: 'Clear Chat', 
-                        icon: <X className="w-4 h-4" />, 
-                        onClick: handleClearChat 
+                      {
+                        label: 'Clear Chat',
+                        icon: <X className="w-4 h-4" />,
+                        onClick: handleClearChat
                       },
-                      { 
-                        label: 'Export Chat', 
-                        icon: <Download className="w-4 h-4" />, 
-                        onClick: () => toast.info('Export chat feature coming soon!') 
+                      {
+                        label: 'Export Chat',
+                        icon: <Download className="w-4 h-4" />,
+                        onClick: () => toast.info('Export chat feature coming soon!')
                       },
                       {
                         label: 'Add to list...',
@@ -318,40 +374,49 @@ export const ChatScreen: React.FC = () => {
         />
 
         {isSearchVisible && (
-          <div className="bg-background border-b border-border p-2 flex items-center gap-2 animate-in slide-in-from-top duration-300 shadow-md relative z-10">
-            <div className="relative flex-1">
-              <Input
-                autoFocus
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search in chat..."
-                className="pl-10 pr-24 h-10 rounded-xl bg-secondary/40 border-none text-sm focus:ring-2 ring-primary/20"
-              />
-              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              {searchQuery && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-[10px] font-black text-primary bg-primary/10 px-2 py-1 rounded-md border border-primary/10">
-                  {searchResults.length > 0 ? `${currentMatchIndex + 1} OF ${searchResults.length}` : '0 RESULTS'}
-                </div>
-              )}
+          <>
+            <div className="pointer-events-none">
+              <GradualBlur position="top" className="z-10" height="10rem" opacity={1} curve="ease-in-out" />
             </div>
-            <div className="flex items-center gap-1">
-              <button
-                disabled={searchResults.length === 0}
-                onClick={handlePrevMatch}
-                className="p-2 hover:bg-secondary rounded-xl disabled:opacity-20 active:scale-90 transition-all"
-              >
-                <ChevronUp className="w-4 h-4" />
-              </button>
-              <button
-                disabled={searchResults.length === 0}
-                onClick={handleNextMatch}
-                className="p-2 hover:bg-secondary rounded-xl disabled:opacity-20 active:scale-90 transition-all"
-              >
-                <ChevronDown className="w-4 h-4" />
-              </button>
-              <button onClick={() => setIsSearchVisible(false)} className="p-2 hover:bg-secondary rounded-xl active:scale-90 transition-all"><X className="w-4 h-4" /></button>
+            <div className="p-2 flex items-center gap-2 animate-in slide-in-from-top duration-300 relative z-10">
+              <div className="relative flex-1">
+                <Input
+                  autoFocus
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search in chat..."
+                  className="pl-10 pr-24 h-10 rounded-xl bg-secondary-foreground/20 backdrop-blur-sm border-black/10 text-sm"
+                />
+                <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                {searchQuery && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-[10px] font-black text-primary bg-primary/10 px-2 py-1 rounded-md border border-primary/10 transition-all">
+                    {searchQuery !== debouncedQuery ? (
+                      <span className="animate-pulse">SEARCHING...</span>
+                    ) : (
+                      searchResults.length > 0 ? `${currentMatchIndex + 1} OF ${searchResults.length}` : '0 RESULTS'
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  disabled={searchResults.length === 0}
+                  onClick={handleNextMatch}
+                  className="p-2 hover:bg-secondary rounded-xl disabled:opacity-20 active:scale-90 transition-all"
+                >
+                  <ChevronUp className="w-4 h-4" />
+                </button>
+                <button
+                  disabled={searchResults.length === 0}
+                  onClick={handlePrevMatch}
+                  className="p-2 hover:bg-secondary rounded-xl disabled:opacity-20 active:scale-90 transition-all"
+                >
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+                <button onClick={() => setIsSearchVisible(false)} className="p-2 hover:bg-secondary rounded-xl active:scale-90 transition-all"><X className="w-4 h-4" /></button>
+              </div>
             </div>
-          </div>
+          </>
         )}
       </div>
 
@@ -388,26 +453,58 @@ export const ChatScreen: React.FC = () => {
                 </div>
               )}
             </div>
-            {messages.map((msg, idx) => (
-              <div key={msg.id} id={`msg-${msg.id}`} className="transition-all duration-300">
-                <MessageBubble
-                  id={msg.id}
-                  content={msg.content}
-                  type={msg.type}
-                  media_url={msg.media_url}
-                  file_name={msg.file_name}
-                  file_size={msg.file_size}
-                  timestamp={displayTime(msg.created_at)}
-                  isSentByMe={msg.sender_id === user?.id}
-                  senderName={msg.profiles?.full_name}
-                  isSequence={idx > 0 && messages[idx - 1].sender_id === msg.sender_id}
-                  status={msg.status}
-                  highlight={searchQuery}
-                  isCurrentHighlight={isSearchVisible && searchResults[currentMatchIndex] === idx}
-                  onDelete={deleteMessage}
-                />
-              </div>
-            ))}
+            {groupedMessages.map((group) => {
+              const isSentByMe = group.sender_id === user?.id;
+              
+              return (
+                <div 
+                  key={group.messages[0].msg.id} 
+                  className={cn(
+                    "flex items-end w-full gap-2 mb-4",
+                    isSentByMe ? "flex-row-reverse" : "flex-row"
+                  )}
+                >
+                  {/* Sticky Avatar Sidebar - Glide Logic */}
+                  <div className="shrink-0 w-13 flex flex-col justify-end self-stretch">
+                    <div className="sticky top-24 -bottom-6 -mb-1">
+                      <Avatar 
+                        src={group.profile?.avatar_url} 
+                        fallback={group.profile?.full_name?.charAt(0) || '?'} 
+                        size="sm"
+                        className="shadow-lg rounded-xl border border-black/5"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Messages list for this group */}
+                  <div className="flex flex-col gap-1 flex-1 min-w-0">
+                    {group.messages.map(({ msg, originalIndex }, mIdx) => (
+                      <div key={msg.id} id={`msg-${msg.id}`} className="transition-all duration-300">
+                        <MessageBubble
+                          id={msg.id}
+                          content={msg.content}
+                          type={msg.type}
+                          media_url={msg.media_url}
+                          file_name={msg.file_name}
+                          file_size={msg.file_size}
+                          timestamp={displayTime(msg.created_at)}
+                          isSentByMe={isSentByMe}
+                          senderName={group.profile?.full_name}
+                          senderAvatar={group.profile?.avatar_url}
+                          isSequence={mIdx > 0}
+                          isLastInSequence={mIdx === group.messages.length - 1}
+                          status={msg.status}
+                          highlight={debouncedQuery}
+                          activeMatchWithinMessage={isSearchVisible && searchResults[currentMatchIndex]?.messageIndex === originalIndex ? searchResults[currentMatchIndex].matchIndexInContent : -1}
+                          onDelete={deleteMessage}
+                          hideAvatar={true}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
             <div ref={messagesEndRef} className="pb-4" />
           </>
         )}
@@ -421,8 +518,8 @@ export const ChatScreen: React.FC = () => {
       />
 
       {/* List Management BottomSheet */}
-      <BottomSheet 
-        isOpen={isListsOpen} 
+      <BottomSheet
+        isOpen={isListsOpen}
         onClose={() => setIsListsOpen(false)}
         title="Add to List"
       >
@@ -455,8 +552,8 @@ export const ChatScreen: React.FC = () => {
             {customLists.length === 0 && (
               <div className="text-center py-8">
                 <p className="text-muted-foreground text-sm">You haven't created any custom lists yet.</p>
-                <button 
-                  onClick={() => navigate('/chats')} 
+                <button
+                  onClick={() => navigate('/chats')}
                   className="mt-4 text-primary font-bold text-sm"
                 >
                   Go back to organize
@@ -468,8 +565,8 @@ export const ChatScreen: React.FC = () => {
       </BottomSheet>
 
       {/* Media Browser BottomSheet */}
-      <BottomSheet 
-        isOpen={isMediaOpen} 
+      <BottomSheet
+        isOpen={isMediaOpen}
         onClose={() => setIsMediaOpen(false)}
         title={chatInfo?.chat_type === 'group' ? 'Group Media' : 'Media, Links, Docs'}
       >
@@ -501,8 +598,8 @@ export const ChatScreen: React.FC = () => {
       </BottomSheet>
 
       {/* Theme Picker BottomSheet */}
-      <BottomSheet 
-        isOpen={isThemeOpen} 
+      <BottomSheet
+        isOpen={isThemeOpen}
         onClose={() => setIsThemeOpen(false)}
         title="Chat Theme"
       >

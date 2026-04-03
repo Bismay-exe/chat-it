@@ -14,7 +14,7 @@ export interface MessageData {
   file_name?: string | null;
   file_size?: number | null;
   created_at: string;
-  profiles?: { full_name: string } | null;
+  profiles?: { full_name: string; avatar_url: string | null } | null;
   status?: 'sending' | 'sent' | 'error' | 'read';
 }
 

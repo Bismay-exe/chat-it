@@ -1,23 +1,25 @@
 import React, { useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-import { 
-  Check, 
-  CheckCheck, 
-  RefreshCw, 
-  Download, 
-  Play, 
-  MoreHorizontal, 
-  Share2, 
-  Trash2, 
-  Info, 
+import {
+  Check,
+  CheckCheck,
+  RefreshCw,
+  Download,
+  Play,
+  MoreHorizontal,
+  Share2,
+  Trash2,
+  Info,
   FolderDown,
   X,
-  FileText
+  FileText,
+  Eye
 } from 'lucide-react';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { toast } from 'sonner';
 import { DropdownMenu } from '@/components/ui/DropdownMenu';
+import { Avatar } from '@/components/ui/Avatar';
 
 export interface MessageBubbleProps {
   id: string;
@@ -30,10 +32,13 @@ export interface MessageBubbleProps {
   isSentByMe: boolean;
   status?: 'sending' | 'sent' | 'delivered' | 'read' | 'error';
   senderName?: string;
+  senderAvatar?: string | null;
   isSequence?: boolean;
+  isLastInSequence?: boolean;
   highlight?: string | boolean;
-  isCurrentHighlight?: boolean;
+  activeMatchWithinMessage?: number;
   onDelete?: (id: string) => void;
+  hideAvatar?: boolean;
 }
 
 const formatBytes = (bytes: number, decimals = 1) => {
@@ -45,9 +50,9 @@ const formatBytes = (bytes: number, decimals = 1) => {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
 };
 
-const ProgressCircle = ({ progress, size = 48, strokeWidth = 3, isDownloading = false, onCancel }: { 
-  progress: number, 
-  size?: number, 
+const ProgressCircle = ({ progress, size = 48, strokeWidth = 3, isDownloading = false, onCancel }: {
+  progress: number,
+  size?: number,
   strokeWidth?: number,
   isDownloading: boolean,
   onCancel?: () => void
@@ -85,7 +90,7 @@ const ProgressCircle = ({ progress, size = 48, strokeWidth = 3, isDownloading = 
 };
 
 export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
-  id, content, type = 'text', media_url, file_name, file_size, timestamp, isSentByMe, status, senderName, isSequence = false, highlight, isCurrentHighlight = false, onDelete
+  id, content, type = 'text', media_url, file_name, file_size, timestamp, isSentByMe, status, senderName, senderAvatar, isSequence = false, isLastInSequence = false, highlight, activeMatchWithinMessage = -1, onDelete, hideAvatar = false
 }) => {
   const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
   const [xhr, setXhr] = useState<XMLHttpRequest | null>(null);
@@ -209,87 +214,198 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
     { label: 'Delete', icon: <Trash2 className="w-4 h-4" />, textClass: 'text-red-500', onClick: () => onDelete?.(id) },
   ];
 
-  return (
-    <div className={cn("flex flex-col w-full px-4 group", isSentByMe ? "items-end" : "items-start", isSequence ? "mt-1" : "mt-6")}>
-      {!isSentByMe && senderName && !isSequence && <span className="text-[11px] text-muted-foreground ml-1 mb-1 font-bold uppercase tracking-tighter opacity-70">{senderName}</span>}
-      <div className="flex items-end gap-1 max-w-[85%] md:max-w-[75%] group/bubble relative">
-        <div className={cn(
-          "relative px-4 py-2.5 text-[15px] leading-snug transition-all duration-300 shadow-sm flex flex-col min-w-45",
-          isSentByMe ? "bg-primary text-primary-foreground rounded-2xl rounded-tr-sm" : "bg-card border border-border text-foreground rounded-2xl rounded-tl-sm text-left",
-          isCurrentHighlight && "ring-2 ring-accent ring-offset-2 ring-offset-background scale-[1.02]",
-          (type === 'image' || type === 'video') && "p-1 overflow-hidden"
-        )}>
-          {/* Action Menu Inside Bubble */}
-          <div className="absolute top-1.5 right-1.5 z-30 opacity-0 group-hover/bubble:opacity-100 transition-opacity">
-            <DropdownMenu items={menuItems} icon={<MoreHorizontal className="w-5 h-5 bg-black/10 hover:bg-black/30 text-white rounded-full p-1 backdrop-blur-sm" />} />
-          </div>
+  const bubbleContent = (
+    <div className={cn(
+      "flex flex-col max-w-[calc(100%-1rem)] md:max-w-[75%] group/bubble relative min-w-0 w-full", 
+      isSentByMe ? "items-end" : "items-start"
+    )}>
+      <div className={cn(
+        "relative px-3 py-2 text-[14px] md:text-[15px] leading-tight transition-all duration-300 shadow-sm flex flex-col min-w-20 overflow-hidden",
+        isSentByMe 
+          ? cn("bg-[#7C69EF] text-white rounded-xl", isLastInSequence && "rounded-br-sm") 
+          : cn("bg-[#F3F4FE] text-slate-900 rounded-xl", isLastInSequence && "rounded-bl-sm"),
+        (type === 'image' || type === 'video') && "p-1 overflow-hidden"
+      )}>
+        {/* Action Menu */}
+        <div className="absolute top-1 right-1 z-30 opacity-80 group-hover/bubble:opacity-100 transition-opacity">
+          <DropdownMenu items={menuItems} icon={<MoreHorizontal className={cn("w-4 h-4 rounded-full p-0.5 backdrop-blur-sm", isSentByMe ? "bg-white/10 text-white" : "bg-black/5 text-slate-400")} />} />
+        </div>
 
-          {type === 'text' ? (
-            <p className="whitespace-pre-wrap wrap-break-word px-1 pr-6">
-              {highlight && typeof highlight === 'string' ? content.split(new RegExp(`(${highlight})`, 'gi')).map((p, i) => p.toLowerCase() === highlight.toLowerCase() ? <span key={i} className="bg-accent text-accent-foreground font-bold px-0.5">{p}</span> : p) : content}
+        {/* Sender Name (Other) */}
+        {!isSentByMe && senderName && !isSequence && (
+          <span className="text-[12px] font-bold text-[#7C69EF]/80 mb-1 px-1">{senderName}</span>
+        )}
+
+        {type === 'text' ? (
+          <div className="relative px-1 pb-1 min-w-0 w-full overflow-hidden">
+            <p className="whitespace-pre-wrap wrap-anywhere break-all pr-2">
+              {(() => {
+                if (highlight && typeof highlight === 'string') {
+                  const parts = content.split(new RegExp(`(${highlight})`, 'gi'));
+                  let currentOffset = 0;
+                  return parts.map((part, i) => {
+                    const isMatch = part.toLowerCase() === highlight.toLowerCase();
+                    const isActive = isMatch && currentOffset === activeMatchWithinMessage;
+                    const element = isMatch ? (
+                      <span 
+                        key={i} 
+                        id={isActive ? "active-search-match" : undefined}
+                        className={cn(
+                          "transition-all duration-300 rounded-md font-bold",
+                          isActive ? "bg-yellow-400 text-yellow-950 px-1 shadow-sm" : "bg-accent text-accent-foreground px-0.5"
+                        )}
+                      >
+                        {part}
+                      </span>
+                    ) : part;
+                    currentOffset += part.length;
+                    return element;
+                  });
+                }
+                return content;
+              })()}
             </p>
-          ) : (
-            <div className="flex flex-col gap-1.5">
-              {type === 'image' && media_url && (
-                <div className="relative group/media rounded-xl overflow-hidden bg-black/5 aspect-square max-h-80 shadow-inner">
-                  <img src={media_url} alt="Shared" className="w-full h-full object-cover" />
-                  {!isSentByMe && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/5">
-                      <ProgressCircle progress={downloadProgress || 0} isDownloading={downloadProgress !== null} onCancel={cancelDownload} />
+            
+            {/* Meta Info Integrated (Text) */}
+            <div className={cn(
+              "flex items-center justify-end gap-1.5 mt-1 text-[10px] font-medium opacity-60",
+              isSentByMe ? "text-white/80" : "text-slate-500"
+            )}>
+              {!isSentByMe && (
+                <div className="flex items-center gap-0.5">
+                  <Eye className="w-3 h-3" />
+                  <span>23</span>
+                </div>
+              )}
+              <span>{timestamp}</span>
+              {isSentByMe && status && (
+                <span className="flex items-center">
+                  {status === 'read' ? <CheckCheck className="w-3.5 h-3.5 text-blue-200" /> : status === 'delivered' ? <CheckCheck className="w-3.5 h-3.5" /> : status === 'sending' ? <RefreshCw className="w-2.5 h-2.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                </span>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-1.5 relative">
+            {type === 'image' && media_url && (
+              <div className="relative group/media rounded-xl overflow-hidden bg-black/5 aspect-square max-h-80 shadow-inner">
+                <img src={media_url} alt="Shared" className="w-full h-full object-cover" />
+                {!isSentByMe && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/5">
+                    <ProgressCircle progress={downloadProgress || 0} isDownloading={downloadProgress !== null} onCancel={cancelDownload} />
+                  </div>
+                )}
+                {/* Meta Overlay for Images */}
+                <div className="absolute bottom-1.5 right-1.5 bg-black/40 backdrop-blur-md px-1.5 py-0.5 rounded-md flex items-center gap-1.5 text-[9px] text-white/90">
+                  <div className="flex items-center gap-0.5">
+                    <Eye className="w-2.5 h-2.5" />
+                    <span>10</span>
+                  </div>
+                  <span>{timestamp}</span>
+                </div>
+              </div>
+            )}
+            {type === 'video' && media_url && (
+              <div className="relative group/media rounded-xl overflow-hidden bg-black/5 aspect-video max-h-80 flex items-center justify-center shadow-inner">
+                <video src={media_url} className="w-full h-full object-cover" />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                  {!isSentByMe ? (
+                    downloadProgress !== null ? <ProgressCircle progress={downloadProgress} isDownloading={true} onCancel={cancelDownload} /> : (
+                      <div className="w-14 h-14 bg-black/40 rounded-full flex items-center justify-center backdrop-blur-sm cursor-pointer hover:bg-black/60 transition-colors shadow-xl" onClick={() => handleDownload()}>
+                        <Play className="w-7 h-7 text-white fill-white ml-0.5" />
+                      </div>
+                    )
+                  ) : <Play className="w-10 h-10 text-white/30" />}
+                </div>
+                {/* Meta Overlay for Videos */}
+                <div className="absolute bottom-1.5 right-1.5 bg-black/40 backdrop-blur-md px-1.5 py-0.5 rounded-md flex items-center gap-1.5 text-[9px] text-white/90">
+                  <div className="flex items-center gap-0.5">
+                    <Eye className="w-2.5 h-2.5" />
+                    <span>10</span>
+                  </div>
+                  <span>{timestamp}</span>
+                </div>
+              </div>
+            )}
+            {type === 'file' && (
+              <div className={cn("flex items-center gap-4 p-2.5 rounded-xl transition-colors", !isSentByMe ? "cursor-pointer hover:bg-black/5" : "bg-white/10")} onClick={() => !isSentByMe && handleDownload()}>
+                <div className="shrink-0 relative">
+                  {!isSentByMe ? (
+                    <ProgressCircle progress={downloadProgress || 0} size={44} strokeWidth={2.5} isDownloading={downloadProgress !== null} onCancel={cancelDownload} />
+                  ) : (
+                    <div className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center shadow-inner">
+                      <FileText className="w-5 h-5 text-white/70" />
                     </div>
                   )}
                 </div>
-              )}
-              {type === 'video' && media_url && (
-                <div className="relative group/media rounded-xl overflow-hidden bg-black/5 aspect-video max-h-80 flex items-center justify-center shadow-inner">
-                  <video src={media_url} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                    {!isSentByMe ? (
-                      downloadProgress !== null ? <ProgressCircle progress={downloadProgress} isDownloading={true} onCancel={cancelDownload} /> : (
-                        <div className="w-14 h-14 bg-black/40 rounded-full flex items-center justify-center backdrop-blur-sm cursor-pointer hover:bg-black/60 transition-colors shadow-xl" onClick={() => handleDownload()}>
-                          <Play className="w-7 h-7 text-white fill-white ml-0.5" />
-                        </div>
-                      )
-                    ) : <Play className="w-10 h-10 text-white/30" />}
-                  </div>
-                  <div className="absolute bottom-2 right-2 bg-black/50 px-2 py-1 rounded text-[10px] text-white backdrop-blur-md font-bold tracking-tight">
-                    {formatBytes(file_size || 0)}
-                  </div>
+                <div className="flex flex-col min-w-0 pr-6">
+                  <span className="text-[14px] font-bold truncate tracking-tight">{file_name || 'Document'}</span>
+                  <span className="text-[11px] opacity-70 font-bold uppercase tracking-tighter">
+                    {formatBytes(file_size || 0)} • {downloadProgress !== null ? `${downloadProgress}%` : (isSentByMe ? 'Cloud' : 'Download')}
+                  </span>
                 </div>
-              )}
-              {type === 'file' && (
-                <div className={cn("flex items-center gap-4 p-2.5 rounded-xl transition-colors", !isSentByMe ? "cursor-pointer hover:bg-secondary/20" : "bg-primary-foreground/5")} onClick={() => !isSentByMe && handleDownload()}>
-                  <div className="shrink-0 relative">
-                    {!isSentByMe ? (
-                      <ProgressCircle progress={downloadProgress || 0} size={44} strokeWidth={2.5} isDownloading={downloadProgress !== null} onCancel={cancelDownload} />
-                    ) : (
-                      <div className="w-11 h-11 rounded-full bg-primary-foreground/10 flex items-center justify-center shadow-inner">
-                        <FileText className="w-5 h-5 text-primary-foreground/70" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex flex-col min-w-0 pr-6">
-                    <span className="text-[14px] font-bold truncate tracking-tight">{file_name || 'Document'}</span>
-                    <span className="text-[11px] opacity-70 font-bold uppercase tracking-tighter">
-                      {formatBytes(file_size || 0)} • {downloadProgress !== null ? `${downloadProgress}%` : (isSentByMe ? 'Cloud Stored' : 'Download')}
-                    </span>
-                  </div>
-                </div>
-              )}
-              {content && <p className="mt-1 px-1 text-[14px] whitespace-pre-wrap opacity-90 pr-6">{content}</p>}
-            </div>
-          )}
-
-          <div className={cn("flex items-center gap-1 mt-1.5 text-[10px] self-end pr-0.5 opacity-60 font-bold", isSentByMe ? "text-primary-foreground" : "text-muted-foreground")}>
-            <span>{timestamp}</span>
-            {isSentByMe && status && (
-              <span className="flex items-center">
-                {status === 'read' ? <CheckCheck className="w-3.5 h-3.5 text-blue-300" /> : status === 'delivered' ? <CheckCheck className="w-3.5 h-3.5" /> : status === 'sending' ? <RefreshCw className="w-2.5 h-2.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-              </span>
+              </div>
             )}
+            {content && <p className="mt-1 px-1 text-[14px] whitespace-pre-wrap opacity-90 pr-2">{content}</p>}
+            
+            {/* Meta for files/media with captions */}
+            {type === 'file' || (content && (type === 'image' || type === 'video')) ? (
+              <div className={cn(
+                "flex items-center justify-end gap-1.5 mt-1 text-[10px] font-medium opacity-60 px-1 pb-1",
+                isSentByMe ? "text-white/80" : "text-slate-500"
+              )}>
+                {!isSentByMe && (
+                  <div className="flex items-center gap-0.5">
+                    <Eye className="w-3 h-3" />
+                    <span>10</span>
+                  </div>
+                )}
+                <span>{timestamp}</span>
+                {isSentByMe && status && (
+                  <span className="flex items-center">
+                    {status === 'read' ? <CheckCheck className="w-3.5 h-3.5 text-blue-200" /> : status === 'delivered' ? <CheckCheck className="w-3.5 h-3.5" /> : status === 'sending' ? <RefreshCw className="w-2.5 h-2.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                  </span>
+                )}
+              </div>
+            ) : null}
           </div>
-        </div>
+        )}
       </div>
+    </div>
+  );
+
+  if (hideAvatar) {
+    return (
+      <div className={cn(
+        "flex w-full mb-0.5",
+        isSentByMe ? "justify-end" : "justify-start"
+      )}>
+        {bubbleContent}
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn(
+      "flex w-full px-2 md:px-4 group mb-1", 
+      isSentByMe ? "flex-row-reverse" : "flex-row",
+      isSequence ? "mt-0.5" : "mt-4"
+    )}>
+      {/* Avatar Side */}
+      <div className={cn("shrink-0 flex items-end", isSentByMe ? "ml-2" : "mr-2")}>
+        {isLastInSequence ? (
+          <Avatar 
+            src={senderAvatar || undefined} 
+            fallback={senderName?.charAt(0) || '?'} 
+            size="sm"
+            className="shadow-lg rounded-xl border border-black/5"
+          />
+        ) : (
+          <div className="w-13" /> 
+        )}
+      </div>
+
+      {bubbleContent}
     </div>
   );
 });
