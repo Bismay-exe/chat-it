@@ -25,7 +25,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({ isOpen, onClose, title
   return (
     <div 
       className={cn(
-        "fixed inset-0 z-[100] flex items-end justify-center sm:items-center",
+        "fixed inset-0 z-100 flex items-end justify-center sm:items-center",
         // CRITICAL: Prevent invisible barrier blocking clicks when closed
         !isOpen && "pointer-events-none" 
       )}
