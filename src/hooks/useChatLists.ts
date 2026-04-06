@@ -71,7 +71,19 @@ export function useChatLists() {
     if (!user) return;
     
     const isMember = memberships[listId]?.includes(chatId);
+    const previousMemberships = { ...memberships };
     
+    // Optimistic Update
+    setMemberships(prev => {
+      const newMapping = { ...prev };
+      if (isMember) {
+        newMapping[listId] = (newMapping[listId] || []).filter(id => id !== chatId);
+      } else {
+        newMapping[listId] = [...(newMapping[listId] || []), chatId];
+      }
+      return newMapping;
+    });
+
     try {
       if (isMember) {
         const { error } = await supabase
@@ -94,9 +106,10 @@ export function useChatLists() {
         if (error) throw error;
       }
       
-      // Update local state optimistically or refetch
+      // Sync with server just in case
       fetchMemberships();
     } catch (err: any) {
+      setMemberships(previousMemberships);
       toast.error('Failed to update list: ' + err.message);
     }
   };

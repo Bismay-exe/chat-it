@@ -16,6 +16,7 @@ export interface ChatData {
   is_muted: boolean;
   is_archived: boolean;
   is_favorite: boolean;
+  other_user_id: string | null;
 }
 
 export function useChats() {
@@ -108,11 +109,26 @@ export function useChats() {
         await supabase.from('archived_chats').insert({ chat_id: chatId, user_id: user.id });
       }
     },
+    onMutate: async ({ chatId, isArchived }) => {
+      await queryClient.cancelQueries({ queryKey: ['chats', user?.id] });
+      const previousChats = queryClient.getQueryData(['chats', user?.id]);
+      queryClient.setQueryData(['chats', user?.id], (old: ChatData[] | undefined) => 
+        old?.map(c => c.chat_id === chatId ? { ...c, is_archived: !isArchived } : c)
+      );
+      return { previousChats };
+    },
     onSuccess: (_, { isArchived }) => {
       toast.success(isArchived ? 'Chat unarchived' : 'Chat archived');
-      queryClient.invalidateQueries({ queryKey: ['chats', user?.id] });
     },
-    onError: (err: any) => toast.error('Action failed: ' + err.message)
+    onError: (err: any, __, context) => {
+      if (context?.previousChats) {
+        queryClient.setQueryData(['chats', user?.id], context.previousChats);
+      }
+      toast.error('Action failed: ' + err.message);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['chats', user?.id] });
+    }
   });
 
   const toggleFavoriteMutation = useMutation({
@@ -130,11 +146,26 @@ export function useChats() {
         if (list) await supabase.from('chat_list_memberships').insert({ chat_id: chatId, list_id: list.id, user_id: user.id });
       }
     },
+    onMutate: async ({ chatId, isFavorite }) => {
+      await queryClient.cancelQueries({ queryKey: ['chats', user?.id] });
+      const previousChats = queryClient.getQueryData(['chats', user?.id]);
+      queryClient.setQueryData(['chats', user?.id], (old: ChatData[] | undefined) => 
+        old?.map(c => c.chat_id === chatId ? { ...c, is_favorite: !isFavorite } : c)
+      );
+      return { previousChats };
+    },
     onSuccess: (_, { isFavorite }) => {
       toast.success(isFavorite ? 'Removed from Favorites' : 'Added to Favorites');
-      queryClient.invalidateQueries({ queryKey: ['chats', user?.id] });
     },
-    onError: (err: any) => toast.error('Action failed: ' + err.message)
+    onError: (err: any, __, context) => {
+      if (context?.previousChats) {
+        queryClient.setQueryData(['chats', user?.id], context.previousChats);
+      }
+      toast.error('Action failed: ' + err.message);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['chats', user?.id] });
+    }
   });
 
   const toggleMuteMutation = useMutation({
@@ -143,11 +174,26 @@ export function useChats() {
       const { error } = await supabase.from('chat_members').update({ is_muted: !isMuted }).eq('chat_id', chatId).eq('user_id', user.id);
       if (error) throw error;
     },
+    onMutate: async ({ chatId, isMuted }) => {
+      await queryClient.cancelQueries({ queryKey: ['chats', user?.id] });
+      const previousChats = queryClient.getQueryData(['chats', user?.id]);
+      queryClient.setQueryData(['chats', user?.id], (old: ChatData[] | undefined) => 
+        old?.map(c => c.chat_id === chatId ? { ...c, is_muted: !isMuted } : c)
+      );
+      return { previousChats };
+    },
     onSuccess: (_, { isMuted }) => {
       toast.success(isMuted ? 'Unmuted' : 'Muted');
-      queryClient.invalidateQueries({ queryKey: ['chats', user?.id] });
     },
-    onError: (err: any) => toast.error('Action failed: ' + err.message)
+    onError: (err: any, __, context) => {
+      if (context?.previousChats) {
+        queryClient.setQueryData(['chats', user?.id], context.previousChats);
+      }
+      toast.error('Action failed: ' + err.message);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['chats', user?.id] });
+    }
   });
 
   const deleteChatMutation = useMutation({
@@ -156,11 +202,26 @@ export function useChats() {
       const { error } = await supabase.from('chat_members').delete().eq('chat_id', chatId).eq('user_id', user.id);
       if (error) throw error;
     },
+    onMutate: async (chatId) => {
+      await queryClient.cancelQueries({ queryKey: ['chats', user?.id] });
+      const previousChats = queryClient.getQueryData(['chats', user?.id]);
+      queryClient.setQueryData(['chats', user?.id], (old: ChatData[] | undefined) => 
+        old?.filter(c => c.chat_id !== chatId)
+      );
+      return { previousChats };
+    },
     onSuccess: () => {
       toast.success('Chat removed');
-      queryClient.invalidateQueries({ queryKey: ['chats', user?.id] });
     },
-    onError: (err: any) => toast.error('Action failed: ' + err.message)
+    onError: (err: any, __, context) => {
+      if (context?.previousChats) {
+        queryClient.setQueryData(['chats', user?.id], context.previousChats);
+      }
+      toast.error('Action failed: ' + err.message);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['chats', user?.id] });
+    }
   });
 
   return { 

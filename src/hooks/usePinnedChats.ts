@@ -57,12 +57,36 @@ export function usePinnedChats() {
         if (error) throw error;
       }
     },
+    onMutate: async ({ chatId, listKey, isPinned }) => {
+      await queryClient.cancelQueries({ queryKey: ['pinned_chats', user?.id] });
+      const previousPins = queryClient.getQueryData(['pinned_chats', user?.id]);
+
+      queryClient.setQueryData(['pinned_chats', user?.id], (old: PinnedChat[] | undefined) => {
+        if (isPinned) {
+          return old?.filter(p => !(p.chat_id === chatId && p.list_key === listKey));
+        } else {
+          const newPin: PinnedChat = {
+            id: 'temp-' + Date.now(),
+            chat_id: chatId,
+            list_key: listKey
+          };
+          return [...(old || []), newPin];
+        }
+      });
+
+      return { previousPins };
+    },
     onSuccess: (_, { isPinned, listKey }) => {
       toast.success(isPinned ? `Unpinned from ${listKey}` : `Pinned to ${listKey}`);
-      queryClient.invalidateQueries({ queryKey: ['pinned_chats', user?.id] });
     },
-    onError: (err: any) => {
+    onError: (err: any, __, context) => {
+      if (context?.previousPins) {
+        queryClient.setQueryData(['pinned_chats', user?.id], context.previousPins);
+      }
       toast.error(err.message || 'Action failed');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['pinned_chats', user?.id] });
     }
   });
 

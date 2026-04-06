@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import {
   Check,
@@ -39,6 +39,9 @@ export interface MessageBubbleProps {
   activeMatchWithinMessage?: number;
   onDelete?: (id: string) => void;
   hideAvatar?: boolean;
+  isSelected?: boolean;
+  onSelect?: (id: string) => void;
+  isSelectionMode?: boolean;
 }
 
 const formatBytes = (bytes: number, decimals = 1) => {
@@ -90,10 +93,33 @@ const ProgressCircle = ({ progress, size = 48, strokeWidth = 3, isDownloading = 
 };
 
 export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
-  id, content, type = 'text', media_url, file_name, file_size, timestamp, isSentByMe, status, senderName, senderAvatar, isSequence = false, isLastInSequence = false, highlight, activeMatchWithinMessage = -1, onDelete, hideAvatar = false
+  id, content, type = 'text', media_url, file_name, file_size, timestamp, isSentByMe, status, senderName, senderAvatar, isSequence = false, isLastInSequence = false, highlight, activeMatchWithinMessage = -1, onDelete, hideAvatar = false, isSelected = false, onSelect, isSelectionMode = false
 }) => {
   const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
   const [xhr, setXhr] = useState<XMLHttpRequest | null>(null);
+  const longPressTimer = useRef<any>(null);
+  const isLongPress = useRef(false);
+
+  const startLongPress = useCallback(() => {
+    isLongPress.current = false;
+    longPressTimer.current = setTimeout(() => {
+      isLongPress.current = true;
+      if (onSelect) onSelect(id);
+    }, 500); // 500ms long press
+  }, [id, onSelect]);
+
+  const endLongPress = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }, []);
+
+  const handleClick = useCallback(() => {
+    if (isSelectionMode && onSelect) {
+      onSelect(id);
+    }
+  }, [id, onSelect, isSelectionMode]);
 
   const handleDownload = useCallback(async (saveAs = false) => {
     if (!media_url || downloadProgress !== null) return;
@@ -215,21 +241,40 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
   ];
 
   const bubbleContent = (
-    <div className={cn(
-      "flex flex-col max-w-[calc(100%-1rem)] md:max-w-[75%] group/bubble relative min-w-0 w-full", 
-      isSentByMe ? "items-end" : "items-start"
-    )}>
+    <div 
+      onClick={handleClick}
+      onPointerDown={startLongPress}
+      onPointerUp={endLongPress}
+      onPointerLeave={endLongPress}
+      className={cn(
+        "flex flex-col max-w-[calc(100%-5rem)] md:max-w-[75%] group/bubble relative min-w-0 w-full transition-transform active:scale-[0.98]", 
+        isSentByMe ? "items-end" : "items-start",
+        isSelected
+      )}
+    >
       <div className={cn(
-        "relative px-3 py-2 text-[14px] md:text-[15px] leading-tight transition-all duration-300 shadow-sm flex flex-col min-w-20 overflow-hidden",
+        "relative px-1 py-1 text-[14px] md:text-[15px] leading-tight transition-all duration-300 shadow-sm flex flex-col min-w-20 overflow-hidden",
         isSentByMe 
-          ? cn("bg-[#7C69EF] text-white rounded-xl", isLastInSequence && "rounded-br-sm") 
-          : cn("bg-[#F3F4FE] text-slate-900 rounded-xl", isLastInSequence && "rounded-bl-sm"),
+          ? cn("bg-[#7C69EF] text-white rounded-xl", isLastInSequence && "rounded-br-sm", isSelected && "bg-[#6A57E0] ring-1 ring-white/50") 
+          : cn("bg-[#F3F4FE] text-slate-900 rounded-xl", isLastInSequence && "rounded-bl-sm", isSelected && "bg-[#E6E8FD] ring-1 ring-[#7C69EF]/50"),
         (type === 'image' || type === 'video') && "p-1 overflow-hidden"
       )}>
-        {/* Action Menu */}
-        <div className="absolute top-1 right-1 z-30 opacity-80 group-hover/bubble:opacity-100 transition-opacity">
-          <DropdownMenu items={menuItems} icon={<MoreHorizontal className={cn("w-4 h-4 rounded-full p-0.5 backdrop-blur-sm", isSentByMe ? "bg-white/10 text-white" : "bg-black/5 text-slate-400")} />} />
-        </div>
+        {/* Selection Checkmark */}
+        {isSelected && (
+          <div className={cn(
+            "absolute bottom-1 left-1 z-40 w-4 h-4 rounded-full flex items-center justify-center animate-in zoom-in-50 duration-200 shadow-sm",
+            isSentByMe ? "bg-white text-[#7C69EF]" : "bg-[#7C69EF] text-white"
+          )}>
+            <Check className="w-2.5 h-2.5 stroke-3" />
+          </div>
+        )}
+
+        {/* Action Menu (Desktop Only, and NOT in selection mode) */}
+        {!isSelectionMode && (
+          <div className="absolute top-1 right-1 z-30 opacity-0 group-hover/bubble:opacity-100 transition-opacity hidden md:block">
+            <DropdownMenu items={menuItems} icon={<MoreHorizontal className={cn("w-4 h-4 rounded-full p-0.5 backdrop-blur-sm", isSentByMe ? "bg-white/10 text-white" : "bg-black/5 text-slate-400")} />} />
+          </div>
+        )}
 
         {/* Sender Name (Other) */}
         {!isSentByMe && senderName && !isSequence && (
@@ -268,7 +313,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
             
             {/* Meta Info Integrated (Text) */}
             <div className={cn(
-              "flex items-center justify-end gap-1.5 mt-1 text-[10px] font-medium opacity-60",
+              "flex items-center justify-end gap-1.5 mt-2 -mb-1.5 text-[10px] font-medium opacity-60",
               isSentByMe ? "text-white/80" : "text-slate-500"
             )}>
               {!isSentByMe && (

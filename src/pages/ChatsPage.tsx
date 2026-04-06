@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { Search,   Settings, MessageSquareText, List as ListIcon, Check } from 'lucide-react';
+import { Search, Settings, MessageSquareText, List as ListIcon, Check, X, Pin, PinOff, Bell, BellOff, Archive, ArchiveRestore, Trash2, MoreVertical, Star, Info, Ban, LogOut } from 'lucide-react';
+import { DropdownMenu } from '@/components/ui/DropdownMenu';
 import { ChatListItem } from '@/components/chat/ChatListItem';
 import { cn } from '@/lib/utils';
 import { useChats } from '@/hooks/useChats';
@@ -14,11 +15,12 @@ import { ChatInfoSidebar } from '@/components/chat/ChatInfoSidebar';
 import { supabase } from '@/lib/supabase';
 import { Avatar } from '@/components/ui/Avatar';
 import GradualBlur from '@/components/ui/GradualBlur';
+import { useUserActions } from '@/hooks/useUserActions';
 
 export const ChatsPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const [activeTab, setActiveTab] = useState('All');
+  const [activeTab, setActiveTab] = useState('All Chats');
   const [managingChatId, setManagingChatId] = useState<string | null>(null);
 
   const { chats, isLoading: isChatsLoading, toggleArchive, toggleFavorite, toggleMute, deleteChat } = useChats();
@@ -30,6 +32,8 @@ export const ChatsPage: React.FC = () => {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showInfo, setShowInfo] = useState(true);
   const [showSearchBar, setShowSearchBar] = useState(false);
+  const [selectedChatIds, setSelectedChatIds] = useState<string[]>([]);
+  const { blockUser } = useUserActions();
 
   const isLoading = isChatsLoading || isListsLoading;
 
@@ -37,13 +41,14 @@ export const ChatsPage: React.FC = () => {
     navigate(`/chats/${chatId}`);
   }, [navigate]);
 
-  const defaultTabs = ['All Chats', 'Unread', 'Favourite', 'Groups'];
+  const defaultTabs = ['All Chats', 'Unread', 'Favourite', 'Groups', 'Archived'];
   const allTabs = [...defaultTabs, ...customLists.map(l => l.name), '+'];
 
   const isChildActive = !!id;
 
   const filteredChats = chats.filter(chat => {
-    // Basic filter: only non-archived for these tabs
+    // Handling specific filters
+    if (activeTab === 'Archived') return chat.is_archived;
     if (chat.is_archived) return false;
 
     if (activeTab === 'Unread') return (chat.unread_count || 0) > 0;
@@ -103,6 +108,75 @@ export const ChatsPage: React.FC = () => {
     handleSearch(val);
   };
 
+  const toggleSelection = useCallback((chatId: string) => {
+    setSelectedChatIds(prev => 
+      prev.includes(chatId) ? prev.filter(id => id !== chatId) : [...prev, chatId]
+    );
+  }, []);
+
+  const clearSelection = useCallback(() => {
+    setSelectedChatIds([]);
+  }, []);
+
+  const handleBulkAction = async (action: (id: string, ...args: any[]) => void, ...args: any[]) => {
+    for (const chatId of selectedChatIds) {
+      await action(chatId, ...args);
+    }
+    clearSelection();
+  };
+
+  const isSelectionMode = selectedChatIds.length > 0;
+
+  const selectionDropdownItems = useMemo(() => {
+    const firstId = selectedChatIds[0];
+    const firstChat = chats.find(c => c.chat_id === firstId);
+    
+    return [
+      {
+        label: 'Add to Favorites',
+        onClick: () => handleBulkAction((id) => toggleFavorite(id, false)),
+        icon: <Star className="w-4 h-4" />
+      },
+      {
+        label: 'Manage Lists',
+        onClick: () => setManagingChatId(firstId),
+        icon: <ListIcon className="w-4 h-4" />
+      },
+      ...(selectedChatIds.length === 1 ? [
+        {
+          label: firstChat?.chat_type === 'group' ? 'Group Info' : 'Chat Info',
+          onClick: () => {
+            if (window.innerWidth < 1024) {
+              if (firstChat?.chat_type === 'group') {
+                navigate(`/chats/${firstId}/info`);
+              } else if (firstChat?.other_user_id) {
+                navigate(`/profile/${firstChat.other_user_id}`);
+              }
+            } else {
+              handleChatClick(firstId);
+              setShowInfo(true);
+            }
+            clearSelection();
+          },
+          icon: <Info className="w-4 h-4" />
+        },
+        {
+          label: firstChat?.chat_type === 'group' ? 'Exit Group' : 'Block User',
+          onClick: () => {
+            if (firstChat?.chat_type === 'group') {
+              deleteChat(firstId);
+            } else if (firstChat?.other_user_id) {
+              blockUser(firstChat.other_user_id);
+            }
+            clearSelection();
+          },
+          textClass: 'text-red-500',
+          icon: firstChat?.chat_type === 'group' ? <LogOut className="w-4 h-4" /> : <Ban className="w-4 h-4" />
+        }
+      ] : [])
+    ];
+  }, [selectedChatIds, chats, toggleFavorite, deleteChat, blockUser, handleChatClick, clearSelection]);
+
   return (
     <div className="flex w-full h-full">
       {/* Sidebar Chat List */} 
@@ -112,25 +186,91 @@ export const ChatsPage: React.FC = () => {
       )}>
         {/* Top Navigation */}
         <div className="h-20 flex items-center justify-between px-4 bg-background/90 backdrop-blur-sm z-10 shrink-0">
-          <img src="/logo/chat-it.svg" alt="Chat-It" className="h-10 w-auto xdark:invert" />
-          <div className="flex items-center gap-1 text-muted-foreground">
-            <button 
-              onClick={() => {
-                setShowSearchBar(!showSearchBar);
-                if (showSearchBar) {
-                  setSearchQuery('');
-                  setSearchResults([]);
-                }
-              }} 
-              className={cn(
-                "p-2 rounded-full premium-transition", 
-                showSearchBar ? "bg-primary/10 text-primary" : "hover:bg-secondary"
-              )}
-            >
-              <Search className="w-5 h-5" />
-            </button>
-            <button onClick={() => navigate('/settings')} className="p-2 hover:bg-secondary rounded-full premium-transition"><Settings className="w-5 h-5" /></button>
-          </div>
+          {isSelectionMode ? (
+            <div className="flex items-center justify-between w-full animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={clearSelection}
+                  className="p-2 hover:bg-secondary rounded-full transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+                <span className="text-xl font-bold font-bricolage-semi-condensed">{selectedChatIds.length}</span>
+              </div>
+              
+              <div className="flex items-center gap-1 text-muted-foreground">
+                <button 
+                  onClick={() => {
+                    const allPinned = selectedChatIds.every(id => pins.some(p => p.chat_id === id && p.list_key === activeTab));
+                    handleBulkAction((id) => togglePin(id, activeTab, allPinned));
+                  }}
+                  className="p-2 hover:bg-secondary rounded-full transition-colors"
+                  title={selectedChatIds.every(id => pins.some(p => p.chat_id === id && p.list_key === activeTab)) ? "Unpin" : "Pin"}
+                >
+                  {selectedChatIds.every(id => pins.some(p => p.chat_id === id && p.list_key === activeTab)) ? <PinOff className="w-5 h-5" /> : <Pin className="w-5 h-5" />}
+                </button>
+                <button 
+                  onClick={() => {
+                    const allMuted = selectedChatIds.every(id => chats.find(c => c.chat_id === id)?.is_muted);
+                    handleBulkAction((id) => toggleMute(id, allMuted));
+                  }}
+                  className="p-2 hover:bg-secondary rounded-full transition-colors"
+                  title={selectedChatIds.every(id => chats.find(c => c.chat_id === id)?.is_muted) ? "Unmute" : "Mute"}
+                >
+                  {selectedChatIds.every(id => chats.find(c => c.chat_id === id)?.is_muted) ? <Bell className="w-5 h-5" /> : <BellOff className="w-5 h-5" />}
+                </button>
+                <button 
+                  onClick={() => {
+                    const allArchived = selectedChatIds.every(id => chats.find(c => c.chat_id === id)?.is_archived);
+                    handleBulkAction((id) => toggleArchive(id, allArchived));
+                  }}
+                  className="p-2 hover:bg-secondary rounded-full transition-colors"
+                  title={selectedChatIds.every(id => chats.find(c => c.chat_id === id)?.is_archived) ? "Unarchive" : "Archive"}
+                >
+                  {selectedChatIds.every(id => chats.find(c => c.chat_id === id)?.is_archived) ? <ArchiveRestore className="w-5 h-5" /> : <Archive className="w-5 h-5" />}
+                </button>
+                <button 
+                  onClick={() => {
+                    if (confirm(`Delete ${selectedChatIds.length} chat(s)?`)) {
+                      handleBulkAction(deleteChat);
+                    }
+                  }}
+                  className="p-2 hover:bg-secondary rounded-full transition-colors text-red-500"
+                  title="Delete"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+                <div className="relative">
+                  <DropdownMenu 
+                    items={selectionDropdownItems} 
+                    icon={<MoreVertical className="w-5 h-5" />}
+                  />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
+              <img src="/logo/chat-it.svg" alt="Chat-It" className="h-10 w-auto xdark:invert" />
+              <div className="flex items-center gap-1 text-muted-foreground">
+                <button 
+                  onClick={() => {
+                    setShowSearchBar(!showSearchBar);
+                    if (showSearchBar) {
+                      setSearchQuery('');
+                      setSearchResults([]);
+                    }
+                  }} 
+                  className={cn(
+                    "p-2 rounded-full premium-transition", 
+                    showSearchBar ? "bg-primary/10 text-primary" : "hover:bg-secondary"
+                  )}
+                >
+                  <Search className="w-5 h-5" />
+                </button>
+                <button onClick={() => navigate('/settings')} className="p-2 hover:bg-secondary rounded-full premium-transition"><Settings className="w-5 h-5" /></button>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Sidebar Search Bar */}
@@ -230,6 +370,32 @@ export const ChatsPage: React.FC = () => {
                       onPin={(id, current) => togglePin(id, activeTab, current)}
                       onDelete={deleteChat}
                       onManageLists={setManagingChatId}
+                      onInfo={(chatId) => {
+                        const chat = chats.find(c => c.chat_id === chatId);
+                        if (window.innerWidth < 1024) {
+                          if (chat?.chat_type === 'group') {
+                            navigate(`/chats/${chatId}/info`);
+                          } else if (chat?.other_user_id) {
+                            navigate(`/profile/${chat.other_user_id}`);
+                          }
+                        } else {
+                          handleChatClick(chatId);
+                          setShowInfo(true);
+                        }
+                      }}
+                      onBlock={(userId) => {
+                        if (confirm('Are you sure you want to block this user?')) {
+                          blockUser(userId);
+                        }
+                      }}
+                      onLeaveGroup={(chatId) => {
+                        if (confirm('Are you sure you want to leave this group?')) {
+                          deleteChat(chatId);
+                        }
+                      }}
+                      isSelected={selectedChatIds.includes(chat.chat_id)}
+                      onSelect={toggleSelection}
+                      selectionMode={isSelectionMode}
                     />
                   ))}
                   {sortedChats.length === 0 && (

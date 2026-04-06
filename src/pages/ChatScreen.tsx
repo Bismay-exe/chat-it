@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useMemo } from 'react';
+import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router';
 import { supabase } from '@/lib/supabase';
 import { TopBar } from '@/components/layout/TopBar';
@@ -7,7 +7,12 @@ import {
   ArrowLeft, Phone, Video, Search, X,
   ChevronUp, ChevronDown, MessageSquare, Image,
   FileText, Link as LinkIcon, BellOff, Bell, Palette,
-  MoreHorizontal, LogOut, Download, List as ListIcon, Star, Check, Info
+  MoreHorizontal, LogOut, Download, List as ListIcon, Star, Check, Info,
+  Copy, Forward, Trash2,
+  MoreVertical,
+  Globe,
+  User,
+  TriangleAlert
 } from 'lucide-react';
 import { MessageBubble } from '@/components/chat/MessageBubble';
 import { MessageComposer } from '@/components/chat/MessageComposer';
@@ -46,17 +51,80 @@ export const ChatScreen: React.FC = () => {
   const { chats, toggleMute } = useChats();
   const { customLists, memberships, toggleMembership } = useChatLists();
   const chatInfo = chats.find(c => c.chat_id === id);
-  const { canSend } = useChatPermissions(id);
+  const { canSend, isAdmin } = useChatPermissions(id);
 
   const isLoading = isMessagesLoading;
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [isListsOpen, setIsListsOpen] = useState(false);
   const [isMediaOpen, setIsMediaOpen] = useState(false);
   const [isThemeOpen, setIsThemeOpen] = useState(false);
+  const [isDeleteSheetOpen, setIsDeleteSheetOpen] = useState(false);
   const [mediaTab, setMediaTab] = useState<'media' | 'docs' | 'links'>('media');
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
+
+  // Message Selection State
+  const [selectedMessageIds, setSelectedMessageIds] = useState<string[]>([]);
+  const isSelectionMode = selectedMessageIds.length > 0;
+
+  const handleMessageSelect = useCallback((messageId: string) => {
+    setSelectedMessageIds(prev => 
+      prev.includes(messageId) 
+        ? prev.filter(id => id !== messageId)
+        : [...prev, messageId]
+    );
+  }, []);
+
+  const clearSelection = useCallback(() => {
+    setSelectedMessageIds([]);
+  }, []);
+
+  const handleCopySelected = useCallback(() => {
+    const selectedMessages = messages.filter(m => selectedMessageIds.includes(m.id));
+    const textToCopy = selectedMessages
+      .map(m => m.content)
+      .filter(Boolean)
+      .join('\n---\n');
+    
+    if (textToCopy) {
+      navigator.clipboard.writeText(textToCopy);
+      toast.success(`${selectedMessageIds.length} messages copied to clipboard`);
+      clearSelection();
+    } else {
+      toast.info('No text content to copy');
+    }
+  }, [messages, selectedMessageIds, clearSelection]);
+
+  const handleDeleteSelected = useCallback(() => {
+    if (selectedMessageIds.length === 0) return;
+    setIsDeleteSheetOpen(true);
+  }, [selectedMessageIds.length]);
+
+  const handleConfirmDelete = useCallback(async (forEveryone: boolean) => {
+    setIsDeleteSheetOpen(false);
+    
+    if (forEveryone) {
+      try {
+        for (const msgId of selectedMessageIds) {
+          await deleteMessage(msgId);
+        }
+        clearSelection();
+      } catch (err: any) {
+        toast.error('Bulk delete failed: ' + err.message);
+      }
+    } else {
+      // Placeholder for Delete for Me
+      toast.info('Delete for me is coming soon!');
+      clearSelection();
+    }
+  }, [selectedMessageIds, deleteMessage, clearSelection]);
+
+  const canDeleteForEveryone = useMemo(() => {
+    if (isAdmin) return true;
+    const selectedMsgs = messages.filter(m => selectedMessageIds.includes(m.id));
+    return selectedMsgs.length > 0 && selectedMsgs.every(m => m.sender_id === user?.id);
+  }, [messages, selectedMessageIds, isAdmin, user?.id]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -256,122 +324,191 @@ export const ChatScreen: React.FC = () => {
   return (
     <div className="flex flex-col h-full w-full bg-secondary relative overflow-hidden">
       <div className="absolute left-0 top-0 right-0 flex flex-col shrink-0 z-20">
-        <TopBar
-          leftElement={
-            <div className="flex items-center gap-1">
-              <button onClick={() => navigate('/chats')} className="md:hidden mr-1 hover:bg-secondary rounded-full premium-transition">
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-              <div className="flex items-center cursor-pointer" onClick={handleHeaderClick}>
-                <Avatar src={chatInfo?.avatar_url} fallback={chatInfo?.name || 'C'} size="sm" />
+        {isSelectionMode ? (
+          <TopBar
+            className="animate-in slide-in-from-top-2 duration-300"
+            leftElement={
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={clearSelection}
+                  className="p-2 hover:bg-secondary rounded-full transition-colors text-muted-foreground"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+                <span className="text-xl font-bold font-bricolage-semi-condensed">{selectedMessageIds.length}</span>
               </div>
-            </div>
-          }
-          title={
-            <div className="flex flex-col cursor-pointer" onClick={handleHeaderClick}>
-              <div className="flex items-center gap-1.5">
-                <span className="text-base font-bold leading-tight tracking-tight">{chatInfo?.name || 'Chat'}</span>
-                {chatInfo?.chat_type === 'group' && <span className="text-[9px] font-black bg-primary/10 text-primary px-1.5 py-0.5 rounded-sm border border-primary/20 leading-none">GP</span>}
-              </div>
-              <span className="text-[10px] text-muted-foreground font-medium">
-                {chatInfo?.chat_type === 'group' ? 'Tap for group details' : 'View profile'}
-              </span>
-            </div>
-          }
-          rightElement={
-            <div className="flex items-center gap-0.5 text-muted-foreground">
-              <button
-                onClick={() => setIsSearchVisible(!isSearchVisible)}
-                className={cn("p-2 hover:bg-secondary rounded-full premium-transition", isSearchVisible && "text-primary bg-primary/10")}
-              >
-                <Search className="w-5 h-5" />
-              </button>
-
-              <button className="p-2 hover:bg-secondary rounded-full premium-transition hidden md:block"><Video className="w-5 h-5" /></button>
-              <button className="p-2 hover:bg-secondary rounded-full premium-transition hidden md:block"><Phone className="w-5 h-5" /></button>
-
-              <button
-                onClick={() => setShowInfo?.(!showInfo)}
-                className={cn(
-                  "p-2 hover:bg-secondary rounded-full premium-transition hidden lg:block",
-                  showInfo && "text-primary bg-primary/10"
-                )}
-              >
-                <Info className="w-5 h-5" />
-              </button>
-
-              <DropdownMenu
-                items={[
-                  {
-                    label: chatInfo?.chat_type === 'group' ? 'Group Media' : 'Media, Links, Docs',
-                    icon: <Image className="w-4 h-4" />,
-                    onClick: () => setIsMediaOpen(true)
-                  },
-                  {
-                    label: 'Search',
-                    icon: <Search className="w-4 h-4" />,
-                    onClick: () => setIsSearchVisible(true)
-                  },
-                  {
-                    label: isMuted ? 'Unmute' : 'Mute notifications',
-                    icon: isMuted ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />,
-                    onClick: () => {
-                      if (id) toggleMute(id, isMuted);
+            }
+            title={null}
+            rightElement={
+              <div className="flex items-center gap-1 text-muted-foreground">
+                <button 
+                  onClick={handleCopySelected}
+                  className="p-2 hover:bg-secondary rounded-full transition-all active:scale-90"
+                  title="Copy"
+                >
+                  <Copy className="w-5 h-5" />
+                </button>
+                <button 
+                  onClick={() => toast.info('Starring coming soon!')}
+                  className="p-2 hover:bg-secondary rounded-full transition-all active:scale-90"
+                  title="Star"
+                >
+                  <Star className="w-5 h-5" />
+                </button>
+                <button 
+                  onClick={() => toast.info('Forwarding coming soon!')}
+                  className="p-2 hover:bg-secondary rounded-full transition-all active:scale-90"
+                  title="Forward"
+                >
+                  <Forward className="w-5 h-5" />
+                </button>
+                <button 
+                  onClick={handleDeleteSelected}
+                  className="p-2 hover:bg-secondary rounded-full transition-all active:scale-90 text-red-500"
+                  title="Delete"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+                <DropdownMenu
+                  items={[
+                    { 
+                      label: 'Message Info', 
+                      icon: <Info className="w-4 h-4" />, 
+                      onClick: () => toast.info('Detailed info coming soon') 
+                    },
+                    { 
+                      label: 'Select all', 
+                      icon: <ListIcon className="w-4 h-4" />, 
+                      onClick: () => setSelectedMessageIds(messages.map(m => m.id))
                     }
-                  },
-                  {
-                    label: 'Chat theme',
-                    icon: <Palette className="w-4 h-4" />,
-                    onClick: () => setIsThemeOpen(true)
-                  },
-                  { divider: true },
-                  {
-                    label: 'More',
-                    icon: <MoreHorizontal className="w-4 h-4" />,
-                    subItems: [
-                      {
-                        label: 'Clear Chat',
-                        icon: <X className="w-4 h-4" />,
-                        onClick: handleClearChat
-                      },
-                      {
-                        label: 'Export Chat',
-                        icon: <Download className="w-4 h-4" />,
-                        onClick: () => toast.info('Export chat feature coming soon!')
-                      },
-                      {
-                        label: 'Add to list...',
-                        icon: <ListIcon className="w-4 h-4" />,
-                        subItems: [
-                          {
-                            label: isFavorite ? 'Remove Favorite' : 'Add Favorite',
-                            icon: <Star className={cn("w-4 h-4", isFavorite && "fill-primary text-primary")} />,
-                            onClick: () => {
-                              // We can use the toggleFavorite from useChats if we had it, 
-                              // but for now let's just use the BottomSheet for consistency
-                              setIsListsOpen(true);
-                            }
-                          },
-                          ...customLists.map(list => ({
-                            label: list.name,
-                            icon: memberships[list.id]?.includes(id || '') ? <Check className="w-4 h-4 text-primary" /> : <ListIcon className="w-4 h-4" />,
-                            onClick: () => toggleMembership(id || '', list.id)
-                          }))
-                        ]
-                      },
-                      ...(chatInfo?.chat_type === 'group' ? [{
-                        label: 'Exit Group',
-                        icon: <LogOut className="w-4 h-4 text-destructive" />,
-                        textClass: 'text-destructive',
-                        onClick: handleExitGroup
-                      }] : [])
-                    ]
+                  ]}
+                  icon={
+                    <button className="py-2 -mr-2 hover:bg-secondary rounded-full transition-all active:scale-90">
+                      <MoreVertical className="w-5 h-5" />
+                    </button>
                   }
-                ]}
-              />
-            </div>
-          }
-        />
+                />
+              </div>
+            }
+          />
+        ) : (
+          <TopBar
+            leftElement={
+              <div className="flex items-center gap-1">
+                <button onClick={() => navigate('/chats')} className="md:hidden mr-1 hover:bg-secondary rounded-full premium-transition">
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                <div className="flex items-center cursor-pointer" onClick={handleHeaderClick}>
+                  <Avatar src={chatInfo?.avatar_url} fallback={chatInfo?.name || 'C'} size="sm" />
+                </div>
+              </div>
+            }
+            title={
+              <div className="flex flex-col cursor-pointer" onClick={handleHeaderClick}>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xl font-bricolage-semi-condensed font-bold tracking-tight">{chatInfo?.name || 'Chat'}</span>
+                  {chatInfo?.chat_type === 'group' && <span className="text-[9px] font-black bg-primary/10 text-primary px-1.5 py-0.5 rounded-sm border border-primary/20 leading-none">GP</span>}
+                </div>
+                <span className="text-[11px] text-muted-foreground font-medium leading-none">
+                  {chatInfo?.chat_type === 'group' ? 'Tap for group details' : 'View profile'}
+                </span>
+              </div>
+            }
+            rightElement={
+              <div className="flex items-center gap-0.5 text-muted-foreground">
+                <button
+                  onClick={() => setIsSearchVisible(!isSearchVisible)}
+                  className={cn("p-2 hover:bg-secondary rounded-full premium-transition", isSearchVisible && "text-primary bg-primary/10")}
+                >
+                  <Search className="w-5 h-5" />
+                </button>
+
+                <button className="p-2 hover:bg-secondary rounded-full premium-transition hidden md:block"><Video className="w-5 h-5" /></button>
+                <button className="p-2 hover:bg-secondary rounded-full premium-transition hidden md:block"><Phone className="w-5 h-5" /></button>
+
+                <button
+                  onClick={() => setShowInfo?.(!showInfo)}
+                  className={cn(
+                    "p-2 hover:bg-secondary rounded-full premium-transition hidden lg:block",
+                    showInfo && "text-primary bg-primary/10"
+                  )}
+                >
+                  <Info className="w-5 h-5" />
+                </button>
+
+                <DropdownMenu
+                  items={[
+                    {
+                      label: chatInfo?.chat_type === 'group' ? 'Group Media' : 'Media, Links, Docs',
+                      icon: <Image className="w-4 h-4" />,
+                      onClick: () => setIsMediaOpen(true)
+                    },
+                    {
+                      label: 'Search',
+                      icon: <Search className="w-4 h-4" />,
+                      onClick: () => setIsSearchVisible(true)
+                    },
+                    {
+                      label: isMuted ? 'Unmute' : 'Mute notifications',
+                      icon: isMuted ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />,
+                      onClick: () => {
+                        if (id) toggleMute(id, isMuted);
+                      }
+                    },
+                    {
+                      label: 'Chat theme',
+                      icon: <Palette className="w-4 h-4" />,
+                      onClick: () => setIsThemeOpen(true)
+                    },
+                    { divider: true },
+                    {
+                      label: 'More',
+                      icon: <MoreHorizontal className="w-4 h-4" />,
+                      subItems: [
+                        {
+                          label: 'Clear Chat',
+                          icon: <X className="w-4 h-4" />,
+                          onClick: handleClearChat
+                        },
+                        {
+                          label: 'Export Chat',
+                          icon: <Download className="w-4 h-4" />,
+                          onClick: () => toast.info('Export chat feature coming soon!')
+                        },
+                        {
+                          label: 'Add to list...',
+                          icon: <ListIcon className="w-4 h-4" />,
+                          subItems: [
+                            {
+                              label: isFavorite ? 'Remove Favorite' : 'Add Favorite',
+                              icon: <Star className={cn("w-4 h-4", isFavorite && "fill-primary text-primary")} />,
+                              onClick: () => {
+                                // We can use the toggleFavorite from useChats if we had it, 
+                                // but for now let's just use the BottomSheet for consistency
+                                setIsListsOpen(true);
+                              }
+                            },
+                            ...customLists.map(list => ({
+                              label: list.name,
+                              icon: memberships[list.id]?.includes(id || '') ? <Check className="w-4 h-4 text-primary" /> : <ListIcon className="w-4 h-4" />,
+                              onClick: () => toggleMembership(id || '', list.id)
+                            }))
+                          ]
+                        },
+                        ...(chatInfo?.chat_type === 'group' ? [{
+                          label: 'Exit Group',
+                          icon: <LogOut className="w-4 h-4 text-destructive" />,
+                          textClass: 'text-destructive',
+                          onClick: handleExitGroup
+                        }] : [])
+                      ]
+                    }
+                  ]}
+                />
+              </div>
+            }
+          />
+        )}
 
         {isSearchVisible && (
           <>
@@ -420,7 +557,7 @@ export const ChatScreen: React.FC = () => {
         )}
       </div>
 
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto w-full py-6 flex flex-col gap-1 px-2 md:px-6 lg:px-12 scroll-smooth">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto w-full pt-16 pb-0 flex flex-col gap-1 px-2 md:px-6 lg:px-12 scroll-smooth">
         {isLoading && messages.length === 0 ? (
           <div className="flex flex-col gap-4">
             <div className="flex justify-start">
@@ -466,7 +603,7 @@ export const ChatScreen: React.FC = () => {
                 >
                   {/* Sticky Avatar Sidebar - Glide Logic */}
                   <div className="shrink-0 w-13 flex flex-col justify-end self-stretch">
-                    <div className="sticky top-24 -bottom-6 -mb-1">
+                    <div className="sticky top-24 bottom-0 -mb-1">
                       <Avatar 
                         src={group.profile?.avatar_url} 
                         fallback={group.profile?.full_name?.charAt(0) || '?'} 
@@ -498,6 +635,9 @@ export const ChatScreen: React.FC = () => {
                           activeMatchWithinMessage={isSearchVisible && searchResults[currentMatchIndex]?.messageIndex === originalIndex ? searchResults[currentMatchIndex].matchIndexInContent : -1}
                           onDelete={deleteMessage}
                           hideAvatar={true}
+                          isSelected={selectedMessageIds.includes(msg.id)}
+                          onSelect={handleMessageSelect}
+                          isSelectionMode={isSelectionMode}
                         />
                       </div>
                     ))}
@@ -505,7 +645,7 @@ export const ChatScreen: React.FC = () => {
                 </div>
               );
             })}
-            <div ref={messagesEndRef} className="pb-4" />
+            <div ref={messagesEndRef} className="pb-0" />
           </>
         )}
       </div>
@@ -626,6 +766,84 @@ export const ChatScreen: React.FC = () => {
               <span className="text-[10px] font-bold uppercase tracking-wider">{theme.name}</span>
             </button>
           ))}
+        </div>
+      </BottomSheet>
+
+      {/* Delete Confirmation BottomSheet */}
+      <BottomSheet
+        isOpen={isDeleteSheetOpen}
+        onClose={() => setIsDeleteSheetOpen(false)}
+        title="Delete Messages ?"
+      >
+        <div className="px-6 pb-8 pt-4 flex flex-col items-center">
+
+          {/* Text Context */}
+          <div className="text-left mb-8">
+            <p className="text-sm text-muted-foreground font-mono font-bold tracking-tight flex flex-col gap-2">
+              <TriangleAlert className="w-10 h-10 text-yellow-500" /> This will permanently delete them from the chat and cannot be undone.
+            </p>
+          </div>
+
+
+          {/* CSS Floating Message Stack Graphic */}
+          <div className="relative w-full h-36 flex items-center justify-center mb-6 pointer-events-none">
+            {/* Ambient danger glow */}
+            <div className="absolute w-32 h-32 bg-red-500/15 rounded-full blur-2xl animate-pulse"></div>
+
+            {/* Background Card */}
+            <div className="absolute w-16 h-22 bg-secondary-foreground border border-border rounded-xl transform -rotate-12 -translate-x-6 translate-y-3 opacity-40 shadow-sm transition-transform"></div>
+
+            {/* Middle Card */}
+            <div className="absolute w-16 h-22 bg-secondary-foreground border border-border rounded-xl transform rotate-6 translate-x-6 translate-y-1 opacity-70 shadow-sm"></div>
+
+            {/* Foreground Target Card */}
+            <div className="absolute w-20 h-28 bg-accent-foreground/30 backdrop-blur-md border-2 border-accent-foreground rounded-xl transform -rotate-3 flex flex-col items-center justify-center shadow-xl shadow-accent-foreground/20 z-10">
+              <span className="text-3xl font-black text-foreground tracking-tighter">
+                {selectedMessageIds.length}
+              </span>
+              <span className="text-[9px] font-bold text-foreground uppercase tracking-widest mt-1">
+                Items
+              </span>
+            </div>
+          </div>
+
+          
+          {/* Actions */}
+          <div className="w-full space-y-3">
+
+            {canDeleteForEveryone && (
+              <button
+                onClick={() => handleConfirmDelete(true)}
+                className="relative w-full h-14 bg-red-600/10 rounded-2xl overflow-hidden group touch-none border border-red-600/20"
+              >
+                <div className="absolute top-0 left-0 h-full bg-red-600 w-0 group-active:w-full transition-all duration-100 ease-out z-0"></div>
+
+                {/* Button Content */}
+                <div className="absolute inset-0 flex items-center justify-center gap-2 z-10 text-red-600 group-active:text-white transition-colors duration-300">
+                  <Globe className="w-4 h-4" />
+                  <span className="font-bold text-sm">Delete for Everyone</span>
+                </div>
+              </button>
+            )}
+
+            {/* Standard Quick Tap Button */}
+            <button
+              onClick={() => handleConfirmDelete(false)}
+              className="relative w-full h-14 bg-background border-2 border-border hover:border-foreground/20 rounded-2xl flex items-center justify-center gap-2 hover:bg-secondary/50 transition-all text-muted-foreground hover:text-foreground active:scale-[0.98]"
+            >
+              <User className="w-4 h-4" />
+              <span className="font-bold text-sm">Delete just for me</span>
+            </button>
+
+            {/* Subtle Cancel Link */}
+            <button
+              onClick={() => setIsDeleteSheetOpen(false)}
+              className="w-full pt-4 text-xs font-bold text-muted-foreground hover:text-foreground uppercase tracking-wider transition-colors"
+            >
+              Keep Messages
+            </button>
+
+          </div>
         </div>
       </BottomSheet>
     </div>
