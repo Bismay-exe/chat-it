@@ -41,8 +41,11 @@ export const GradualScroll: React.FC<GradualScrollProps> = ({
     }
   };
 
+  const requestRef = useRef<number>(null);
   const handleScroll = (e: UIEvent<HTMLDivElement>) => {
-    calculateGradients(e.currentTarget);
+    if (requestRef.current) cancelAnimationFrame(requestRef.current);
+    const target = e.currentTarget;
+    requestRef.current = requestAnimationFrame(() => calculateGradients(target));
   };
 
   // Initial calculation
@@ -52,10 +55,16 @@ export const GradualScroll: React.FC<GradualScrollProps> = ({
     }
     // Re-check on window resize or potential children changes
     const observer = new ResizeObserver(() => {
-      if (scrollRef.current) calculateGradients(scrollRef.current);
+      if (scrollRef.current) {
+        if (requestRef.current) cancelAnimationFrame(requestRef.current);
+        requestRef.current = requestAnimationFrame(() => calculateGradients(scrollRef.current!));
+      }
     });
     if (scrollRef.current) observer.observe(scrollRef.current);
-    return () => observer.disconnect();
+    return () => {
+       observer.disconnect();
+       if (requestRef.current) cancelAnimationFrame(requestRef.current);
+    };
   }, [children]);
 
   return (

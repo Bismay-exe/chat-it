@@ -13,15 +13,15 @@ interface AnimatedItemProps {
  * AnimatedItem provides a smooth entrance animation (scale + opacity) 
  * as the element enters the viewport. Perfect for list items.
  */
-export const AnimatedItem: React.FC<AnimatedItemProps> = ({ 
+export const AnimatedItem: React.FC<AnimatedItemProps> = React.memo(({ 
   children, 
   delay = 0,
   className = "",
 }) => {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { 
-    amount: 0.5, 
-    once: false // Snippet uses once: false for re-animation on scroll
+    amount: 0.1, // Reduced amount to trigger faster/more reliably during fast scrolls
+    once: false // Keeps the user's preferred "animate every time" behavior
   });
 
   return (
@@ -31,12 +31,13 @@ export const AnimatedItem: React.FC<AnimatedItemProps> = ({
       animate={isInView ? { scale: 1, opacity: 1 } : { scale: 0.7, opacity: 0 }}
       transition={{ 
         duration: 0.2, 
-        delay: delay || 0.1, // Using snippet's constant delay or provided
+        delay: delay || 0.05, // Slightly faster default delay
         ease: "easeOut"
       }}
       className={className}
+      style={{ willChange: "transform, opacity" }}
     >
       {children}
     </motion.div>
   );
-};
+});
