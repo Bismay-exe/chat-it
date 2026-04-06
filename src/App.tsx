@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/authStore';
 import { useAutoUpdate } from '@/hooks/useAutoUpdate';
 import { useCapacitor } from '@/hooks/useCapacitor';
+import { SplashScreen } from '@capacitor/splash-screen';
 
 import { AppShell } from '@/components/layout/AppShell';
 import { LandingPage } from '@/pages/LandingPage';
@@ -58,22 +59,22 @@ const RedirectIfSignedIn = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+
 export const App: React.FC = () => {
-  const { setUser, setLoading } = useAuthStore();
+  const { setUser, setLoading, isLoading } = useAuthStore();
   useAutoUpdate();
   useCapacitor();
 
   useEffect(() => {
     // Single listener for both initial session and changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      const user = session?.user ?? null;
-      setUser(user);
+      setUser(session?.user ?? null);
       
-      if (user) {
+      if (session?.user) {
         // Fetch profile in background without blocking isLoading
         supabase.from('profiles')
           .select('*')
-          .eq('id', user.id)
+          .eq('id', session.user.id)
           .single()
           .then(({ data, error }) => {
             if (!error && data) useAuthStore.getState().setProfile(data);
@@ -84,10 +85,21 @@ export const App: React.FC = () => {
       
       // Mark auth as "ready" as soon as we have a session (or lack thereof)
       setLoading(false);
+
+      // Hide splash screen only after we know the auth state
+      setTimeout(() => {
+        SplashScreen.hide().catch(() => {});
+      }, 500); 
     });
 
     return () => subscription.unsubscribe();
   }, [setUser, setLoading]);
+
+  // While checking initial auth, show nothing 
+  // (This keeps the SplashScreen visible behind the webview)
+  if (isLoading) {
+    return null;
+  }
 
   return (
     <>

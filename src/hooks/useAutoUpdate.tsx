@@ -31,16 +31,18 @@ export const useAutoUpdate = () => {
       
       const data = await response.json();
       const latestRelease = Array.isArray(data) ? data[0] : data;
-      const latestVersion = latestRelease.tag_name?.trim().toLowerCase();
-      const currentVersion = CURRENT_VERSION.trim().toLowerCase();
+      const sanitizeVersion = (v: string) => v.trim().toLowerCase().replace(/^v/, '');
+      const latestVersion = sanitizeVersion(latestRelease.tag_name || '');
+      const currentVersion = sanitizeVersion(CURRENT_VERSION);
 
       if (latestVersion && latestVersion !== currentVersion) {
         // If it's the web version, we don't show the update notification automatically
-        // but if they click manually, we show a message that updates are for the app
-        if (!isNative && manual) {
-          toast.info(`New version available: ${latestVersion}`, {
-            description: "Updates are provided via the Android/iOS app. Please check your mobile device for the latest APK/Build."
-          });
+        if (!isNative) {
+          if (manual) {
+            toast.info(`New version available: ${latestRelease.tag_name}`, {
+              description: "Updates are provided via the Android/iOS app. Please check your mobile device for the latest APK/Build."
+            });
+          }
           return;
         }
 
