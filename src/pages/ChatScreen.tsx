@@ -29,6 +29,8 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { useChatLists } from '@/hooks/useChatLists';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import GradualBlur from '@/components/ui/GradualBlur';
+import { usePresence } from '@/hooks/usePresence';
+import { useTypingIndicator } from '@/hooks/useTypingIndicator';
 
 export const ChatScreen: React.FC = () => {
   const { showInfo, setShowInfo } = useOutletContext<{ showInfo: boolean; setShowInfo: (v: boolean) => void }>() || { showInfo: false, setShowInfo: () => { } };
@@ -52,6 +54,10 @@ export const ChatScreen: React.FC = () => {
   const { customLists, memberships, toggleMembership } = useChatLists();
   const chatInfo = chats.find(c => c.chat_id === id);
   const { canSend, isAdmin } = useChatPermissions(id);
+  
+  const [otherUserId, setOtherUserId] = useState<string | null>(null);
+  const { isOnline } = usePresence();
+  const { typingUsers, sendTypingStatus } = useTypingIndicator(id);
 
   const isLoading = isMessagesLoading;
   const [isSearchVisible, setIsSearchVisible] = useState(false);
@@ -59,6 +65,53 @@ export const ChatScreen: React.FC = () => {
   const [isMediaOpen, setIsMediaOpen] = useState(false);
   const [isThemeOpen, setIsThemeOpen] = useState(false);
   const [isDeleteSheetOpen, setIsDeleteSheetOpen] = useState(false);
+
+  useEffect(() => {
+    if (chatInfo?.chat_type === 'direct' && id && user) {
+      const getOtherUser = async () => {
+        const { data } = await supabase
+          .from('chat_members')
+          .select('user_id')
+          .eq('chat_id', id)
+          .neq('user_id', user.id)
+          .single();
+
+        if (data) setOtherUserId(data.user_id);
+      };
+      getOtherUser();
+    }
+  }, [chatInfo?.chat_type, id, user?.id]);
+  
+  // Group Typing Cycle Logic
+  const [currentTyperIndex, setCurrentTyperIndex] = useState(0);
+  useEffect(() => {
+    if (typingUsers.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentTyperIndex(prev => (prev + 1) % typingUsers.length);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [typingUsers.length]);
+
+  const typingStatus = useMemo(() => {
+    if (typingUsers.length === 0) return null;
+    if (chatInfo?.chat_type === 'direct') return 'typing...';
+    
+    // Group logic
+    const user = typingUsers[currentTyperIndex];
+    if (!user) return null;
+    return `${user.full_name} is typing...`;
+  }, [typingUsers, currentTyperIndex, chatInfo?.chat_type]);
+
+  const onlineStatus = useMemo(() => {
+    if (typingStatus) return typingStatus;
+    if (chatInfo?.chat_type === 'group') return 'Tap for group details';
+    
+    if (otherUserId && isOnline(otherUserId)) return 'Online';
+    
+    // Fallback/Last seen - we need last_seen_at from profiles
+    // For now, if not online, show static "View profile"
+    return 'View profile';
+  }, [typingStatus, chatInfo?.chat_type, otherUserId, isOnline]);
   const [mediaTab, setMediaTab] = useState<'media' | 'docs' | 'links'>('media');
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -225,24 +278,7 @@ export const ChatScreen: React.FC = () => {
     }
   };
 
-  const [otherUserId, setOtherUserId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (chatInfo?.chat_type === 'direct' && id && user) {
-      const getOtherUser = async () => {
-        const { data } = await supabase
-          .from('chat_members')
-          .select('user_id')
-          .eq('chat_id', id)
-          .neq('user_id', user.id)
-          .single();
-
-        if (data) setOtherUserId(data.user_id);
-      };
-      getOtherUser();
-    }
-  }, [chatInfo?.chat_type, id, user?.id]);
-
+  // Message grouping logic
   const groupedMessages = useMemo(() => {
     const groups: {
       sender_id: string;
@@ -409,8 +445,12 @@ export const ChatScreen: React.FC = () => {
                   <span className="text-xl font-bricolage-semi-condensed font-bold tracking-tight">{chatInfo?.name || 'Chat'}</span>
                   {chatInfo?.chat_type === 'group' && <span className="text-[9px] font-black bg-primary/10 text-primary px-1.5 py-0.5 rounded-sm border border-primary/20 leading-none">GP</span>}
                 </div>
-                <span className="text-[11px] text-muted-foreground font-medium leading-none">
-                  {chatInfo?.chat_type === 'group' ? 'Tap for group details' : 'View profile'}
+                <span className={cn(
+                  "text-[11px] font-medium leading-none transition-colors",
+                  typingStatus ? "text-primary italic animate-pulse" : 
+                  onlineStatus === 'Online' ? "text-green-400 font-bold" : "text-muted-foreground"
+                )}>
+                  {onlineStatus}
                 </span>
               </div>
             }
@@ -615,7 +655,7 @@ export const ChatScreen: React.FC = () => {
 
                   {/* Messages list for this group */}
                   <div className="flex flex-col gap-1 flex-1 min-w-0">
-                    {group.messages.map(({ msg, originalIndex }, mIdx) => (
+                    {group.messages.map(({ msg, originalIndex }: { msg: any; originalIndex: number }, mIdx: number) => (
                       <div key={msg.id} id={`msg-${msg.id}`} className="transition-all duration-300">
                         <MessageBubble
                           id={msg.id}
@@ -653,6 +693,7 @@ export const ChatScreen: React.FC = () => {
       <MessageComposer
         onSendMessage={(text) => sendMessage(text)}
         onSendFile={(file, type) => sendFile(file, type)}
+        onTyping={(isTyping) => sendTypingStatus(isTyping)}
         disabled={isLoading && messages.length === 0 || isRestricted}
         placeholder={isRestricted ? "Only admins can send messages" : "Type a message..."}
       />

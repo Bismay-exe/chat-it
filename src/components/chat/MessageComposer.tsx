@@ -7,6 +7,7 @@ import imageCompression from 'browser-image-compression';
 export interface MessageComposerProps {
   onSendMessage: (content: string) => void;
   onSendFile: (file: File, type: 'image' | 'video' | 'file') => void;
+  onTyping?: (isTyping: boolean) => void;
   disabled?: boolean;
   placeholder?: string;
 }
@@ -14,10 +15,31 @@ export interface MessageComposerProps {
 export const MessageComposer: React.FC<MessageComposerProps> = ({ 
   onSendMessage, 
   onSendFile, 
+  onTyping,
   disabled, 
   placeholder = "Type a message..." 
 }) => {
   const [text, setText] = useState('');
+  const typingTimeoutRef = React.useRef<any>(null);
+
+  const handleTextChange = (value: string) => {
+    setText(value);
+    
+    if (onTyping) {
+      if (!typingTimeoutRef.current) {
+        onTyping(true);
+      }
+      
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      
+      typingTimeoutRef.current = setTimeout(() => {
+        onTyping(false);
+        typingTimeoutRef.current = null;
+      }, 2000);
+    }
+  };
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -110,14 +132,13 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
         <div className="flex-1 bg-secondary/50 border border-border rounded-2xl flex items-center pr-1 premium-transition">
           <textarea
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => handleTextChange(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             disabled={disabled}
             className="w-full bg-transparent border-none outline-none resize-none py-3 px-4 max-h-30 min-h-11 text-[15px]"
             rows={1}
             style={{ height: 'auto' }}
-            // A dynamic height logic would go here in production
           />
           <button 
             type="button" 
