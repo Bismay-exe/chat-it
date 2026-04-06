@@ -86,7 +86,7 @@ export const AuthPage: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-svh bg-background p-4 relative overflow-hidden">
+    <div className="flex flex-col items-center justify-center min-h-svh bg-background p-4 relative overflow-hidden pt-safe">
       {/* Background decoration */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[100px]" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent/10 rounded-full blur-[100px]" />

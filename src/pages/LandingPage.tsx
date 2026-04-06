@@ -7,7 +7,7 @@ export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-svh bg-background px-4">
+    <div className="flex flex-col items-center justify-center min-h-svh bg-background p-4 relative overflow-hidden pt-safe">
       <div className="w-24 h-24 bg-primary/10 rounded-3xl flex items-center justify-center mb-8 shadow-xl shadow-primary/5">
         <MessageSquareText className="w-12 h-12 text-primary" />
       </div>

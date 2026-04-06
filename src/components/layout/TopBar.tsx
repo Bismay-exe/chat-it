@@ -11,7 +11,11 @@ interface TopBarProps {
 
 export const TopBar: React.FC<TopBarProps> = ({ title, leftElement, rightElement, className }) => {
   return (
-    <div className={cn('h-16 flex items-center justify-between px-4 py-4 sticky top-0 z-40', className)}>
+    <div className={cn(
+      'min-h-16 flex flex-col justify-end px-4 py-4 sticky top-0 z-40 bg-background/0 pt-[env(safe-area-inset-top,0px)]', 
+      className
+    )}>
+      <div className="h-16 flex items-center justify-between">
       <div className="pointer-events-none">
         <GradualBlur position="top" className="z-10" height="5rem" opacity={1} curve="ease-in-out" />
       </div>
@@ -25,6 +29,7 @@ export const TopBar: React.FC<TopBarProps> = ({ title, leftElement, rightElement
       </div>
       <div className="flex items-center justify-end flex-1 gap-1 z-10">
         {rightElement}
+      </div>
       </div>
     </div>
   );
