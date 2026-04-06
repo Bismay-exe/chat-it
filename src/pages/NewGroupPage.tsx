@@ -10,6 +10,8 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useRef } from 'react';
+import { GradualScroll } from '@/components/ui/GradualScroll';
+import { AnimatedItem } from '@/components/ui/AnimatedItem';
 
 interface Contact {
   id: string;
@@ -195,31 +197,32 @@ export const NewGroupPage = () => {
           />
         </div>
 
-        <div className="flex-1 overflow-y-auto mt-2">
-          {filteredContacts.map(c => {
+        <GradualScroll className="flex-1 mt-2" scrollClassName="pb-4">
+          {filteredContacts.map((c, i) => {
             const isSelected = selectedUsers.find(u => u.id === c.id);
             return (
-              <button 
-                key={c.id} 
-                onClick={() => toggleUser(c)}
-                className="w-full flex items-center gap-4 px-4 py-3 hover:bg-secondary/30 premium-transition group"
-              >
-                <div className="relative">
-                  <Avatar src={c.avatar_url} fallback={c.full_name} />
-                  {isSelected && (
-                    <div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground rounded-full p-0.5 border-2 border-background">
-                      <Check className="w-3 h-3" />
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 text-left border-b border-border/50 pb-3 group-last:border-none">
-                  <div className="font-medium">{c.full_name}</div>
-                  <div className="text-sm text-muted-foreground">@{c.username}</div>
-                </div>
-              </button>
+              <AnimatedItem key={c.id} index={i}>
+                <button 
+                  onClick={() => toggleUser(c)}
+                  className="w-full flex items-center gap-4 px-4 py-3 hover:bg-secondary/30 premium-transition group"
+                >
+                  <div className="relative">
+                    <Avatar src={c.avatar_url} fallback={c.full_name} />
+                    {isSelected && (
+                      <div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground rounded-full p-0.5 border-2 border-background">
+                        <Check className="w-3 h-3" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 text-left border-b border-border/50 pb-3 group-last:border-none">
+                    <div className="font-medium text-[15px]">{c.full_name}</div>
+                    <div className="text-sm text-muted-foreground">@{c.username}</div>
+                  </div>
+                </button>
+              </AnimatedItem>
             );
           })}
-        </div>
+        </GradualScroll>
 
         {selectedUsers.length > 0 && (
           <div className="bg-background border-t border-border p-4">

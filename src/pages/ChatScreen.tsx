@@ -31,6 +31,8 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 import GradualBlur from '@/components/ui/GradualBlur';
 import { usePresence } from '@/hooks/usePresence';
 import { useTypingIndicator } from '@/hooks/useTypingIndicator';
+import { GradualScroll } from '@/components/ui/GradualScroll';
+import { AnimatedItem } from '@/components/ui/AnimatedItem';
 
 export const ChatScreen: React.FC = () => {
   const { showInfo, setShowInfo } = useOutletContext<{ showInfo: boolean; setShowInfo: (v: boolean) => void }>() || { showInfo: false, setShowInfo: () => { } };
@@ -597,7 +599,11 @@ export const ChatScreen: React.FC = () => {
         )}
       </div>
 
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto w-full pt-16 pb-0 flex flex-col gap-1 px-2 md:px-6 lg:px-12 scroll-smooth">
+      <GradualScroll 
+        scrollRef={scrollContainerRef as any}
+        className="flex-1 w-full"
+        scrollClassName="pt-16 pb-0 flex flex-col gap-1 px-2 md:px-6 lg:px-12 scroll-smooth"
+      >
         {isLoading && messages.length === 0 ? (
           <div className="flex flex-col gap-4">
             <div className="flex justify-start">
@@ -630,7 +636,7 @@ export const ChatScreen: React.FC = () => {
                 </div>
               )}
             </div>
-            {groupedMessages.map((group) => {
+            {groupedMessages.map((group, gIdx) => {
               const isSentByMe = group.sender_id === user?.id;
               
               return (
@@ -644,42 +650,46 @@ export const ChatScreen: React.FC = () => {
                   {/* Sticky Avatar Sidebar - Glide Logic */}
                   <div className="shrink-0 w-13 flex flex-col justify-end self-stretch">
                     <div className="sticky top-24 bottom-0 -mb-1">
-                      <Avatar 
-                        src={group.profile?.avatar_url} 
-                        fallback={group.profile?.full_name?.charAt(0) || '?'} 
-                        size="sm"
-                        className="shadow-lg rounded-xl border border-black/5"
-                      />
+                      <AnimatedItem index={gIdx}>
+                        <Avatar 
+                          src={group.profile?.avatar_url} 
+                          fallback={group.profile?.full_name?.charAt(0) || '?'} 
+                          size="sm"
+                          className="shadow-lg rounded-xl border border-black/5"
+                        />
+                      </AnimatedItem>
                     </div>
                   </div>
 
                   {/* Messages list for this group */}
                   <div className="flex flex-col gap-1 flex-1 min-w-0">
                     {group.messages.map(({ msg, originalIndex }: { msg: any; originalIndex: number }, mIdx: number) => (
-                      <div key={msg.id} id={`msg-${msg.id}`} className="transition-all duration-300">
-                        <MessageBubble
-                          id={msg.id}
-                          content={msg.content}
-                          type={msg.type}
-                          media_url={msg.media_url}
-                          file_name={msg.file_name}
-                          file_size={msg.file_size}
-                          timestamp={displayTime(msg.created_at)}
-                          isSentByMe={isSentByMe}
-                          senderName={group.profile?.full_name}
-                          senderAvatar={group.profile?.avatar_url}
-                          isSequence={mIdx > 0}
-                          isLastInSequence={mIdx === group.messages.length - 1}
-                          status={msg.status}
-                          highlight={debouncedQuery}
-                          activeMatchWithinMessage={isSearchVisible && searchResults[currentMatchIndex]?.messageIndex === originalIndex ? searchResults[currentMatchIndex].matchIndexInContent : -1}
-                          onDelete={deleteMessage}
-                          hideAvatar={true}
-                          isSelected={selectedMessageIds.includes(msg.id)}
-                          onSelect={handleMessageSelect}
-                          isSelectionMode={isSelectionMode}
-                        />
-                      </div>
+                      <AnimatedItem key={msg.id} index={mIdx} delay={0.05}>
+                        <div id={`msg-${msg.id}`} className="transition-all duration-300">
+                          <MessageBubble
+                            id={msg.id}
+                            content={msg.content}
+                            type={msg.type}
+                            media_url={msg.media_url}
+                            file_name={msg.file_name}
+                            file_size={msg.file_size}
+                            timestamp={displayTime(msg.created_at)}
+                            isSentByMe={isSentByMe}
+                            senderName={group.profile?.full_name}
+                            senderAvatar={group.profile?.avatar_url}
+                            isSequence={mIdx > 0}
+                            isLastInSequence={mIdx === group.messages.length - 1}
+                            status={msg.status}
+                            highlight={debouncedQuery}
+                            activeMatchWithinMessage={isSearchVisible && searchResults[currentMatchIndex]?.messageIndex === originalIndex ? searchResults[currentMatchIndex].matchIndexInContent : -1}
+                            onDelete={deleteMessage}
+                            hideAvatar={true}
+                            isSelected={selectedMessageIds.includes(msg.id)}
+                            onSelect={handleMessageSelect}
+                            isSelectionMode={isSelectionMode}
+                          />
+                        </div>
+                      </AnimatedItem>
                     ))}
                   </div>
                 </div>
@@ -688,7 +698,7 @@ export const ChatScreen: React.FC = () => {
             <div ref={messagesEndRef} className="pb-0" />
           </>
         )}
-      </div>
+      </GradualScroll>
 
       <MessageComposer
         onSendMessage={(text) => sendMessage(text)}

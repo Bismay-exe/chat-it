@@ -9,6 +9,8 @@ import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/authStore';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { GradualScroll } from '@/components/ui/GradualScroll';
+import { AnimatedItem } from '@/components/ui/AnimatedItem';
 
 interface SearchResult {
   id: string;
@@ -155,25 +157,26 @@ export const AddContactPage = () => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <GradualScroll className="flex-1" scrollClassName="pb-4">
         {results.length > 0 ? (
           <div className="p-2 space-y-1">
              <h3 className="px-4 py-2 text-xs font-bold text-muted-foreground uppercase tracking-widest">On Chat-It</h3>
-             {results.map(r => (
-               <button 
-                 key={r.id} 
-                 onClick={() => handleSelect(r)}
-                 className="w-full flex items-center gap-4 p-3 rounded-2xl hover:bg-secondary/40 transition-colors text-left group"
-               >
-                 <Avatar src={r.avatar_url || undefined} fallback={r.name || '?'} size="md" />
-                 <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-sm truncate">{r.name}</div>
-                    <div className="text-xs text-muted-foreground truncate">
-                      {r.type === 'user' ? `@${r.username}` : `${r.member_count} members`}
-                    </div>
-                 </div>
-                 {r.type === 'user' ? <MessageSquare className="w-4 h-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity" /> : <Globe className="w-4 h-4 text-accent opacity-0 group-hover:opacity-100 transition-opacity" />}
-               </button>
+             {results.map((r, i) => (
+               <AnimatedItem key={r.id} index={i}>
+                 <button 
+                   onClick={() => handleSelect(r)}
+                   className="w-full flex items-center gap-4 p-3 rounded-2xl hover:bg-secondary/40 transition-colors text-left group"
+                 >
+                   <Avatar src={r.avatar_url || undefined} fallback={r.name || '?'} size="md" />
+                   <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-sm truncate">{r.name}</div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        {r.type === 'user' ? `@${r.username}` : `${r.member_count} members`}
+                      </div>
+                   </div>
+                   {r.type === 'user' ? <MessageSquare className="w-4 h-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity" /> : <Globe className="w-4 h-4 text-accent opacity-0 group-hover:opacity-100 transition-opacity" />}
+                 </button>
+               </AnimatedItem>
              ))}
           </div>
         ) : query.trim() && !isSearching ? (
@@ -211,7 +214,7 @@ export const AddContactPage = () => {
             ))}
           </div>
         )}
-      </div>
+      </GradualScroll>
     </div>
   );
 };

@@ -7,6 +7,8 @@ import { cn } from '@/lib/utils';
 import { useChats } from '@/hooks/useChats';
 import { useChatLists } from '@/hooks/useChatLists';
 import { usePinnedChats } from '@/hooks/usePinnedChats';
+import { GradualScroll } from '@/components/ui/GradualScroll';
+import { AnimatedItem } from '@/components/ui/AnimatedItem';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useAuthStore } from '@/stores/authStore';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -316,25 +318,26 @@ export const ChatsPage: React.FC = () => {
         </div>
 
         {/* Chat List or Search Results */}
-        <div className="flex-1 overflow-y-auto pb-20 md:pb-2 space-y-0.5 no-scrollbar">
+        <GradualScroll className="flex-1" scrollClassName="pb-20 md:pb-2 space-y-0.5 no-scrollbar">
           {searchQuery.trim().length >= 2 ? (
             <div className="space-y-1">
               <div className="px-3 py-2 text-[10px] font-black text-primary uppercase tracking-[0.2em] opacity-60">Search Results</div>
-              {searchResults.map(r => (
-                <button
-                  key={r.id}
-                  onClick={() => {
-                    handleChatClick(r.id);
-                    setSearchQuery('');
-                  }}
-                  className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-secondary/40 transition-all text-left"
-                >
-                  <Avatar src={r.avatar_url} fallback={r.name} size="md" />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-bold text-[15px] truncate">{r.name}</div>
-                    <div className="text-[10px] text-muted-foreground">@{r.username || r.type}</div>
-                  </div>
-                </button>
+              {searchResults.map((r, i) => (
+                <AnimatedItem key={r.id} index={i} delay={i * 0.05}>
+                  <button
+                    onClick={() => {
+                      handleChatClick(r.id);
+                      setSearchQuery('');
+                    }}
+                    className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-secondary/40 transition-all text-left"
+                  >
+                    <Avatar src={r.avatar_url} fallback={r.name} size="md" />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold text-[15px] truncate">{r.name}</div>
+                      <div className="text-[10px] text-muted-foreground">@{r.username || r.type}</div>
+                    </div>
+                  </button>
+                </AnimatedItem>
               ))}
               {searchResults.length === 0 && !isSearching && (
                 <div className="text-center p-8 text-muted-foreground text-sm">No results found</div>
@@ -356,47 +359,48 @@ export const ChatsPage: React.FC = () => {
                 </div>
               ) : (
                 <>
-                  {sortedChats.map(chat => (
-                    <ChatListItem
-                      key={chat.chat_id}
-                      {...chat}
-                      is_pinned={pins.some(p => p.chat_id === chat.chat_id && p.list_key === activeTab)}
-                      isActive={id === chat.chat_id}
-                      currentListKey={activeTab}
-                      onClick={() => handleChatClick(chat.chat_id)}
-                      onArchive={toggleArchive}
-                      onFavorite={toggleFavorite}
-                      onMute={toggleMute}
-                      onPin={(id, current) => togglePin(id, activeTab, current)}
-                      onDelete={deleteChat}
-                      onManageLists={setManagingChatId}
-                      onInfo={(chatId) => {
-                        const chat = chats.find(c => c.chat_id === chatId);
-                        if (window.innerWidth < 1024) {
-                          if (chat?.chat_type === 'group') {
-                            navigate(`/chats/${chatId}/info`);
-                          } else if (chat?.other_user_id) {
-                            navigate(`/profile/${chat.other_user_id}`);
+                  {sortedChats.map((chat, i) => (
+                    <AnimatedItem key={chat.chat_id} index={i}>
+                      <ChatListItem
+                        {...chat}
+                        is_pinned={pins.some(p => p.chat_id === chat.chat_id && p.list_key === activeTab)}
+                        isActive={id === chat.chat_id}
+                        currentListKey={activeTab}
+                        onClick={() => handleChatClick(chat.chat_id)}
+                        onArchive={toggleArchive}
+                        onFavorite={toggleFavorite}
+                        onMute={toggleMute}
+                        onPin={(id, current) => togglePin(id, activeTab, current)}
+                        onDelete={deleteChat}
+                        onManageLists={setManagingChatId}
+                        onInfo={(chatId) => {
+                          const chat = chats.find(c => c.chat_id === chatId);
+                          if (window.innerWidth < 1024) {
+                            if (chat?.chat_type === 'group') {
+                              navigate(`/chats/${chatId}/info`);
+                            } else if (chat?.other_user_id) {
+                              navigate(`/profile/${chat.other_user_id}`);
+                            }
+                          } else {
+                            handleChatClick(chatId);
+                            setShowInfo(true);
                           }
-                        } else {
-                          handleChatClick(chatId);
-                          setShowInfo(true);
-                        }
-                      }}
-                      onBlock={(userId) => {
-                        if (confirm('Are you sure you want to block this user?')) {
-                          blockUser(userId);
-                        }
-                      }}
-                      onLeaveGroup={(chatId) => {
-                        if (confirm('Are you sure you want to leave this group?')) {
-                          deleteChat(chatId);
-                        }
-                      }}
-                      isSelected={selectedChatIds.includes(chat.chat_id)}
-                      onSelect={toggleSelection}
-                      selectionMode={isSelectionMode}
-                    />
+                        }}
+                        onBlock={(userId) => {
+                          if (confirm('Are you sure you want to block this user?')) {
+                            blockUser(userId);
+                          }
+                        }}
+                        onLeaveGroup={(chatId) => {
+                          if (confirm('Are you sure you want to leave this group?')) {
+                            deleteChat(chatId);
+                          }
+                        }}
+                        isSelected={selectedChatIds.includes(chat.chat_id)}
+                        onSelect={toggleSelection}
+                        selectionMode={isSelectionMode}
+                      />
+                    </AnimatedItem>
                   ))}
                   {sortedChats.length === 0 && (
                     <div className="h-full flex flex-col items-center justify-center text-muted-foreground p-6 text-center opacity-40">
@@ -408,7 +412,7 @@ export const ChatsPage: React.FC = () => {
               )}
             </>
           )}
-        </div>
+        </GradualScroll>
         <div className="md:hidden block pointer-events-none">
           <GradualBlur position="bottom" className="z-10" height="5rem" opacity={1} curve="ease-in-out" />
         </div>

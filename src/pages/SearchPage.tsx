@@ -8,6 +8,8 @@ import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/authStore';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { GradualScroll } from '@/components/ui/GradualScroll';
+import { AnimatedItem } from '@/components/ui/AnimatedItem';
 
 interface SearchResult {
   id: string;
@@ -182,7 +184,7 @@ export const SearchPage = () => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <GradualScroll className="flex-1" scrollClassName="pb-4">
         {isSearching && (
           <div className="p-2 space-y-1">
             {[...Array(4)].map((_, i) => (
@@ -196,32 +198,32 @@ export const SearchPage = () => {
             ))}
           </div>
         )}
-
         {!isSearching && localResults.length > 0 && (
           <div className="p-2 space-y-1">
             <h3 className="px-4 py-3 text-[10px] font-black text-primary uppercase tracking-[0.2em] opacity-60">Your Chats</h3>
-            {localResults.map(r => (
-              <SearchResultItem key={r.id} result={r} onClick={() => handleSelect(r)} />
+            {localResults.map((r, i) => (
+              <AnimatedItem key={r.id} index={i}>
+                <SearchResultItem result={r} onClick={() => handleSelect(r)} />
+              </AnimatedItem>
             ))}
           </div>
         )}
-
-        {platformResults.length > 0 && (
+        {!isSearching && platformResults.length > 0 && (
           <div className="p-2 space-y-1">
             <h3 className="px-4 py-3 text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] opacity-60">On Chat-It</h3>
-            {platformResults.map(r => (
-              <SearchResultItem key={r.id} result={r} onClick={() => handleSelect(r)} />
+            {platformResults.map((r, i) => (
+              <AnimatedItem key={r.id} index={i}>
+                <SearchResultItem result={r} onClick={() => handleSelect(r)} />
+              </AnimatedItem>
             ))}
           </div>
         )}
-
         {!isSearching && query.trim().length > 0 && localResults.length === 0 && platformResults.length === 0 && (
           <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground">
             <Search className="w-12 h-12 mb-4 opacity-10" />
             <p className="text-sm font-medium">No results found for "{query}"</p>
           </div>
         )}
-
         {!query.trim() && (
           <div className="flex flex-col items-center justify-center p-12 text-center opacity-40 grayscale">
              <div className="w-20 h-20 bg-secondary rounded-3xl flex items-center justify-center mb-6">
@@ -231,7 +233,7 @@ export const SearchPage = () => {
              <p className="text-[10px] mt-1 max-w-45">Type at least 2 characters to search across all chats and people.</p>
           </div>
         )}
-      </div>
+      </GradualScroll>
     </div>
   );
 };
