@@ -30,7 +30,10 @@ export const useAutoUpdate = () => {
       if (!response.ok) throw new Error('Failed to fetch releases');
       
       const data = await response.json();
-      const latestRelease = Array.isArray(data) ? data[0] : data;
+      let latestRelease = Array.isArray(data) ? data[0] : data;
+      if (Array.isArray(data) && channel === 'beta') {
+        latestRelease = data.find((r: any) => r.prerelease || r.tag_name?.toLowerCase().includes('beta')) || data[0];
+      }
       const sanitizeVersion = (v: string) => v.trim().toLowerCase().replace(/^v/, '');
       const latestVersion = sanitizeVersion(latestRelease.tag_name || '');
       const currentVersion = sanitizeVersion(CURRENT_VERSION);

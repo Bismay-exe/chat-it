@@ -26,7 +26,10 @@ export const AboutPage = () => {
         const response = await fetch(url);
         if (!response.ok) throw new Error('Fetch error');
         const data = await response.json();
-        const latestRelease = Array.isArray(data) ? data[0] : data;
+        let latestRelease = Array.isArray(data) ? data[0] : data;
+        if (Array.isArray(data) && channel === 'beta') {
+          latestRelease = data.find((r: any) => r.prerelease || r.tag_name?.toLowerCase().includes('beta')) || data[0];
+        }
         
         if (latestRelease) {
           const sanitizeVersion = (v: string) => v.trim().toLowerCase().replace(/^v/, '');
