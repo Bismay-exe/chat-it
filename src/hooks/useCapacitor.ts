@@ -12,8 +12,8 @@ export const useCapacitor = () => {
     const setupStatusBar = async () => {
       try {
         await StatusBar.setOverlaysWebView({ overlay: true });
-        await StatusBar.setBackgroundColor({ color: '#ffffff00' });
-        await StatusBar.setStyle({ style: Style.Dark });
+        await StatusBar.setBackgroundColor({ color: '#00000000' });
+        await StatusBar.setStyle({ style: Style.Light });
       } catch (e) {
         console.warn('StatusBar not available', e);
       }
