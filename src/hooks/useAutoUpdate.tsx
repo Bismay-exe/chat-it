@@ -1,7 +1,7 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import { Download } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
+import { useUpdateStore } from '@/stores/updateStore';
 
 // This should match the latest STABLE tag you've released (e.g., v1.0.0)
 // For beta builds, the CI/CD will append -beta.RUN_ID
@@ -9,7 +9,7 @@ export const CURRENT_VERSION = 'v1.0.0';
 const GITHUB_REPO = 'Bismay-exe/chat-it';
 
 export const useAutoUpdate = () => {
-  const [isChecking, setIsChecking] = useState(false);
+  const { isChecking, setChecking, setUpdateAvailable } = useUpdateStore();
 
   const checkForUpdates = useCallback(async (manual = false) => {
     // Only check automatically if on a native platform (Android/iOS)
@@ -17,7 +17,7 @@ export const useAutoUpdate = () => {
     if (!isNative && !manual) return;
 
     const channel = localStorage.getItem('chat-it-update-channel') || 'stable';
-    if (manual) setIsChecking(true);
+    if (manual) setChecking(true);
 
     try {
       // For 'stable', releases/latest only returns non-prereleases
@@ -47,18 +47,10 @@ export const useAutoUpdate = () => {
         }
 
         if (isNative) {
-          const apkAsset = latestRelease.assets.find((asset: any) => asset.name.endsWith('.apk'));
+          const apkAsset = latestRelease.assets?.find((asset: any) => asset.name.endsWith('.apk'));
           const downloadUrl = apkAsset ? apkAsset.browser_download_url : latestRelease.html_url;
 
-          toast.info(`New ${channel.charAt(0).toUpperCase() + channel.slice(1)} Update (${latestVersion})`, {
-            description: "A newer version is available. Download the latest APK to stay up to date.",
-            duration: manual ? 15000 : 8000,
-            action: {
-              label: "Download",
-              onClick: () => window.open(downloadUrl, '_blank')
-            },
-            icon: <Download className="w-4 h-4" />
-          });
+          setUpdateAvailable(latestVersion, downloadUrl, latestRelease.body || '', channel);
         }
       } else if (manual) {
         toast.success("You're on the latest version!", {
@@ -69,9 +61,9 @@ export const useAutoUpdate = () => {
       console.error('Update check failed:', error);
       if (manual) toast.error("Check failed. Please check your internet connection.");
     } finally {
-      if (manual) setIsChecking(false);
+      if (manual) setChecking(false);
     }
-  }, []);
+  }, [setChecking, setUpdateAvailable]);
 
   useEffect(() => {
     // Initial check (respecting platform rules inside checkForUpdates)

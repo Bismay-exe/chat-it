@@ -1,14 +1,51 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { ArrowLeft, Globe, MessageCircle, ChevronRight, ShieldCheck, FileText, RefreshCw, Loader2 } from 'lucide-react';
+import { ArrowLeft, Globe, MessageCircle, ChevronRight, ShieldCheck, FileText, Loader2, Download } from 'lucide-react';
 import { TopBar } from '@/components/layout/TopBar';
-import { useAutoUpdate, CURRENT_VERSION } from '@/hooks/useAutoUpdate';
+import { CURRENT_VERSION } from '@/hooks/useAutoUpdate';
+import { useUpdateStore } from '@/stores/updateStore';
 import { cn } from '@/lib/utils';
 
 export const AboutPage = () => {
   const navigate = useNavigate();
-  const { isChecking, checkForUpdates } = useAutoUpdate();
   const [channel, setChannel] = useState(localStorage.getItem('chat-it-update-channel') || 'stable');
+  const { setUpdateAvailable } = useUpdateStore();
+
+  const [channelLatestVersion, setChannelLatestVersion] = useState('');
+  const [channelDownloadUrl, setChannelDownloadUrl] = useState('');
+  const [channelReleaseNotes, setChannelReleaseNotes] = useState('');
+  const [isFetchingChannel, setIsFetchingChannel] = useState(false);
+
+  useEffect(() => {
+    const fetchChannelInfo = async () => {
+      setIsFetchingChannel(true);
+      try {
+        const url = channel === 'stable' 
+          ? `https://api.github.com/repos/Bismay-exe/chat-it/releases/latest`
+          : `https://api.github.com/repos/Bismay-exe/chat-it/releases`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Fetch error');
+        const data = await response.json();
+        const latestRelease = Array.isArray(data) ? data[0] : data;
+        
+        if (latestRelease) {
+          const sanitizeVersion = (v: string) => v.trim().toLowerCase().replace(/^v/, '');
+          const version = sanitizeVersion(latestRelease.tag_name || '');
+          const apkAsset = latestRelease.assets?.find((asset: any) => asset.name.endsWith('.apk'));
+          const dUrl = apkAsset ? apkAsset.browser_download_url : latestRelease.html_url;
+
+          setChannelLatestVersion(version);
+          setChannelDownloadUrl(dUrl);
+          setChannelReleaseNotes(latestRelease.body || '');
+        }
+      } catch(err) {
+         console.error(err);
+      } finally {
+         setIsFetchingChannel(false);
+      }
+    };
+    fetchChannelInfo();
+  }, [channel]);
 
   const handleChannelChange = (newChannel: string) => {
     setChannel(newChannel);
@@ -42,8 +79,8 @@ export const AboutPage = () => {
       <div className="flex-1 flex flex-col p-6 items-center">
         {/* Logo Section */}
         <div className="mt-8 mb-12 flex flex-col items-center gap-4">
-          <div className="w-24 h-24 bg-primary rounded-[2.5rem] flex items-center justify-center shadow-xl shadow-primary/20 rotate-3 hover:rotate-0 transition-transform duration-500">
-             <MessageCircle className="w-12 h-12 text-white" />
+          <div className="w-24 h-24 bg-primary rounded-3xl flex items-center justify-center shadow-xl shadow-primary/20">
+            <img src="/logo/chat-it-logo.svg" alt="Chat-It" className="h-9 w-auto xdark:invert" />
           </div>
           <div className="text-center">
             <h1 className="text-3xl font-black tracking-tighter">Chat-It</h1>
@@ -70,7 +107,7 @@ export const AboutPage = () => {
                     onClick={() => handleChannelChange(c)}
                     className={cn(
                       "flex-1 py-2 text-xs font-bold rounded-xl transition-all capitalize",
-                      channel === c ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                      channel === c ? "bg-primary/10 text-primary border border-primary/20" : "text-muted-foreground hover:text-foreground"
                     )}
                   >
                     {c}
@@ -79,18 +116,25 @@ export const AboutPage = () => {
               </div>
             </div>
 
-            {/* Check for Updates */}
-            <button 
-              onClick={() => checkForUpdates(true)}
-              disabled={isChecking}
-              className="w-full p-4 flex items-center justify-between hover:bg-secondary/30 transition-colors border-t border-border group"
-            >
-              <div className="flex items-center gap-3">
-                {isChecking ? <Loader2 className="w-4 h-4 animate-spin text-primary" /> : <RefreshCw className="w-4 h-4 text-primary" />}
-                <span className="text-sm font-medium">Check for updates</span>
-              </div>
-              <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-            </button>
+            {/* Latest Version Info */}
+            <div className="p-4 flex flex-col gap-3 border-t border-border">
+               <div className="flex items-center justify-between">
+                 <span className="text-sm font-semibold capitalize">{channel} Build</span>
+                 {isFetchingChannel ? (
+                   <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                 ) : (
+                   <span className="text-sm font-bold text-primary max-w-30 truncate" title={channelLatestVersion}>{channelLatestVersion || 'N/A'}</span>
+                 )}
+               </div>
+               <button 
+                  onClick={() => setUpdateAvailable(channelLatestVersion, channelDownloadUrl, channelReleaseNotes, channel, true)}
+                  disabled={isFetchingChannel || !channelDownloadUrl}
+                  className="w-full bg-primary/10 text-primary py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-primary hover:text-white transition-all disabled:opacity-50 mt-1"
+               >
+                  <Download className="w-4 h-4" />
+                  Install Latest {channel === 'stable' ? 'Stable' : 'Beta'}
+               </button>
+            </div>
           </div>
 
           <div className="bg-background rounded-3xl border border-border overflow-hidden shadow-sm">

@@ -8,6 +8,7 @@ import { useCapacitor } from '@/hooks/useCapacitor';
 import { SplashScreen } from '@capacitor/splash-screen';
 
 import { AppShell } from '@/components/layout/AppShell';
+import { UpdateScreen } from '@/components/layout/UpdateScreen';
 import { LandingPage } from '@/pages/LandingPage';
 import { AuthPage } from '@/pages/AuthPage';
 import { ChatsPage } from '@/pages/ChatsPage';
@@ -104,6 +105,7 @@ export const App: React.FC = () => {
   return (
     <>
       <Toaster position="top-center" richColors theme="system" />
+      <UpdateScreen />
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<RedirectIfSignedIn><LandingPage /></RedirectIfSignedIn>} />
