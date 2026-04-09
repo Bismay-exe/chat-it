@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Send, Paperclip, Smile, X, Trash2, RefreshCw } from 'lucide-react';
+import { Send, Paperclip, Smile, X, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import imageCompression from 'browser-image-compression';
@@ -44,8 +44,6 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [sendHD, setSendHD] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [fileProgresses, setFileProgresses] = useState<Record<string, number>>({});
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,14 +67,19 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
   };
 
   const confirmSendFiles = async () => {
-    setIsUploading(true);
-    try {
-      for (const file of selectedFiles) {
-        // Size Limit Check (50MB)
+    const filesToUpload = [...selectedFiles];
+    const isHD = sendHD;
+    
+    // Close modal immediately and let them upload in background
+    setSelectedFiles([]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+
+    filesToUpload.forEach(async (file) => {
+      try {
         const MAX_SIZE = 50 * 1024 * 1024;
         if (file.size > MAX_SIZE) {
           toast.error(`${file.name} is too large. Max size is 50MB.`);
-          continue;
+          return;
         }
 
         let fileToSend = file;
@@ -85,23 +88,16 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
         if (file.type.startsWith('image/')) type = 'image';
         else if (file.type.startsWith('video/')) type = 'video';
 
-        if (type === 'image' && !sendHD) {
+        if (type === 'image' && !isHD) {
           const options = { maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: true };
           fileToSend = await imageCompression(file, options);
         }
 
-        await onSendFile(fileToSend, type, (progress) => {
-          setFileProgresses(prev => ({ ...prev, [file.name]: progress }));
-        });
+        await onSendFile(fileToSend, type, undefined);
+      } catch (error: any) {
+        toast.error(`Error sending ${file.name}: ${error.message}`);
       }
-      setSelectedFiles([]);
-      setFileProgresses({});
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    } catch (error: any) {
-      toast.error('Error processing file: ' + error.message);
-    } finally {
-      setIsUploading(false);
-    }
+    });
   };
 
   const handleEmojiClick = () => {
@@ -151,15 +147,6 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
                     <div className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-black/60 rounded text-[9px] text-white">
                       {Math.round(f.size / 1024 / 1024 * 10) / 10} MB
                     </div>
-                    {/* Progress overlay */}
-                    {fileProgresses[f.name] !== undefined && (
-                      <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center p-2 backdrop-blur-sm">
-                        <div className="w-full h-1.5 bg-white/20 rounded-full overflow-hidden mt-1">
-                          <div className="h-full bg-primary transition-all duration-300" style={{ width: `${fileProgresses[f.name]}%` }} />
-                        </div>
-                        <span className="text-[10px] text-white mt-2 font-bold">{fileProgresses[f.name]}%</span>
-                      </div>
-                    )}
                   </div>
               ))}
               
@@ -180,13 +167,9 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
               
               <button 
                 onClick={confirmSendFiles} 
-                disabled={isUploading} 
-                className={cn(
-                  "px-6 py-2.5 rounded-full flex items-center gap-2 font-medium transition-colors cursor-pointer", 
-                  isUploading ? "bg-secondary text-muted-foreground cursor-not-allowed" : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/20"
-                )}
+                className="px-6 py-2.5 rounded-full flex items-center gap-2 font-medium transition-colors cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/20"
               >
-                  {isUploading ? <><RefreshCw className="w-4 h-4 animate-spin"/> Sending...</> : <><Send className="w-4 h-4 ml-1"/> Send</>}
+                  <><Send className="w-4 h-4 ml-1"/> Send</>
               </button>
             </div>
           </div>
@@ -196,13 +179,10 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
         <button 
           type="button" 
           onClick={handleFileClick}
-          className={cn(
-            "p-2.5 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-full premium-transition shrink-0 mb-0.5",
-            isUploading && "animate-pulse text-primary"
-          )}
-          disabled={disabled || isUploading}
+          className="p-2.5 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-full premium-transition shrink-0 mb-0.5"
+          disabled={disabled}
         >
-          <Paperclip className={cn("w-5 h-5", isUploading && "animate-spin")} />
+          <Paperclip className="w-5 h-5" />
         </button>
 
         <div className="flex-1 bg-secondary/50 border border-border rounded-2xl flex items-center pr-1 premium-transition">

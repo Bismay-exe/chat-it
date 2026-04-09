@@ -32,6 +32,7 @@ export interface MessageBubbleProps {
   timestamp: string;
   isSentByMe: boolean;
   status?: 'sending' | 'sent' | 'delivered' | 'read' | 'error';
+  uploadProgress?: number;
   senderName?: string;
   senderAvatar?: string | null;
   isSequence?: boolean;
@@ -94,7 +95,7 @@ const ProgressCircle = ({ progress, size = 48, strokeWidth = 3, isDownloading = 
 };
 
 export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
-  id, content, type = 'text', media_url, file_name, file_size, timestamp, isSentByMe, status, senderName, senderAvatar, isSequence = false, isLastInSequence = false, highlight, activeMatchWithinMessage = -1, onDelete, hideAvatar = false, isSelected = false, onSelect, isSelectionMode = false
+  id, content, type = 'text', media_url, file_name, file_size, timestamp, isSentByMe, status, uploadProgress, senderName, senderAvatar, isSequence = false, isLastInSequence = false, highlight, activeMatchWithinMessage = -1, onDelete, hideAvatar = false, isSelected = false, onSelect, isSelectionMode = false
 }) => {
   const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
   const [xhr, setXhr] = useState<XMLHttpRequest | null>(null);
@@ -351,8 +352,10 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
                     </div>
                     <span>{timestamp}</span>
                     {isSentByMe && status && (
-                      <span className="flex items-center">
-                        {status === 'read' ? <CheckCheck className="w-3.5 h-3.5 text-blue-300" /> : status === 'delivered' ? <CheckCheck className="w-3.5 h-3.5" /> : status === 'sending' ? <RefreshCw className="w-2.5 h-2.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                      <span className="flex items-center ml-1">
+                        {status === 'read' ? <CheckCheck className="w-3.5 h-3.5 text-blue-300" /> : status === 'delivered' ? <CheckCheck className="w-3.5 h-3.5" /> : status === 'sending' ? (
+                          uploadProgress !== undefined ? <span className="font-bold tracking-tighter">{uploadProgress}%</span> : <RefreshCw className="w-2.5 h-2.5 animate-spin" />
+                        ) : <Check className="w-3.5 h-3.5" />}
                       </span>
                     )}
                   </div>
@@ -389,8 +392,10 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
                     </div>
                     <span>{timestamp}</span>
                     {isSentByMe && status && (
-                      <span className="flex items-center">
-                        {status === 'read' ? <CheckCheck className="w-3.5 h-3.5 text-blue-300" /> : status === 'delivered' ? <CheckCheck className="w-3.5 h-3.5" /> : status === 'sending' ? <RefreshCw className="w-2.5 h-2.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                      <span className="flex items-center ml-1">
+                        {status === 'read' ? <CheckCheck className="w-3.5 h-3.5 text-blue-300" /> : status === 'delivered' ? <CheckCheck className="w-3.5 h-3.5" /> : status === 'sending' ? (
+                          uploadProgress !== undefined ? <span className="font-bold tracking-tighter">{uploadProgress}%</span> : <RefreshCw className="w-2.5 h-2.5 animate-spin" />
+                        ) : <Check className="w-3.5 h-3.5" />}
                       </span>
                     )}
                   </div>
@@ -441,8 +446,10 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
                 )}
                 <span>{timestamp}</span>
                 {isSentByMe && status && (
-                  <span className="flex items-center">
-                    {status === 'read' ? <CheckCheck className="w-3.5 h-3.5 text-blue-200" /> : status === 'delivered' ? <CheckCheck className="w-3.5 h-3.5" /> : status === 'sending' ? <RefreshCw className="w-2.5 h-2.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                  <span className="flex items-center gap-1">
+                    {status === 'read' ? <CheckCheck className="w-3.5 h-3.5 text-blue-200" /> : status === 'delivered' ? <CheckCheck className="w-3.5 h-3.5" /> : status === 'sending' ? (
+                      uploadProgress !== undefined ? <span className="font-bold">{uploadProgress}%</span> : <RefreshCw className="w-2.5 h-2.5 animate-spin" />
+                    ) : <Check className="w-3.5 h-3.5" />}
                   </span>
                 )}
               </div>

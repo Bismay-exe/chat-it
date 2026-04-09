@@ -198,7 +198,7 @@ export function useMessages(chatId: string | undefined) {
   });
 
   const sendFileMutation = useMutation({
-    mutationFn: async ({ file, type, onProgress }: { file: File, type: 'image' | 'video' | 'file', onProgress?: (p: number) => void }) => {
+    mutationFn: async ({ file, type, tempId }: { file: File, type: 'image' | 'video' | 'file', tempId: string }) => {
       if (!chatId || !user) throw new Error('Not initialized');
 
       // 1. Upload to Telegram via Edge Function
@@ -214,9 +214,16 @@ export function useMessages(chatId: string | undefined) {
         xhr.setRequestHeader('Authorization', `Bearer ${token}`);
         
         xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable && onProgress) {
+          if (e.lengthComputable) {
             const percent = Math.round((e.loaded / e.total) * 100);
-            onProgress(percent);
+            queryClient.setQueryData(['messages', chatId, user?.id], (old: any) => {
+              if (!old || !old.pages?.[0]) return old;
+              const updatedPages = [...old.pages];
+              updatedPages[0] = updatedPages[0].map((m: any) => 
+                m.id === tempId ? { ...m, uploadProgress: percent } : m
+              );
+              return { ...old, pages: updatedPages };
+            });
           }
         };
 
@@ -264,12 +271,11 @@ export function useMessages(chatId: string | undefined) {
       if (error) throw error;
       return data;
     },
-    onMutate: async ({ file, type }) => {
+    onMutate: async ({ file, type, tempId }) => {
       await queryClient.cancelQueries({ queryKey: ['messages', chatId, user?.id] });
       const previousData = queryClient.getQueryData(['messages', chatId, user?.id]);
       
-      const tempId = `temp-${Date.now()}`;
-      const optimisticMessage: MessageData = {
+      const optimisticMessage: MessageData & { uploadProgress?: number } = {
         id: tempId,
         chat_id: chatId!,
         sender_id: user!.id,
@@ -279,13 +285,14 @@ export function useMessages(chatId: string | undefined) {
         file_size: file.size,
         media_url: URL.createObjectURL(file), // Local preview
         created_at: new Date().toISOString(),
-        status: 'sending'
+        status: 'sending',
+        uploadProgress: 0
       };
 
       queryClient.setQueryData(['messages', chatId, user?.id], (old: any) => {
         if (!old) return { pages: [[optimisticMessage]], pageParams: [null] };
         const updatedPages = [...old.pages];
-        updatedPages[0] = [...updatedPages[0], optimisticMessage];
+        updatedPages[0] = [optimisticMessage, ...updatedPages[0]];
         return { ...old, pages: updatedPages };
       });
 
@@ -340,7 +347,10 @@ export function useMessages(chatId: string | undefined) {
     hasNextPage,
     isFetchingNextPage,
     sendMessage: (content: string) => sendMessageMutation.mutate(content),
-    sendFile: (file: File, type: 'image' | 'video' | 'file', onProgress?: (p: number) => void) => sendFileMutation.mutateAsync({ file, type, onProgress }),
+    sendFile: (file: File, type: 'image' | 'video' | 'file') => {
+      const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      return sendFileMutation.mutateAsync({ file, type, tempId });
+    },
     deleteMessage: (id: string) => deleteMessageMutation.mutate(id)
   };
 }

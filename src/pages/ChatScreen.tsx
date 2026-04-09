@@ -680,6 +680,7 @@ export const ChatScreen: React.FC = () => {
                             isSequence={mIdx > 0}
                             isLastInSequence={mIdx === group.messages.length - 1}
                             status={msg.status}
+                            uploadProgress={msg.uploadProgress}
                             highlight={debouncedQuery}
                             activeMatchWithinMessage={isSearchVisible && searchResults[currentMatchIndex]?.messageIndex === originalIndex ? searchResults[currentMatchIndex].matchIndexInContent : -1}
                             onDelete={deleteMessage}
@@ -702,7 +703,7 @@ export const ChatScreen: React.FC = () => {
 
       <MessageComposer
         onSendMessage={(text) => sendMessage(text)}
-        onSendFile={(file, type, onProgress) => sendFile(file, type, onProgress)}
+        onSendFile={(file, type) => sendFile(file, type)}
         onTyping={(isTyping) => sendTypingStatus(isTyping)}
         disabled={isLoading && messages.length === 0 || isRestricted}
         placeholder={isRestricted ? "Only admins can send messages" : "Type a message..."}
