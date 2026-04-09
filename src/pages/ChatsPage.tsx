@@ -180,14 +180,14 @@ export const ChatsPage: React.FC = () => {
   }, [selectedChatIds, chats, toggleFavorite, deleteChat, blockUser, handleChatClick, clearSelection]);
 
   return (
-    <div className="flex w-full h-full">
+    <div className="flex w-full h-full bg-[#212023] md:pr-3 md:py-3 md:gap-3">
       {/* Sidebar Chat List */} 
       <div className={cn(
-        "flex-col w-full md:w-[320px] lg:w-95 h-full bg-background border-r border-border shrink-0 top-0 relative",
+        "flex-col w-full md:w-[320px] lg:w-95 h-full bg-background md:rounded-2xl border-r border-border shrink-0 top-0 relative",
         isChildActive ? "hidden md:flex" : "flex"
       )}>
         {/* Top Navigation */}
-        <div className="h-20 flex items-center justify-between px-4 bg-background/90 backdrop-blur-sm z-10 shrink-0">
+        <div className="h-20 flex items-center justify-between px-4 bg-background/90 md:rounded-4xl backdrop-blur-sm z-10 shrink-0">
           {isSelectionMode ? (
             <div className="flex items-center justify-between w-full animate-in fade-in slide-in-from-top-2 duration-300">
               <div className="flex items-center gap-3">
@@ -267,7 +267,7 @@ export const ChatsPage: React.FC = () => {
                     showSearchBar ? "bg-primary/10 text-primary" : "hover:bg-secondary"
                   )}
                 >
-                  <Search className="w-5 h-5" />
+                  <Search className={cn("w-5 h-5", showSearchBar ? "fill-primary" : "")} />
                 </button>
                 <button onClick={() => navigate('/settings')} className="p-2 hover:bg-secondary rounded-full premium-transition"><Settings className="w-5 h-5" /></button>
               </div>
@@ -420,11 +420,11 @@ export const ChatsPage: React.FC = () => {
 
       {/* Main Panel */}
       <div className={cn(
-        "flex-1 h-full bg-[#f4f3ec] dark:bg-[#16171d] relative overflow-hidden flex flex-col shadow-inner",
+        "flex-1 h-full bg-[#f4f3ec] md:rounded-2xl dark:bg-[#16171d] relative overflow-hidden flex flex-col shadow-inner",
         !id ? "hidden md:flex flex-col items-center justify-center p-8 text-center" : "flex"
       )}>
         {!id && (
-          <div className="max-w-md bg-background/50 p-8 rounded-3xl border border-border/50 shadow-sm backdrop-blur-sm animate-in fade-in zoom-in duration-500">
+          <div className="max-w-md bg-background/50 p-8 rounded-2xl border border-border/50 shadow-sm backdrop-blur-sm animate-in fade-in zoom-in duration-500">
             <div className="w-20 h-20 bg-primary/10 rounded-2xl mx-auto mb-6 flex items-center justify-center mix-blend-multiply dark:mix-blend-screen">
               <MessageSquareText className="w-10 h-10 text-primary opacity-80" />
             </div>
@@ -436,7 +436,7 @@ export const ChatsPage: React.FC = () => {
       </div>
 
       {id && showInfo && (
-        <div className="hidden lg:block w-[320px] xl:w-80 shrink-0 h-full animate-in slide-in-from-right duration-300">
+        <div className="hidden lg:block w-[320px] xl:w-80 md:rounded-2xl overflow-hidden shrink-0 h-full animate-in slide-in-from-right duration-300">
           <ChatInfoSidebar chatId={id} onClose={() => setShowInfo(false)} />
         </div>
       )}

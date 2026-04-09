@@ -3,8 +3,8 @@ import { supabase } from '@/lib/supabase';
 import { Avatar } from '@/components/ui/Avatar';
 import { useAuthStore } from '@/stores/authStore';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { 
-  Info, Users, Calendar, Shield, Bell, 
+import {
+  Info, Users, Calendar, Shield, Bell,
   ImageIcon, Link as LinkIcon, X, ChevronRight, Ban, UserX
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -46,7 +46,7 @@ export const ChatInfoSidebar: React.FC<ChatInfoSidebarProps> = ({ chatId, onClos
             .select('*')
             .eq('chat_id', chatId)
             .single();
-          
+
           const { data: memberData } = await supabase
             .from('chat_members')
             .select('user_id, role, profiles(username, full_name, avatar_url)')
@@ -109,11 +109,11 @@ export const ChatInfoSidebar: React.FC<ChatInfoSidebarProps> = ({ chatId, onClos
       <div className="flex-1 overflow-y-auto no-scrollbar">
         {/* Profile Card */}
         <div className="flex flex-col items-center p-8 bg-secondary/5">
-          <Avatar 
-            src={avatar} 
-            fallback={name || '?'} 
-            className="w-28 h-28 rounded-full shadow-lg border-2 border-background ring-1 ring-border/50" 
-            size="xl" 
+          <Avatar
+            src={avatar}
+            fallback={name || '?'}
+            className="w-28 h-28 rounded-full shadow-lg border-2 border-background ring-1 ring-border/50"
+            size="xl"
           />
           <h2 className="text-xl font-bold mt-4 text-center">{name || 'Unnamed'}</h2>
           <p className="text-xs text-muted-foreground mt-1 font-medium">
@@ -139,10 +139,10 @@ export const ChatInfoSidebar: React.FC<ChatInfoSidebarProps> = ({ chatId, onClos
               {about || "No description provided."}
             </p>
             {chatType === 'group' && (
-               <div className="pt-3 mt-3 border-t border-border/20 flex items-center gap-2 text-[10px] text-muted-foreground">
-                 <Calendar className="w-3 h-3" />
-                 <span>Created {details?.created_at ? format(new Date(details.created_at), 'MMM yyyy') : '...'}</span>
-               </div>
+              <div className="pt-3 mt-3 border-t border-border/20 flex items-center gap-2 text-[10px] text-muted-foreground">
+                <Calendar className="w-3 h-3" />
+                <span>Created {details?.created_at ? format(new Date(details.created_at), 'MMM yyyy') : '...'}</span>
+              </div>
             )}
           </div>
 
@@ -165,9 +165,9 @@ export const ChatInfoSidebar: React.FC<ChatInfoSidebarProps> = ({ chatId, onClos
                   </div>
                 ))}
                 {members.length > 10 && (
-                   <button className="w-full p-3 text-xs font-bold text-primary hover:bg-primary/5 transition-colors flex items-center justify-center gap-1 uppercase tracking-widest">
-                     View All {members.length} <ChevronRight className="w-3 h-3" />
-                   </button>
+                  <button className="w-full p-3 text-xs font-bold text-primary hover:bg-primary/5 transition-colors flex items-center justify-center gap-1 uppercase tracking-widest">
+                    View All {members.length} <ChevronRight className="w-3 h-3" />
+                  </button>
                 )}
               </div>
             </div>

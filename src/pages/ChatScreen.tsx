@@ -363,7 +363,7 @@ export const ChatScreen: React.FC = () => {
   const isFavorite = chatInfo?.is_favorite || false;
 
   return (
-    <div className="flex flex-col h-full w-full bg-secondary relative overflow-hidden">
+    <div className="flex flex-col h-full w-full md:bg-secondary relative overflow-hidden">
       <div className="absolute left-0 top-0 right-0 flex flex-col shrink-0 z-20">
         {isSelectionMode ? (
           <TopBar
@@ -604,7 +604,7 @@ export const ChatScreen: React.FC = () => {
 
       <GradualScroll 
         scrollRef={scrollContainerRef as any}
-        className="flex-1 w-full"
+        className="flex-1 w-full bg-secondary rounded-b-2xl"
         scrollClassName="pt-16 pb-0 flex flex-col-reverse gap-1 px-2 md:px-6 lg:px-12 scroll-smooth"
       >
         <div ref={messagesEndRef} className="h-0 w-full" />

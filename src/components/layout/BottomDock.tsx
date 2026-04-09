@@ -30,7 +30,7 @@ export const BottomDock: React.FC = () => {
                 className="flex items-center gap-4 p-4 rounded-2xl hover:bg-secondary/50 transition-colors text-left"
               >
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                  <MessageSquare className="w-5 h-5" />
+                  <MessageSquare className="w-5 h-5 fill-primary/20" />
                 </div>
                 <div>
                   <div className="font-semibold text-sm">New Chat</div>
@@ -43,7 +43,7 @@ export const BottomDock: React.FC = () => {
                 className="flex items-center gap-4 p-4 rounded-2xl hover:bg-secondary/50 transition-colors text-left"
               >
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                  <Users className="w-5 h-5" />
+                  <Users className="w-5 h-5 fill-primary/20" />
                 </div>
                 <div>
                   <div className="font-semibold text-sm">New Group</div>
@@ -55,8 +55,8 @@ export const BottomDock: React.FC = () => {
                 onClick={() => handleMenuClick(() => navigate('/invite'))}
                 className="flex items-center gap-4 p-4 rounded-2xl hover:bg-secondary/50 transition-colors text-left"
               >
-                <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center text-accent shrink-0">
-                  <Share2 className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                  <Share2 className="w-5 h-5 fill-primary/20" />
                 </div>
                 <div>
                   <div className="font-semibold text-sm">Invite a Friend</div>
@@ -71,7 +71,7 @@ export const BottomDock: React.FC = () => {
                 className="flex items-center gap-4 p-4 rounded-2xl hover:bg-secondary/50 transition-colors text-left"
               >
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                  <Megaphone className="w-5 h-5" />
+                  <Megaphone className="w-5 h-5 fill-primary/20" />
                 </div>
                 <div>
                   <div className="font-semibold text-sm">New Announcement</div>
