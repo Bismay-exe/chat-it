@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router';
 import { Toaster } from 'sonner';
+import { Capacitor } from '@capacitor/core';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/authStore';
 import { useAutoUpdate } from '@/hooks/useAutoUpdate';
@@ -88,9 +89,11 @@ export const App: React.FC = () => {
       setLoading(false);
 
       // Hide splash screen only after we know the auth state
-      setTimeout(() => {
-        SplashScreen.hide().catch(() => {});
-      }, 500); 
+      if (Capacitor.isNativePlatform()) {
+        setTimeout(() => {
+          SplashScreen.hide().catch(() => {});
+        }, 800); 
+      }
     });
 
     return () => subscription.unsubscribe();

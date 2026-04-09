@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router';
+import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import { StatusBar, Style } from '@capacitor/status-bar';
 
@@ -10,12 +11,14 @@ export const useCapacitor = () => {
   useEffect(() => {
     // 1. Status Bar Setup
     const setupStatusBar = async () => {
+      if (!Capacitor.isNativePlatform()) return;
+      
       try {
         await StatusBar.setOverlaysWebView({ overlay: true });
         await StatusBar.setBackgroundColor({ color: '#00000000' });
         await StatusBar.setStyle({ style: Style.Light });
       } catch (e) {
-        console.warn('StatusBar not available', e);
+        console.warn('StatusBar error:', e);
       }
     };
 
