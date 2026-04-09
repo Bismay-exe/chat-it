@@ -1,6 +1,7 @@
 import { useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Capacitor } from '@capacitor/core';
+import { App } from '@capacitor/app';
 import { useUpdateStore } from '@/stores/updateStore';
 
 // This should match the latest STABLE tag you've released (e.g., v1.0.0)
@@ -36,7 +37,16 @@ export const useAutoUpdate = () => {
       }
       const sanitizeVersion = (v: string) => v.trim().toLowerCase().replace(/^v/, '');
       const latestVersion = sanitizeVersion(latestRelease.tag_name || '');
-      const currentVersion = sanitizeVersion(CURRENT_VERSION);
+      
+      let currentVersion = sanitizeVersion(CURRENT_VERSION);
+      if (isNative) {
+        try {
+          const info = await App.getInfo();
+          currentVersion = sanitizeVersion(info.version);
+        } catch (e) {
+          console.warn('Failed to get native App info:', e);
+        }
+      }
 
       if (latestVersion && latestVersion !== currentVersion) {
         // If it's the web version, we don't show the update notification automatically
