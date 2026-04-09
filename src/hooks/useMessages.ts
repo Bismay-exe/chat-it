@@ -142,21 +142,20 @@ export function useMessages(chatId: string | undefined) {
   }, [messages.length, chatId, user?.id, queryClient]);
 
   const sendMessageMutation = useMutation({
-    mutationFn: async (content: string) => {
+    mutationFn: async ({ content, tempId }: { content: string, tempId: string }) => {
       if (!chatId || !user) throw new Error('Not initialized');
       const { data, error } = await supabase
         .from('messages')
-        .insert({ chat_id: chatId, sender_id: user.id, content: content.trim(), type: 'text' })
+        .insert({ id: tempId, chat_id: chatId, sender_id: user.id, content: content.trim(), type: 'text' })
         .select()
         .single();
       if (error) throw error;
       return data;
     },
-    onMutate: async (content) => {
+    onMutate: async ({ content, tempId }) => {
       await queryClient.cancelQueries({ queryKey: ['messages', chatId, user?.id] });
       const previousData = queryClient.getQueryData(['messages', chatId, user?.id]);
       
-      const tempId = `temp-${Date.now()}`;
       const optimisticMessage: MessageData = {
         id: tempId,
         chat_id: chatId!,
@@ -253,10 +252,11 @@ export function useMessages(chatId: string | undefined) {
 
       const publicUrl = `${supabaseUrl}/functions/v1/telegram-proxy?file_id=${encodeURIComponent(fileId)}`;
 
-      // 2. Insert Message
+      // 2. Insert Message with predefined ID
       const { data, error } = await supabase
         .from('messages')
         .insert({
+          id: tempId,
           chat_id: chatId,
           sender_id: user.id,
           content: '',
@@ -292,7 +292,7 @@ export function useMessages(chatId: string | undefined) {
       queryClient.setQueryData(['messages', chatId, user?.id], (old: any) => {
         if (!old) return { pages: [[optimisticMessage]], pageParams: [null] };
         const updatedPages = [...old.pages];
-        updatedPages[0] = [optimisticMessage, ...updatedPages[0]];
+        updatedPages[0] = [...updatedPages[0], optimisticMessage];
         return { ...old, pages: updatedPages };
       });
 
@@ -346,9 +346,12 @@ export function useMessages(chatId: string | undefined) {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-    sendMessage: (content: string) => sendMessageMutation.mutate(content),
+    sendMessage: (content: string) => {
+      const tempId = crypto.randomUUID();
+      return sendMessageMutation.mutateAsync({ content, tempId });
+    },
     sendFile: (file: File, type: 'image' | 'video' | 'file') => {
-      const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const tempId = crypto.randomUUID();
       return sendFileMutation.mutateAsync({ file, type, tempId });
     },
     deleteMessage: (id: string) => deleteMessageMutation.mutate(id)
