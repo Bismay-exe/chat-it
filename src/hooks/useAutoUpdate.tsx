@@ -6,49 +6,75 @@ import { useUpdateStore } from '@/stores/updateStore';
 
 // This should match the latest STABLE tag you've released (e.g., v1.0.0)
 // For beta builds, the CI/CD will append -beta.RUN_ID
-export const CURRENT_VERSION = 'v1.0.0'; 
+export const CURRENT_VERSION = 'v1.0.0';
 const GITHUB_REPO = 'Bismay-exe/chat-it';
 
 export const useAutoUpdate = () => {
   const { isChecking, setChecking, setUpdateAvailable } = useUpdateStore();
+
+  const sanitizeVersion = (v: string) => v.trim().toLowerCase().replace(/^v/, '');
 
   const checkForUpdates = useCallback(async (manual = false) => {
     // Only check automatically if on a native platform (Android/iOS)
     const isNative = Capacitor.isNativePlatform();
     if (!isNative && !manual) return;
 
-    const channel = localStorage.getItem('chat-it-update-channel') || 'stable';
+    let currentVersion = sanitizeVersion(CURRENT_VERSION);
+    if (isNative) {
+      try {
+        const info = await App.getInfo();
+        currentVersion = sanitizeVersion(info.version);
+      } catch (e) {
+        console.warn('Failed to get native App info:', e);
+      }
+    }
+
+    let channel = localStorage.getItem('chat-it-update-channel') || 'stable';
+    // If the installed version is beta, forcefully check beta channel to prevent false stable downgrades
+    if (currentVersion.includes('beta') && channel === 'stable') {
+      channel = 'beta';
+    }
+
     if (manual) setChecking(true);
 
     try {
-      // For 'stable', releases/latest only returns non-prereleases
-      // For 'beta', we need the first item from the full releases list
-      const url = channel === 'stable' 
+      const url = channel === 'stable'
         ? `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`
         : `https://api.github.com/repos/${GITHUB_REPO}/releases`;
-      
+
       const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch releases');
-      
+
       const data = await response.json();
       let latestRelease = Array.isArray(data) ? data[0] : data;
       if (Array.isArray(data) && channel === 'beta') {
         latestRelease = data.find((r: any) => r.prerelease || r.tag_name?.toLowerCase().includes('beta')) || data[0];
       }
-      const sanitizeVersion = (v: string) => v.trim().toLowerCase().replace(/^v/, '');
-      const latestVersion = sanitizeVersion(latestRelease.tag_name || '');
-      
-      let currentVersion = sanitizeVersion(CURRENT_VERSION);
-      if (isNative) {
-        try {
-          const info = await App.getInfo();
-          currentVersion = sanitizeVersion(info.version);
-        } catch (e) {
-          console.warn('Failed to get native App info:', e);
-        }
-      }
 
-      if (latestVersion && latestVersion !== currentVersion) {
+      const latestVersion = sanitizeVersion(latestRelease.tag_name || '');
+
+      const isNewerVersion = (latest: string, current: string) => {
+        if (latest === current) return false;
+        const parse = (v: string) => {
+          const [main, pre] = v.split('-beta.');
+          const parts = main.split('.').map(n => parseInt(n) || 0);
+          // If no beta suffix, treat as stable (high preNumber)
+          const preNumber = pre ? (parseInt(pre) || 0) : 999999;
+          return { parts, preNumber };
+        };
+        const l = parse(latest);
+        const c = parse(current);
+
+        for (let i = 0; i < Math.max(l.parts.length, c.parts.length); i++) {
+          const pL = l.parts[i] || 0;
+          const pC = c.parts[i] || 0;
+          if (pL > pC) return true;
+          if (pL < pC) return false;
+        }
+        return l.preNumber > c.preNumber;
+      };
+
+      if (latestVersion && isNewerVersion(latestVersion, currentVersion)) {
         // If it's the web version, we don't show the update notification automatically
         if (!isNative) {
           if (manual) {
@@ -67,7 +93,7 @@ export const useAutoUpdate = () => {
         }
       } else if (manual) {
         toast.success("You're on the latest version!", {
-           description: `Current version ${CURRENT_VERSION} is up to date.`
+          description: `Current version ${CURRENT_VERSION} is up to date.`
         });
       }
     } catch (error) {

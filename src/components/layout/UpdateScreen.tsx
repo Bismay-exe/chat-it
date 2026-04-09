@@ -98,8 +98,8 @@ export const UpdateScreen: React.FC = () => {
       <h1 className="text-2xl font-black mb-12 tracking-tighter">Update Chat-It</h1>
 
       {/* Big Logo */}
-      <div className="w-32 h-32 bg-primary rounded-[3rem] flex items-center justify-center shadow-2xl shadow-primary/30 mb-8 animate-bounce" style={{ animationDuration: '3s' }}>
-        <img src="/logo/chat-it-logo.svg" alt="Chat-It" className="h-16 w-auto xdark:invert" />
+      <div className="w-32 h-32 bg-primary rounded-4xl flex items-center justify-center shadow-2xl shadow-primary/30 mb-8 animate-bounce" style={{ animationDuration: '3s' }}>
+        <img src="/logo/chat-it-logo.svg" alt="Chat-It" className="h-16 xdark:invert" />
       </div>
 
       {/* Texts Below Logo */}
