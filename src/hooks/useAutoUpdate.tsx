@@ -56,10 +56,20 @@ export const useAutoUpdate = () => {
       const isNewerVersion = (latest: string, current: string) => {
         if (latest === current) return false;
         const parse = (v: string) => {
-          const [main, pre] = v.split('-beta.');
+          // Handles both "1.0.1-beta.31" and "1.0.1-beta"
+          const [main, pre] = v.split(/-beta\.?|beta\.?/);
           const parts = main.split('.').map(n => parseInt(n) || 0);
-          // If no beta suffix, treat as stable (high preNumber)
-          const preNumber = pre ? (parseInt(pre) || 0) : 999999;
+          
+          // If it's a beta, we need to extract the number if it exists. 
+          // If "1.0.1-beta" (no number), we treat it as beta 0.
+          // If "1.0.1" (stable), it gets 999999 to rank higher than any beta.
+          let preNumber = 0;
+          if (!v.includes('beta')) {
+            preNumber = 999999;
+          } else if (pre) {
+            preNumber = parseInt(pre) || 0;
+          }
+          
           return { parts, preNumber };
         };
         const l = parse(latest);
