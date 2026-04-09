@@ -10,13 +10,13 @@ export const UpdateScreen: React.FC = () => {
   const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
   const [xhr, setXhr] = useState<XMLHttpRequest | null>(null);
 
-  if (!updateAvailable) return null;
-
   useEffect(() => {
     if (updateAvailable && downloadUrl && autoStartDownload && downloadProgress === null) {
       handleDownload();
     }
-  }, [updateAvailable, downloadUrl, autoStartDownload]);
+  }, [updateAvailable, downloadUrl, autoStartDownload, downloadProgress]);
+
+  if (!updateAvailable) return null;
 
   const handleDownload = async () => {
     if (!downloadUrl || downloadProgress !== null) return;
