@@ -1,4 +1,5 @@
 import { CapacitorConfig } from '@capacitor/cli';
+import { Style } from '@capacitor/status-bar';
 
 const config: CapacitorConfig = {
   appId: 'com.chatit.app',
@@ -12,8 +13,13 @@ const config: CapacitorConfig = {
       backgroundColor: "#f5f5f5",
       androidScaleType: "CENTER_CROP",
       showSpinner: false,
-      splashFullScreen: true,
-      splashImmersive: true,
+      splashFullScreen: false,
+      splashImmersive: false,
+    },
+    StatusBar: {
+      overlaysWebView: true,
+      style: Style.Light,
+      backgroundColor: "#00000000",
     },
   },
 };

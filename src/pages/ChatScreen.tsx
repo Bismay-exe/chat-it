@@ -206,7 +206,7 @@ export const ChatScreen: React.FC = () => {
       }
     });
 
-    return matches.reverse();
+    return matches;
   }, [messages, debouncedQuery]);
 
   useEffect(() => {
@@ -288,15 +288,18 @@ export const ChatScreen: React.FC = () => {
       messages: { msg: any; originalIndex: number }[];
     }[] = [];
 
-    messages.forEach((msg, idx) => {
+    // Reverse messages for flex-col-reverse: newest first
+    const reversedMessages = [...messages].reverse();
+
+    reversedMessages.forEach((msg, idx) => {
       const lastGroup = groups[groups.length - 1];
       if (lastGroup && lastGroup.sender_id === msg.sender_id) {
-        lastGroup.messages.push({ msg, originalIndex: idx });
+        lastGroup.messages.push({ msg, originalIndex: messages.length - 1 - idx });
       } else {
         groups.push({
           sender_id: msg.sender_id,
           profile: msg.profiles,
-          messages: [{ msg, originalIndex: idx }]
+          messages: [{ msg, originalIndex: messages.length - 1 - idx }]
         });
       }
     });
@@ -602,10 +605,12 @@ export const ChatScreen: React.FC = () => {
       <GradualScroll 
         scrollRef={scrollContainerRef as any}
         className="flex-1 w-full"
-        scrollClassName="pt-16 pb-0 flex flex-col gap-1 px-2 md:px-6 lg:px-12 scroll-smooth"
+        scrollClassName="pt-16 pb-0 flex flex-col-reverse gap-1 px-2 md:px-6 lg:px-12 scroll-smooth"
       >
+        <div ref={messagesEndRef} className="h-0 w-full" />
+        
         {isLoading && messages.length === 0 ? (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 mb-auto">
             <div className="flex justify-start">
               <Skeleton className="h-12 w-[60%] rounded-2xl rounded-bl-none" />
             </div>
@@ -620,28 +625,19 @@ export const ChatScreen: React.FC = () => {
             </div>
           </div>
         ) : messages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center opacity-30 select-none grayscale">
+          <div className="h-full mt-auto mb-auto flex flex-col items-center justify-center opacity-30 select-none grayscale">
             <MessageSquare className="w-16 h-16 mb-4" />
             <p className="text-sm font-bold tracking-widest uppercase">No messages yet</p>
             <p className="text-[10px] mt-1">Start the conversation below.</p>
           </div>
         ) : (
           <>
-            <div ref={loadMoreRef} className="h-4 flex items-center justify-center py-4">
-              {isFetchingNextPage && (
-                <div className="flex items-center gap-2 text-[10px] font-black text-primary animate-pulse uppercase tracking-widest">
-                  <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" />
-                  Loading History
-                  <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:0.2s]" />
-                </div>
-              )}
-            </div>
             {groupedMessages.map((group, gIdx) => {
               const isSentByMe = group.sender_id === user?.id;
               
               return (
                 <div 
-                  key={group.messages[0].msg.id} 
+                  key={`group-${group.sender_id}-${gIdx}`} 
                   className={cn(
                     "flex items-end w-full gap-2 mb-4",
                     isSentByMe ? "flex-row-reverse" : "flex-row"
@@ -661,8 +657,8 @@ export const ChatScreen: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Messages list for this group */}
-                  <div className="flex flex-col gap-1 flex-1 min-w-0">
+                  {/* Messages list for this group (reversed internally to preserve DOM injection anchor) */}
+                  <div className="flex flex-col-reverse gap-1 flex-1 min-w-0">
                     {group.messages.map(({ msg, originalIndex }: { msg: any; originalIndex: number }, mIdx: number) => (
                       <AnimatedItem key={msg.id} index={mIdx} delay={0.05}>
                         <div id={`msg-${msg.id}`} className="transition-all duration-300">
@@ -696,7 +692,15 @@ export const ChatScreen: React.FC = () => {
                 </div>
               );
             })}
-            <div ref={messagesEndRef} className="pb-0" />
+            <div ref={loadMoreRef} className="h-4 flex items-center justify-center py-4">
+              {isFetchingNextPage && (
+                <div className="flex items-center gap-2 text-[10px] font-black text-primary animate-pulse uppercase tracking-widest">
+                  <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" />
+                  Loading History
+                  <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:0.2s]" />
+                </div>
+              )}
+            </div>
           </>
         )}
       </GradualScroll>

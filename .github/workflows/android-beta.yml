@@ -46,20 +46,19 @@ jobs:
       - name: Determine Beta Version
         id: versioning
         run: |
-          # Fetch latest stable tag (vX.Y.Z)
-          LATEST_STABLE=$(git tag -l "v[0-9]*.[0-9]*.[0-9]*" | grep -v "beta" | sort -V | tail -n1)
-          if [ -z "$LATEST_STABLE" ]; then
-            LATEST_STABLE="v0.0.0"
-          fi
+          git fetch --tags --force
+          # Fetch absolute latest tag
+          LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1` 2>/dev/null || echo "v5.0.0")
           
-          # Increment patch version for beta
-          VERSION_BASE=$(echo $LATEST_STABLE | sed 's/v//')
+          # Clean 'v' and '-beta'
+          VERSION_BASE=$(echo $LATEST_TAG | sed 's/v//' | cut -d- -f1)
           MAJOR=$(echo $VERSION_BASE | cut -d. -f1)
           MINOR=$(echo $VERSION_BASE | cut -d. -f2)
           PATCH=$(echo $VERSION_BASE | cut -d. -f3)
+
           NEW_PATCH=$((PATCH + 1))
           
-          BETA_VERSION="$MAJOR.$MINOR.$NEW_PATCH-beta.${{ github.run_number }}"
+          BETA_VERSION="$MAJOR.$MINOR.$NEW_PATCH-beta"
           echo "BETA_VERSION=$BETA_VERSION" >> $GITHUB_ENV
           echo "SHORT_VERSION=$MAJOR.$MINOR.$NEW_PATCH" >> $GITHUB_ENV
 

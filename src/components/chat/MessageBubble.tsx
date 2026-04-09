@@ -339,7 +339,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
             {type === 'image' && media_url && (
               <>
                 <div onClick={() => setIsViewerOpen(true)} className="relative group/media rounded-xl overflow-hidden bg-black/5 aspect-square max-h-80 shadow-inner cursor-pointer">
-                  <img src={media_url} alt="Shared" className="w-full h-full object-cover" />
+                  <img src={media_url} alt="Shared" loading="lazy" className="w-full h-full object-cover" />
                   {!isSentByMe && downloadProgress !== null && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/5">
                       <ProgressCircle progress={downloadProgress || 0} isDownloading={true} onCancel={cancelDownload} />
@@ -382,7 +382,11 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
             {type === 'video' && media_url && (
               <>
                 <div className="relative group/media rounded-xl overflow-hidden bg-black/5 aspect-video max-h-80 flex items-center justify-center shadow-inner cursor-pointer" onClick={() => setIsViewerOpen(true)}>
-                  <video src={media_url} className="w-full h-full object-cover" />
+                  <video 
+                    src={media_url} 
+                    preload="metadata"
+                    className="w-full h-full object-cover" 
+                  />
                   <div className="absolute inset-0 flex items-center justify-center bg-black/20">
                     {!isSentByMe ? (
                       downloadProgress !== null ? <ProgressCircle progress={downloadProgress} isDownloading={true} onCancel={cancelDownload} /> : (
