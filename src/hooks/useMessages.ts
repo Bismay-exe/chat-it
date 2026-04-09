@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
+import { supabase, supabaseUrl } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/authStore';
 import { toast } from 'sonner';
 
@@ -198,20 +198,32 @@ export function useMessages(chatId: string | undefined) {
     mutationFn: async ({ file, type }: { file: File, type: 'image' | 'video' | 'file' }) => {
       if (!chatId || !user) throw new Error('Not initialized');
 
-      // 1. Upload to Supabase Storage
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(2)}${Date.now()}.${fileExt}`;
-      const filePath = `${chatId}/${fileName}`;
+      // 1. Upload to Telegram via Edge Function
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-      const { error: uploadError } = await supabase.storage
-        .from('chat-attachments')
-        .upload(filePath, file);
+      const response = await fetch(`${supabaseUrl}/functions/v1/telegram-upload`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData,
+      });
 
-      if (uploadError) throw uploadError;
+      if (!response.ok) {
+        const errData = await response.json().catch(() => null);
+        throw new Error(errData?.error || `API returned ${response.status}`);
+      }
+      
+      const uploadData = await response.json();
+      
+      const fileId = uploadData?.file_id;
+      if (!fileId) throw new Error('Failed to retrieve file_id from Telegram');
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('chat-attachments')
-        .getPublicUrl(filePath);
+      const publicUrl = `${supabaseUrl}/functions/v1/telegram-proxy?file_id=${encodeURIComponent(fileId)}`;
 
       // 2. Insert Message
       const { data, error } = await supabase

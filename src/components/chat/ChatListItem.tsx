@@ -171,7 +171,7 @@ export const ChatListItem: React.FC<ChatListItemProps> = React.memo(({
         )}
       >
         <div className={cn(
-          'absolute left-1.5 right-1.5 top-0 bottom-0',
+          'absolute left-1.5 right-1.5 top-0 bottom-1.5',
           isActive ? 'bg-primary/20 border border-black/10 rounded-[20px]' : (isSelected ? 'bg-primary/10 rounded-[20px]' : 'hover:bg-secondary/40')
         )}></div>
 
@@ -184,7 +184,7 @@ export const ChatListItem: React.FC<ChatListItemProps> = React.memo(({
           )}
         </div>
 
-        <div className="flex-1 overflow-hidden pointer-events-none">
+        <div className="flex-1 pr-4 overflow-hidden pointer-events-none">
           <div className="flex justify-between items-baseline mb-0.5">
             <h3 className="font-bold font-bricolage-semi-condensed text-[20px] tracking-tight truncate flex items-center gap-2 text-foreground pr-2">
               {name}
@@ -207,10 +207,10 @@ export const ChatListItem: React.FC<ChatListItemProps> = React.memo(({
             </div>
           </div>
         </div>
-        <div className="border-b border-secondary-foreground/5 absolute bottom-0 left-22 right-3"></div>
+        <div className="border-b border-secondary-foreground/5 absolute bottom-[0.95px] left-22 right-3"></div>
       </button>
 
-      <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-80 group-hover:opacity-100 premium-transition hidden md:block">
+      <div className="absolute right-0 top-1/2 -translate-y-1/2 opacity-80 group-hover:opacity-100 premium-transition hidden md:block">
         <DropdownMenu items={dropdownItems} />
       </div>
     </div>

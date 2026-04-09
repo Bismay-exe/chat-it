@@ -90,14 +90,14 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({ items, icon, align =
     <div className="relative inline-block text-left" ref={ref}>
       <button 
         onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); setOpenSubIndex(null); }} 
-        className="p-2 hover:bg-secondary rounded-full premium-transition text-muted-foreground hover:text-foreground"
+        className="p-2 premium-transition text-muted-foreground hover:text-foreground"
       >
         {icon || <MoreVertical className="w-5 h-5" />}
       </button>
 
       {isOpen && (
         <div className={cn(
-          "absolute right-0 mt-2 w-56 origin-top-right bg-background rounded-2xl shadow-2xl ring-1 ring-black/5 focus:outline-none z-50 overflow-hidden border border-border animate-in slide-in-from-top-2 fade-in duration-200",
+          "absolute right-0 mt-2 w-56 origin-top-right bg-background rounded-2xl shadow-2xl ring-1 ring-black/5 focus:outline-none z-100 overflow-hidden border border-border animate-in slide-in-from-top-2 fade-in duration-200",
           align === 'right' ? "right-0" : "left-0"
         )}>
           <div className="py-1">
