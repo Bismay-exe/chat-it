@@ -702,7 +702,7 @@ export const ChatScreen: React.FC = () => {
 
       <MessageComposer
         onSendMessage={(text) => sendMessage(text)}
-        onSendFile={(file, type) => sendFile(file, type)}
+        onSendFile={(file, type, onProgress) => sendFile(file, type, onProgress)}
         onTyping={(isTyping) => sendTypingStatus(isTyping)}
         disabled={isLoading && messages.length === 0 || isRestricted}
         placeholder={isRestricted ? "Only admins can send messages" : "Type a message..."}

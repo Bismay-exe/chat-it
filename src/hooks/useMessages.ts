@@ -47,7 +47,10 @@ export function useMessages(chatId: string | undefined) {
         type: m.res_type,
         created_at: m.res_created_at,
         profiles: m.res_profiles,
-        status: m.res_status
+        status: m.res_status,
+        media_url: m.res_media_url,
+        file_name: m.res_file_name,
+        file_size: m.res_file_size || m.file_size
       })).reverse() as MessageData[];
     },
     enabled: !!chatId && !!user,
@@ -195,7 +198,7 @@ export function useMessages(chatId: string | undefined) {
   });
 
   const sendFileMutation = useMutation({
-    mutationFn: async ({ file, type }: { file: File, type: 'image' | 'video' | 'file' }) => {
+    mutationFn: async ({ file, type, onProgress }: { file: File, type: 'image' | 'video' | 'file', onProgress?: (p: number) => void }) => {
       if (!chatId || !user) throw new Error('Not initialized');
 
       // 1. Upload to Telegram via Edge Function
@@ -205,20 +208,38 @@ export function useMessages(chatId: string | undefined) {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-      const response = await fetch(`${supabaseUrl}/functions/v1/telegram-upload`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData,
-      });
+      const uploadData: any = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `${supabaseUrl}/functions/v1/telegram-upload`);
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable && onProgress) {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            onProgress(percent);
+          }
+        };
 
-      if (!response.ok) {
-        const errData = await response.json().catch(() => null);
-        throw new Error(errData?.error || `API returned ${response.status}`);
-      }
-      
-      const uploadData = await response.json();
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              resolve(JSON.parse(xhr.responseText));
+            } catch (err) {
+              reject(new Error('Invalid JSON response'));
+            }
+          } else {
+            try {
+              const errData = JSON.parse(xhr.responseText);
+              reject(new Error(errData?.error || `API returned ${xhr.status}`));
+            } catch {
+              reject(new Error(`API returned ${xhr.status}`));
+            }
+          }
+        };
+
+        xhr.onerror = () => reject(new Error('Network error during upload'));
+        xhr.send(formData);
+      });
       
       const fileId = uploadData?.file_id;
       if (!fileId) throw new Error('Failed to retrieve file_id from Telegram');
@@ -319,7 +340,7 @@ export function useMessages(chatId: string | undefined) {
     hasNextPage,
     isFetchingNextPage,
     sendMessage: (content: string) => sendMessageMutation.mutate(content),
-    sendFile: (file: File, type: 'image' | 'video' | 'file') => sendFileMutation.mutate({ file, type }),
+    sendFile: (file: File, type: 'image' | 'video' | 'file', onProgress?: (p: number) => void) => sendFileMutation.mutateAsync({ file, type, onProgress }),
     deleteMessage: (id: string) => deleteMessageMutation.mutate(id)
   };
 }

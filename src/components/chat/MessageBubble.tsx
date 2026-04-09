@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 import {
   Check,
@@ -97,6 +98,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
 }) => {
   const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
   const [xhr, setXhr] = useState<XMLHttpRequest | null>(null);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
   const longPressTimer = useRef<any>(null);
   const isLongPress = useRef(false);
 
@@ -333,44 +335,76 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
         ) : (
           <div className="flex flex-col gap-1.5 relative">
             {type === 'image' && media_url && (
-              <div className="relative group/media rounded-xl overflow-hidden bg-black/5 aspect-square max-h-80 shadow-inner">
-                <img src={media_url} alt="Shared" className="w-full h-full object-cover" />
-                {!isSentByMe && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/5">
-                    <ProgressCircle progress={downloadProgress || 0} isDownloading={downloadProgress !== null} onCancel={cancelDownload} />
+              <>
+                <div onClick={() => setIsViewerOpen(true)} className="relative group/media rounded-xl overflow-hidden bg-black/5 aspect-square max-h-80 shadow-inner cursor-pointer">
+                  <img src={media_url} alt="Shared" className="w-full h-full object-cover" />
+                  {!isSentByMe && downloadProgress !== null && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/5">
+                      <ProgressCircle progress={downloadProgress || 0} isDownloading={true} onCancel={cancelDownload} />
+                    </div>
+                  )}
+                  {/* Meta Overlay for Images */}
+                  <div className="absolute bottom-1.5 right-1.5 bg-black/40 backdrop-blur-md px-1.5 py-0.5 rounded-md flex items-center gap-1 text-[9px] text-white/90">
+                    <div className="flex items-center gap-0.5">
+                      <Eye className="w-2.5 h-2.5" />
+                      <span>10</span>
+                    </div>
+                    <span>{timestamp}</span>
+                    {isSentByMe && status && (
+                      <span className="flex items-center">
+                        {status === 'read' ? <CheckCheck className="w-3.5 h-3.5 text-blue-300" /> : status === 'delivered' ? <CheckCheck className="w-3.5 h-3.5" /> : status === 'sending' ? <RefreshCw className="w-2.5 h-2.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                      </span>
+                    )}
                   </div>
-                )}
-                {/* Meta Overlay for Images */}
-                <div className="absolute bottom-1.5 right-1.5 bg-black/40 backdrop-blur-md px-1.5 py-0.5 rounded-md flex items-center gap-1.5 text-[9px] text-white/90">
-                  <div className="flex items-center gap-0.5">
-                    <Eye className="w-2.5 h-2.5" />
-                    <span>10</span>
-                  </div>
-                  <span>{timestamp}</span>
                 </div>
-              </div>
+                {isViewerOpen && createPortal(
+                  <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-2 animate-in fade-in duration-200" onClick={() => setIsViewerOpen(false)}>
+                    <button onClick={(e) => { e.stopPropagation(); setIsViewerOpen(false); }} className="absolute top-4 right-4 z-50 p-3 bg-white/10 rounded-full hover:bg-white/20 text-white backdrop-blur-md transition-colors">
+                      <X className="w-6 h-6" />
+                    </button>
+                    <img src={media_url} alt="Expanded" className="max-w-full max-h-full object-contain cursor-default" onClick={(e) => e.stopPropagation()} />
+                  </div>,
+                  document.body
+                )}
+              </>
             )}
             {type === 'video' && media_url && (
-              <div className="relative group/media rounded-xl overflow-hidden bg-black/5 aspect-video max-h-80 flex items-center justify-center shadow-inner">
-                <video src={media_url} className="w-full h-full object-cover" />
-                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                  {!isSentByMe ? (
-                    downloadProgress !== null ? <ProgressCircle progress={downloadProgress} isDownloading={true} onCancel={cancelDownload} /> : (
-                      <div className="w-14 h-14 bg-black/40 rounded-full flex items-center justify-center backdrop-blur-sm cursor-pointer hover:bg-black/60 transition-colors shadow-xl" onClick={() => handleDownload()}>
-                        <Play className="w-7 h-7 text-white fill-white ml-0.5" />
-                      </div>
-                    )
-                  ) : <Play className="w-10 h-10 text-white/30" />}
-                </div>
-                {/* Meta Overlay for Videos */}
-                <div className="absolute bottom-1.5 right-1.5 bg-black/40 backdrop-blur-md px-1.5 py-0.5 rounded-md flex items-center gap-1.5 text-[9px] text-white/90">
-                  <div className="flex items-center gap-0.5">
-                    <Eye className="w-2.5 h-2.5" />
-                    <span>10</span>
+              <>
+                <div className="relative group/media rounded-xl overflow-hidden bg-black/5 aspect-video max-h-80 flex items-center justify-center shadow-inner cursor-pointer" onClick={() => setIsViewerOpen(true)}>
+                  <video src={media_url} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                    {!isSentByMe ? (
+                      downloadProgress !== null ? <ProgressCircle progress={downloadProgress} isDownloading={true} onCancel={cancelDownload} /> : (
+                        <div className="w-14 h-14 bg-black/40 rounded-full flex items-center justify-center backdrop-blur-sm hover:bg-black/60 transition-colors shadow-xl">
+                          <Play className="w-7 h-7 text-white fill-white ml-0.5" />
+                        </div>
+                      )
+                    ) : <Play className="w-10 h-10 text-white/30" />}
                   </div>
-                  <span>{timestamp}</span>
+                  {/* Meta Overlay for Videos */}
+                  <div className="absolute bottom-1.5 right-1.5 bg-black/40 backdrop-blur-md px-1.5 py-0.5 rounded-md flex items-center gap-1 text-[9px] text-white/90">
+                    <div className="flex items-center gap-0.5">
+                      <Eye className="w-2.5 h-2.5" />
+                      <span>10</span>
+                    </div>
+                    <span>{timestamp}</span>
+                    {isSentByMe && status && (
+                      <span className="flex items-center">
+                        {status === 'read' ? <CheckCheck className="w-3.5 h-3.5 text-blue-300" /> : status === 'delivered' ? <CheckCheck className="w-3.5 h-3.5" /> : status === 'sending' ? <RefreshCw className="w-2.5 h-2.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
+                {isViewerOpen && createPortal(
+                  <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-2 animate-in fade-in duration-200" onClick={() => setIsViewerOpen(false)}>
+                    <button onClick={(e) => { e.stopPropagation(); setIsViewerOpen(false); }} className="absolute top-4 right-4 z-50 p-3 bg-white/10 rounded-full hover:bg-white/20 text-white backdrop-blur-md transition-colors">
+                      <X className="w-6 h-6" />
+                    </button>
+                    <video src={media_url} controls autoPlay className="max-w-full max-h-full object-contain cursor-default" onClick={(e) => e.stopPropagation()} />
+                  </div>,
+                  document.body
+                )}
+              </>
             )}
             {type === 'file' && (
               <div className={cn("flex items-center gap-4 p-2.5 rounded-xl transition-colors", !isSentByMe ? "cursor-pointer hover:bg-black/5" : "bg-white/10")} onClick={() => !isSentByMe && handleDownload()}>
