@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, supabaseUrl } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/authStore';
+import { useUploadStore } from '@/stores/uploadStore';
 import { toast } from 'sonner';
 
 // Safe UUID generator for Capacitor WebViews that might lack crypto.randomUUID
@@ -221,17 +222,41 @@ export function useMessages(chatId: string | undefined) {
 
       const uploadData: any = await new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
+        useUploadStore.getState().addUpload(tempId, xhr);
+
         xhr.open('POST', `${supabaseUrl}/functions/v1/telegram-upload`);
         xhr.setRequestHeader('Authorization', `Bearer ${token}`);
         
+        // Use a simulated fallback progress combined with real progress, due to Edge Function buffering
+        let simulatedProgress = 0;
+        const progressInterval = setInterval(() => {
+          simulatedProgress += Math.floor(Math.random() * 5) + 2; // slow increment
+          if (simulatedProgress > 85) clearInterval(progressInterval);
+          
+          queryClient.setQueryData(['messages', chatId, user?.id], (old: any) => {
+            if (!old || !old.pages?.[0]) return old;
+            const updatedPages = [...old.pages];
+            updatedPages[0] = updatedPages[0].map((m: any) => 
+              m.id === tempId ? { ...m, uploadProgress: Math.min(simulatedProgress, m.uploadProgress || 0) } : m
+            );
+            return { ...old, pages: updatedPages };
+          });
+        }, 300);
+
         xhr.upload.onprogress = (e) => {
           if (e.lengthComputable) {
-            const percent = Math.round((e.loaded / e.total) * 100);
+            let percent = Math.round((e.loaded / e.total) * 100);
+            // Since proxy buffers entirely, 100% on client means it reached Supabase, not necessarily Telegram.
+            // We cap real progress at 90% until the API responds.
+            if (percent >= 100) percent = 90; 
+            
+            clearInterval(progressInterval); // real progress takes over
+
             queryClient.setQueryData(['messages', chatId, user?.id], (old: any) => {
               if (!old || !old.pages?.[0]) return old;
               const updatedPages = [...old.pages];
               updatedPages[0] = updatedPages[0].map((m: any) => 
-                m.id === tempId ? { ...m, uploadProgress: percent } : m
+                m.id === tempId ? { ...m, uploadProgress: Math.max(percent, m.uploadProgress || 0) } : m
               );
               return { ...old, pages: updatedPages };
             });
@@ -239,6 +264,8 @@ export function useMessages(chatId: string | undefined) {
         };
 
         xhr.onload = () => {
+          clearInterval(progressInterval);
+          useUploadStore.getState().removeUpload(tempId);
           if (xhr.status >= 200 && xhr.status < 300) {
             try {
               resolve(JSON.parse(xhr.responseText));
@@ -255,7 +282,18 @@ export function useMessages(chatId: string | undefined) {
           }
         };
 
-        xhr.onerror = () => reject(new Error('Network error during upload'));
+        xhr.onerror = () => {
+          clearInterval(progressInterval);
+          useUploadStore.getState().removeUpload(tempId);
+          reject(new Error('Network error during upload'));
+        };
+        
+        xhr.onabort = () => {
+          clearInterval(progressInterval);
+          useUploadStore.getState().removeUpload(tempId);
+          reject(new Error('UPLOAD_ABORTED'));
+        };
+
         xhr.send(formData);
       });
       
@@ -314,7 +352,9 @@ export function useMessages(chatId: string | undefined) {
       if (context?.previousData) {
         queryClient.setQueryData(['messages', chatId, user?.id], context.previousData);
       }
-      toast.error('Upload failed: ' + err.message);
+      if (err.message !== 'UPLOAD_ABORTED') {
+        toast.error('Upload failed: ' + err.message);
+      }
     },
     onSuccess: (data, _, context) => {
       queryClient.setQueryData(['messages', chatId, user?.id], (old: any) => {

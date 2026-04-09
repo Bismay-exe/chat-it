@@ -21,6 +21,7 @@ import { Share } from '@capacitor/share';
 import { toast } from 'sonner';
 import { DropdownMenu } from '@/components/ui/DropdownMenu';
 import { Avatar } from '@/components/ui/Avatar';
+import { useUploadStore } from '@/stores/uploadStore';
 
 export interface MessageBubbleProps {
   id: string;
@@ -354,14 +355,21 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
                     {isSentByMe && status && (
                       <span className="flex items-center ml-1">
                         {status === 'read' ? <CheckCheck className="w-3.5 h-3.5 text-blue-300" /> : status === 'delivered' ? <CheckCheck className="w-3.5 h-3.5" /> : status === 'sending' ? (
-                          uploadProgress !== undefined ? <span className="font-bold tracking-tighter">{uploadProgress}%</span> : <RefreshCw className="w-2.5 h-2.5 animate-spin" />
+                          uploadProgress !== undefined ? (
+                            <span className="flex items-center gap-0.5 pointer-events-auto">
+                              <span className="font-bold tracking-tighter">{uploadProgress}%</span>
+                              <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); useUploadStore.getState().cancelUpload(id); }} className="hover:bg-white/20 rounded-full p-px transition-colors cursor-pointer" aria-label="Cancel upload">
+                                <X className="w-2.5 h-2.5" />
+                              </button>
+                            </span>
+                          ) : <RefreshCw className="w-2.5 h-2.5 animate-spin" />
                         ) : <Check className="w-3.5 h-3.5" />}
                       </span>
                     )}
                   </div>
                 </div>
                 {isViewerOpen && createPortal(
-                  <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-2 animate-in fade-in duration-200" onClick={() => setIsViewerOpen(false)}>
+                  <div className="fixed inset-0 z-100 bg-black/95 flex items-center justify-center p-2 animate-in fade-in duration-200" onClick={() => setIsViewerOpen(false)}>
                     <button onClick={(e) => { e.stopPropagation(); setIsViewerOpen(false); }} className="absolute top-4 right-4 z-50 p-3 bg-white/10 rounded-full hover:bg-white/20 text-white backdrop-blur-md transition-colors">
                       <X className="w-6 h-6" />
                     </button>
@@ -394,14 +402,21 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
                     {isSentByMe && status && (
                       <span className="flex items-center ml-1">
                         {status === 'read' ? <CheckCheck className="w-3.5 h-3.5 text-blue-300" /> : status === 'delivered' ? <CheckCheck className="w-3.5 h-3.5" /> : status === 'sending' ? (
-                          uploadProgress !== undefined ? <span className="font-bold tracking-tighter">{uploadProgress}%</span> : <RefreshCw className="w-2.5 h-2.5 animate-spin" />
+                          uploadProgress !== undefined ? (
+                            <span className="flex items-center gap-0.5 pointer-events-auto">
+                              <span className="font-bold tracking-tighter">{uploadProgress}%</span>
+                              <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); useUploadStore.getState().cancelUpload(id); }} className="hover:bg-white/20 rounded-full p-px transition-colors cursor-pointer" aria-label="Cancel upload">
+                                <X className="w-2.5 h-2.5" />
+                              </button>
+                            </span>
+                          ) : <RefreshCw className="w-2.5 h-2.5 animate-spin" />
                         ) : <Check className="w-3.5 h-3.5" />}
                       </span>
                     )}
                   </div>
                 </div>
                 {isViewerOpen && createPortal(
-                  <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-2 animate-in fade-in duration-200" onClick={() => setIsViewerOpen(false)}>
+                  <div className="fixed inset-0 z-100 bg-black/95 flex items-center justify-center p-2 animate-in fade-in duration-200" onClick={() => setIsViewerOpen(false)}>
                     <button onClick={(e) => { e.stopPropagation(); setIsViewerOpen(false); }} className="absolute top-4 right-4 z-50 p-3 bg-white/10 rounded-full hover:bg-white/20 text-white backdrop-blur-md transition-colors">
                       <X className="w-6 h-6" />
                     </button>
@@ -448,7 +463,14 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
                 {isSentByMe && status && (
                   <span className="flex items-center gap-1">
                     {status === 'read' ? <CheckCheck className="w-3.5 h-3.5 text-blue-200" /> : status === 'delivered' ? <CheckCheck className="w-3.5 h-3.5" /> : status === 'sending' ? (
-                      uploadProgress !== undefined ? <span className="font-bold">{uploadProgress}%</span> : <RefreshCw className="w-2.5 h-2.5 animate-spin" />
+                      uploadProgress !== undefined ? (
+                        <span className="flex items-center gap-0.5 pointer-events-auto">
+                          <span className="font-bold">{uploadProgress}%</span>
+                          <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); useUploadStore.getState().cancelUpload(id); }} className="hover:bg-white/20 rounded-full p-px transition-colors cursor-pointer" aria-label="Cancel upload">
+                            <X className="w-2.5 h-2.5" />
+                          </button>
+                        </span>
+                      ) : <RefreshCw className="w-2.5 h-2.5 animate-spin" />
                     ) : <Check className="w-3.5 h-3.5" />}
                   </span>
                 )}

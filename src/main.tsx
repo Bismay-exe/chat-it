@@ -5,6 +5,13 @@ import './index.css'
 import App from './App.tsx'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
+window.onerror = function(message, source, lineno, colno, error) {
+  alert('App Error: ' + message + '\\nSource: ' + source + ':' + lineno + ':' + colno + '\\nTrace: ' + (error?.stack || ''));
+};
+window.onunhandledrejection = function(event) {
+  alert('Promise Rejection: ' + (event.reason?.message || event.reason));
+};
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
