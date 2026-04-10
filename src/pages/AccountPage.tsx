@@ -105,12 +105,15 @@ export const AccountPage = () => {
         }
       />
 
-      <div className="flex-1 overflow-y-auto">
-        <div className="bg-background mt-4 border-y border-border">
-          <div className="p-4 border-b border-border">
+      <div className="max-w-xl w-full mx-auto p-4 space-y-6">
+        <div className="bg-background rounded-3xl shadow-sm border border-border">
+          <div className="p-4">
             <span className="text-xs font-semibold text-primary uppercase tracking-wider">Email Address</span>
             <div className="mt-1 text-lg">{user?.email}</div>
           </div>
+        </div>
+
+        <div className="bg-background rounded-3xl shadow-sm border border-border">
 
           {links.map((link, idx) => {
             const Icon = link.icon;
@@ -129,7 +132,7 @@ export const AccountPage = () => {
           })}
         </div>
 
-        <div className="p-8">
+        <div className="px-8">
           <button
             onClick={handleSignOut}
             className="w-full p-4 font-semibold text-red-500 bg-red-500/5 hover:bg-red-500/10 rounded-2xl border border-red-500/20 premium-transition"

@@ -11,10 +11,13 @@ interface TopBarProps {
 
 export const TopBar: React.FC<TopBarProps> = ({ title, leftElement, rightElement, className }) => {
   return (
-    <div className={cn(
-      'min-h-20 flex flex-col justify-end px-4 py-4 pt-safe sticky top-0 z-40 bg-background/0',
-      className
-    )}>
+    <div 
+      className={cn(
+        'min-h-20 flex flex-col justify-end px-4 py-4 sticky top-0 z-40 bg-background/0',
+        className
+      )}
+      style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+    >
       <div className="flex items-center justify-between">
         <div className="pointer-events-none">
           <GradualBlur position="top" className="z-10" height="5rem" opacity={1} curve="ease-in-out" />

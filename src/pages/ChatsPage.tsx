@@ -186,142 +186,148 @@ export const ChatsPage: React.FC = () => {
         "flex-col w-full md:w-[320px] lg:w-95 h-full bg-background md:rounded-2xl border-r border-border shrink-0 top-0 relative",
         isChildActive ? "hidden md:flex" : "flex"
       )}>
-        {/* Top Navigation */}
-        <div className="min-h-20 flex items-center justify-between px-4 pt-safe bg-background/90 md:rounded-4xl backdrop-blur-sm z-10 shrink-0">
-          {isSelectionMode ? (
-            <div className="flex items-center justify-between w-full animate-in fade-in slide-in-from-top-2 duration-300">
-              <div className="flex items-center gap-3">
-                <button 
-                  onClick={clearSelection}
-                  className="p-2 hover:bg-secondary rounded-full transition-colors"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-                <span className="text-xl font-bold font-bricolage-semi-condensed">{selectedChatIds.length}</span>
-              </div>
-              
-              <div className="flex items-center gap-1 text-muted-foreground">
-                <button 
-                  onClick={() => {
-                    const allPinned = selectedChatIds.every(id => pins.some(p => p.chat_id === id && p.list_key === activeTab));
-                    handleBulkAction((id) => togglePin(id, activeTab, allPinned));
-                  }}
-                  className="p-2 hover:bg-secondary rounded-full transition-colors"
-                  title={selectedChatIds.every(id => pins.some(p => p.chat_id === id && p.list_key === activeTab)) ? "Unpin" : "Pin"}
-                >
-                  {selectedChatIds.every(id => pins.some(p => p.chat_id === id && p.list_key === activeTab)) ? <PinOff className="w-5 h-5" /> : <Pin className="w-5 h-5" />}
-                </button>
-                <button 
-                  onClick={() => {
-                    const allMuted = selectedChatIds.every(id => chats.find(c => c.chat_id === id)?.is_muted);
-                    handleBulkAction((id) => toggleMute(id, allMuted));
-                  }}
-                  className="p-2 hover:bg-secondary rounded-full transition-colors"
-                  title={selectedChatIds.every(id => chats.find(c => c.chat_id === id)?.is_muted) ? "Unmute" : "Mute"}
-                >
-                  {selectedChatIds.every(id => chats.find(c => c.chat_id === id)?.is_muted) ? <Bell className="w-5 h-5" /> : <BellOff className="w-5 h-5" />}
-                </button>
-                <button 
-                  onClick={() => {
-                    const allArchived = selectedChatIds.every(id => chats.find(c => c.chat_id === id)?.is_archived);
-                    handleBulkAction((id) => toggleArchive(id, allArchived));
-                  }}
-                  className="p-2 hover:bg-secondary rounded-full transition-colors"
-                  title={selectedChatIds.every(id => chats.find(c => c.chat_id === id)?.is_archived) ? "Unarchive" : "Archive"}
-                >
-                  {selectedChatIds.every(id => chats.find(c => c.chat_id === id)?.is_archived) ? <ArchiveRestore className="w-5 h-5" /> : <Archive className="w-5 h-5" />}
-                </button>
-                <button 
-                  onClick={() => {
-                    if (confirm(`Delete ${selectedChatIds.length} chat(s)?`)) {
-                      handleBulkAction(deleteChat);
-                    }
-                  }}
-                  className="p-2 hover:bg-secondary rounded-full transition-colors text-red-500"
-                  title="Delete"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
-                <div className="relative">
-                  <DropdownMenu 
-                    items={selectionDropdownItems} 
-                    icon={<MoreVertical className="w-5 h-5" />}
-                  />
-                </div>
-              </div>
-            </div>
-          ) : (
-            <>
-              <img src="/logo/chat-it.svg" alt="Chat-It" className="h-10 w-auto xdark:invert" />
-              <div className="flex items-center gap-1 text-muted-foreground">
-                <button 
-                  onClick={() => {
-                    setShowSearchBar(!showSearchBar);
-                    if (showSearchBar) {
-                      setSearchQuery('');
-                      setSearchResults([]);
-                    }
-                  }} 
-                  className={cn(
-                    "p-2 rounded-full premium-transition", 
-                    showSearchBar ? "bg-primary/10 text-primary" : "hover:bg-secondary"
-                  )}
-                >
-                  <Search className={cn("w-5 h-5", showSearchBar ? "fill-primary" : "")} />
-                </button>
-                <button onClick={() => navigate('/settings')} className="p-2 hover:bg-secondary rounded-full premium-transition"><Settings className="w-5 h-5" /></button>
-              </div>
-            </>
-          )}
+
+        <div className="pointer-events-none">
+          <GradualBlur position="top" className="z-10" height="9rem" opacity={1} curve="ease-in-out" />
         </div>
 
-        {/* Sidebar Search Bar */}
-        {showSearchBar && (
-          <div className="px-4 py-3 border-b border-border bg-background animate-in slide-in-from-top-2 duration-200">
-            <div className="relative group border border-black/10 rounded-full">
-              <input
-                type="text"
-                autoFocus
-                value={searchQuery}
-                onChange={onSearchChange}
-                placeholder="Search chats..."
-                className="w-full h-10 pl-10 pr-4 rounded-full bg-secondary/70 border-none text-sm font-medium outline-none transition-all placeholder:text-muted-foreground/60"
-              />
-              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
-              {isSearching && (
-                <div className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              )}
-            </div>
+        <div className='absolute top-0 left-0 right-0 z-10'>
+          {/* Top Navigation */}
+          <div className="min-h-20 flex items-center justify-between px-4 mt-safe md:rounded-4xl z-10 shrink-0">
+            {isSelectionMode ? (
+              <div className="flex items-center justify-between w-full animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={clearSelection}
+                    className="p-2 hover:bg-secondary rounded-full transition-colors"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                  <span className="text-xl font-bold font-bricolage-semi-condensed">{selectedChatIds.length}</span>
+                </div>
+                
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <button 
+                    onClick={() => {
+                      const allPinned = selectedChatIds.every(id => pins.some(p => p.chat_id === id && p.list_key === activeTab));
+                      handleBulkAction((id) => togglePin(id, activeTab, allPinned));
+                    }}
+                    className="p-2 hover:bg-secondary rounded-full transition-colors"
+                    title={selectedChatIds.every(id => pins.some(p => p.chat_id === id && p.list_key === activeTab)) ? "Unpin" : "Pin"}
+                  >
+                    {selectedChatIds.every(id => pins.some(p => p.chat_id === id && p.list_key === activeTab)) ? <PinOff className="w-5 h-5" /> : <Pin className="w-5 h-5" />}
+                  </button>
+                  <button 
+                    onClick={() => {
+                      const allMuted = selectedChatIds.every(id => chats.find(c => c.chat_id === id)?.is_muted);
+                      handleBulkAction((id) => toggleMute(id, allMuted));
+                    }}
+                    className="p-2 hover:bg-secondary rounded-full transition-colors"
+                    title={selectedChatIds.every(id => chats.find(c => c.chat_id === id)?.is_muted) ? "Unmute" : "Mute"}
+                  >
+                    {selectedChatIds.every(id => chats.find(c => c.chat_id === id)?.is_muted) ? <Bell className="w-5 h-5" /> : <BellOff className="w-5 h-5" />}
+                  </button>
+                  <button 
+                    onClick={() => {
+                      const allArchived = selectedChatIds.every(id => chats.find(c => c.chat_id === id)?.is_archived);
+                      handleBulkAction((id) => toggleArchive(id, allArchived));
+                    }}
+                    className="p-2 hover:bg-secondary rounded-full transition-colors"
+                    title={selectedChatIds.every(id => chats.find(c => c.chat_id === id)?.is_archived) ? "Unarchive" : "Archive"}
+                  >
+                    {selectedChatIds.every(id => chats.find(c => c.chat_id === id)?.is_archived) ? <ArchiveRestore className="w-5 h-5" /> : <Archive className="w-5 h-5" />}
+                  </button>
+                  <button 
+                    onClick={() => {
+                      if (confirm(`Delete ${selectedChatIds.length} chat(s)?`)) {
+                        handleBulkAction(deleteChat);
+                      }
+                    }}
+                    className="p-2 hover:bg-secondary rounded-full transition-colors text-red-500"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                  <div className="relative">
+                    <DropdownMenu 
+                      items={selectionDropdownItems} 
+                      icon={<MoreVertical className="w-5 h-5" />}
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                <img src="/logo/chat-it.svg" alt="Chat-It" className="h-10 w-auto xdark:invert" />
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <button 
+                    onClick={() => {
+                      setShowSearchBar(!showSearchBar);
+                      if (showSearchBar) {
+                        setSearchQuery('');
+                        setSearchResults([]);
+                      }
+                    }} 
+                    className={cn(
+                      "p-2 rounded-full premium-transition", 
+                      showSearchBar ? "bg-primary/10 text-primary" : "hover:bg-secondary"
+                    )}
+                  >
+                    <Search className={cn("w-5 h-5", showSearchBar ? "fill-primary" : "")} />
+                  </button>
+                  <button onClick={() => navigate('/settings')} className="p-2 hover:bg-secondary rounded-full premium-transition"><Settings className="w-5 h-5" /></button>
+                </div>
+              </>
+            )}
           </div>
-        )}
 
-        {/* Filter Tabs */}
-        <div className={cn("px-3 py-1", showSearchBar ? "hidden" : "block")}>
-          <div className="p-0.5 bg-muted-foreground/10 rounded-full border border-black/10 overflow-x-auto no-scrollbar shrink-0">
-            <div className="flex gap-2 min-w-max">
-              {allTabs.map(tab => (
-                <button
-                  key={tab}
-                  onClick={() => tab === '+' ? navigate('/chats/lists') : setActiveTab(tab)}
-                  className={cn(
-                    "px-5 py-1 rounded-full text-sm font-bold premium-transition whitespace-nowrap",
-                    activeTab === tab
-                      ? "bg-primary/10 text-primary border border-primary/20"
-                      : "text-muted-foreground hover:bg-secondary hover:text-foreground border border-transparent"
-                  )}
-                >
-                  {tab}
-                </button>
-              ))}
+          {/* Sidebar Search Bar */}
+          {showSearchBar && (
+            <div className="px-4 animate-in slide-in-from-top-2 duration-200">
+              <div className="relative group border border-black/10 rounded-full">
+                <input
+                  type="text"
+                  autoFocus
+                  value={searchQuery}
+                  onChange={onSearchChange}
+                  placeholder="Search chats..."
+                  className="w-full h-10 pl-10 pr-4 rounded-full bg-muted-foreground/10 backdrop-blur-md border-none text-sm font-bold outline-none transition-all placeholder:text-muted-foreground/60"
+                />
+                <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
+                {isSearching && (
+                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Filter Tabs */}
+          <div className={cn("px-3 z-10", showSearchBar ? "hidden" : "block")}>
+            <div className="p-0.5 bg-muted-foreground/10 backdrop-blur-md rounded-full border border-black/10 overflow-x-auto no-scrollbar shrink-0">
+              <div className="flex gap-2 min-w-max">
+                {allTabs.map(tab => (
+                  <button
+                    key={tab}
+                    onClick={() => tab === '+' ? navigate('/chats/lists') : setActiveTab(tab)}
+                    className={cn(
+                      "px-5 py-1 rounded-full text-sm font-bold premium-transition whitespace-nowrap",
+                      activeTab === tab
+                        ? "bg-primary/20 text-primary border border-primary/20"
+                        : "text-muted-foreground hover:bg-secondary hover:text-foreground border border-transparent"
+                    )}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
 
         {/* Chat List or Search Results */}
-        <GradualScroll className="flex-1" scrollClassName="pb-20 md:pb-2 space-y-0.5 no-scrollbar">
+        <GradualScroll className="flex-1" scrollClassName="pt-[calc(128px+env(safe-area-inset-top,0px))] pb-20 md:pb-2 space-y-0.5 no-scrollbar">
           {searchQuery.trim().length >= 2 ? (
             <div className="space-y-1">
-              <div className="px-3 py-2 text-[10px] font-black text-primary uppercase tracking-[0.2em] opacity-60">Search Results</div>
               {searchResults.map((r, i) => (
                 <AnimatedItem key={r.id} index={i} delay={i * 0.05}>
                   <button
@@ -333,8 +339,8 @@ export const ChatsPage: React.FC = () => {
                   >
                     <Avatar src={r.avatar_url} fallback={r.name} size="md" />
                     <div className="flex-1 min-w-0">
-                      <div className="font-bold text-[15px] truncate">{r.name}</div>
-                      <div className="text-[10px] text-muted-foreground">@{r.username || r.type}</div>
+                      <div className="font-bold font-bricolage-semi-condensed text-[20px] tracking-tight truncate flex items-center gap-2 text-foreground">{r.name}</div>
+                      <div className="text-[14px] text-muted-foreground">@{r.username || r.type}</div>
                     </div>
                   </button>
                 </AnimatedItem>
