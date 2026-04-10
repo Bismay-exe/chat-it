@@ -11,7 +11,7 @@ import { GradualScroll } from '@/components/ui/GradualScroll';
 import { AnimatedItem } from '@/components/ui/AnimatedItem';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useAuthStore } from '@/stores/authStore';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { Skeleton } from 'boneyard-js/react';
 import { Outlet } from 'react-router';
 import { ChatInfoSidebar } from '@/components/chat/ChatInfoSidebar';
 import { supabase } from '@/lib/supabase';
@@ -187,13 +187,13 @@ export const ChatsPage: React.FC = () => {
         isChildActive ? "hidden md:flex" : "flex"
       )}>
 
-        <div className="pointer-events-none">
-          <GradualBlur position="top" className="z-10" height="9rem" opacity={1} curve="ease-in-out" />
+        <div className="pointer-events-none rounded-t-2xl overflow-hidden">
+          <GradualBlur position="top" className="z-10 md:rounded-t-2xl md:overflow-hidden" height="9rem" opacity={1} curve="ease-in-out" />
         </div>
 
         <div className='absolute top-0 left-0 right-0 z-10'>
           {/* Top Navigation */}
-          <div className="min-h-20 flex items-center justify-between px-4 mt-safe md:rounded-4xl z-10 shrink-0">
+          <div className="md:hidden min-h-20 flex items-center justify-between px-4 mt-safe md:rounded-4xl z-10 shrink-0">
             {isSelectionMode ? (
               <div className="flex items-center justify-between w-full animate-in fade-in slide-in-from-top-2 duration-300">
                 <div className="flex items-center gap-3">
@@ -301,8 +301,25 @@ export const ChatsPage: React.FC = () => {
             </div>
           )}
 
+          <div className="hidden md:block p-4 animate-in slide-in-from-top-2 duration-200">
+              <div className="relative group border border-black/10 rounded-full">
+                <input
+                  type="text"
+                  autoFocus
+                  value={searchQuery}
+                  onChange={onSearchChange}
+                  placeholder="Search chats..."
+                  className="w-full h-10 pl-10 pr-4 rounded-full bg-muted-foreground/10 backdrop-blur-md border-none text-sm font-bold outline-none transition-all placeholder:text-muted-foreground/60"
+                />
+                <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
+                {isSearching && (
+                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                )}
+              </div>
+            </div>
+
           {/* Filter Tabs */}
-          <div className={cn("px-3 z-10", showSearchBar ? "hidden" : "block")}>
+          <div className={cn("px-3 z-10", showSearchBar ? "hidden md:block" : "block")}>
             <div className="p-0.5 bg-muted-foreground/10 backdrop-blur-md rounded-full border border-black/10 overflow-x-auto no-scrollbar shrink-0">
               <div className="flex gap-2 min-w-max">
                 {allTabs.map(tab => (
@@ -351,71 +368,95 @@ export const ChatsPage: React.FC = () => {
             </div>
           ) : (
             <>
-              {isLoading ? (
+            <Skeleton 
+              name="chat-list" 
+              loading={isLoading}
+              fixture={
                 <div className="space-y-1">
                   {[...Array(6)].map((_, i) => (
-                    <div key={i} className="flex items-center gap-3 p-3">
-                      <Skeleton className="w-12 h-12 rounded-full shrink-0" />
-                      <div className="flex-1 space-y-2 py-1">
-                        <Skeleton className="h-4 w-[40%]" />
-                        <Skeleton className="h-3 w-[70%]" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <>
-                  {sortedChats.map((chat, i) => (
-                    <AnimatedItem key={chat.chat_id} index={i}>
+                    <AnimatedItem key={`fixture-${i}`} index={i}>
                       <ChatListItem
-                        {...chat}
-                        is_pinned={pins.some(p => p.chat_id === chat.chat_id && p.list_key === activeTab)}
-                        isActive={id === chat.chat_id}
-                        currentListKey={activeTab}
-                        onClick={() => handleChatClick(chat.chat_id)}
-                        onArchive={toggleArchive}
-                        onFavorite={toggleFavorite}
-                        onMute={toggleMute}
-                        onPin={(id, current) => togglePin(id, activeTab, current)}
-                        onDelete={deleteChat}
-                        onManageLists={setManagingChatId}
-                        onInfo={(chatId) => {
-                          const chat = chats.find(c => c.chat_id === chatId);
-                          if (window.innerWidth < 1024) {
-                            if (chat?.chat_type === 'group') {
-                              navigate(`/chats/${chatId}/info`);
-                            } else if (chat?.other_user_id) {
-                              navigate(`/profile/${chat.other_user_id}`);
-                            }
-                          } else {
-                            handleChatClick(chatId);
-                            setShowInfo(true);
-                          }
-                        }}
-                        onBlock={(userId) => {
-                          if (confirm('Are you sure you want to block this user?')) {
-                            blockUser(userId);
-                          }
-                        }}
-                        onLeaveGroup={(chatId) => {
-                          if (confirm('Are you sure you want to leave this group?')) {
-                            deleteChat(chatId);
-                          }
-                        }}
-                        isSelected={selectedChatIds.includes(chat.chat_id)}
-                        onSelect={toggleSelection}
-                        selectionMode={isSelectionMode}
+                        chat_id={`fixture-${i}`}
+                        chat_type="direct"
+                        name="Loading User Name"
+                        avatar_url={null}
+                        is_archived={false}
+                        is_favorite={false}
+                        is_muted={false}
+                        is_pinned={false}
+                        isActive={false}
+                        currentListKey="All Chats"
+                        onClick={() => {}}
+                        onArchive={() => {}}
+                        onFavorite={() => {}}
+                        onMute={() => {}}
+                        onPin={() => {}}
+                        onDelete={() => {}}
+                        onManageLists={() => {}}
+                        onInfo={() => {}}
+                        onBlock={() => {}}
+                        onLeaveGroup={() => {}}
+                        isSelected={false}
+                        onSelect={() => {}}
+                        selectionMode={false}
                       />
                     </AnimatedItem>
                   ))}
-                  {sortedChats.length === 0 && (
-                    <div className="h-full flex flex-col items-center justify-center text-muted-foreground p-6 text-center opacity-40">
-                      <MessageSquareText className="w-10 h-10 mb-3" />
-                      <p className="text-sm font-medium">No chats found in "{activeTab}"</p>
-                    </div>
-                  )}
-                </>
-              )}
+                </div>
+              }
+            >
+              <>
+                {sortedChats.map((chat, i) => (
+                  <AnimatedItem key={chat.chat_id} index={i}>
+                    <ChatListItem
+                      {...chat}
+                      is_pinned={pins.some(p => p.chat_id === chat.chat_id && p.list_key === activeTab)}
+                      isActive={id === chat.chat_id}
+                      currentListKey={activeTab}
+                      onClick={() => handleChatClick(chat.chat_id)}
+                      onArchive={toggleArchive}
+                      onFavorite={toggleFavorite}
+                      onMute={toggleMute}
+                      onPin={(id, current) => togglePin(id, activeTab, current)}
+                      onDelete={deleteChat}
+                      onManageLists={setManagingChatId}
+                      onInfo={(chatId) => {
+                        const chat = chats.find(c => c.chat_id === chatId);
+                        if (window.innerWidth < 1024) {
+                          if (chat?.chat_type === 'group') {
+                            navigate(`/chats/${chatId}/info`);
+                          } else if (chat?.other_user_id) {
+                            navigate(`/profile/${chat.other_user_id}`);
+                          }
+                        } else {
+                          handleChatClick(chatId);
+                          setShowInfo(true);
+                        }
+                      }}
+                      onBlock={(userId) => {
+                        if (confirm('Are you sure you want to block this user?')) {
+                          blockUser(userId);
+                        }
+                      }}
+                      onLeaveGroup={(chatId) => {
+                        if (confirm('Are you sure you want to leave this group?')) {
+                          deleteChat(chatId);
+                        }
+                      }}
+                      isSelected={selectedChatIds.includes(chat.chat_id)}
+                      onSelect={toggleSelection}
+                      selectionMode={isSelectionMode}
+                    />
+                  </AnimatedItem>
+                ))}
+                {sortedChats.length === 0 && (
+                  <div className="h-full flex flex-col items-center justify-center text-muted-foreground p-6 text-center opacity-40">
+                    <MessageSquareText className="w-10 h-10 mb-3" />
+                    <p className="text-sm font-medium">No chats found in "{activeTab}"</p>
+                  </div>
+                )}
+              </>
+            </Skeleton>
             </>
           )}
         </GradualScroll>
@@ -426,16 +467,19 @@ export const ChatsPage: React.FC = () => {
 
       {/* Main Panel */}
       <div className={cn(
-        "flex-1 h-full bg-[#f4f3ec] md:rounded-2xl dark:bg-[#16171d] relative overflow-hidden flex flex-col shadow-inner",
+        "flex-1 h-full bg-background md:rounded-2xl relative overflow-hidden flex flex-col shadow-inner",
         !id ? "hidden md:flex flex-col items-center justify-center p-8 text-center" : "flex"
       )}>
         {!id && (
-          <div className="max-w-md bg-background/50 p-8 rounded-2xl border border-border/50 shadow-sm backdrop-blur-sm animate-in fade-in zoom-in duration-500">
-            <div className="w-20 h-20 bg-primary/10 rounded-2xl mx-auto mb-6 flex items-center justify-center mix-blend-multiply dark:mix-blend-screen">
-              <MessageSquareText className="w-10 h-10 text-primary opacity-80" />
+          <div className="max-w-md p-8 backdrop-blur-sm animate-in fade-in zoom-in duration-500">
+            <div className="w-24 h-24 bg-primary rounded-3xl mx-auto mb-6 flex items-center justify-center mix-blend-multiply dark:mix-blend-screen">
+              <img src="/logo/chat-it-logo.svg" alt="Chat-It" className="h-8 w-auto text-black" />
             </div>
-            <h2 className="text-2xl font-bold mb-3 tracking-tight">Chat-It Web</h2>
-            <p className="text-muted-foreground text-[15px] leading-relaxed">Select a chat from the sidebar to start messaging, or create a new conversation.</p>
+            <div className="w-full flex justify-center text-[3rem] font-thunder font-semibold mb-3 gap-2">
+              <img src="/logo/chat-it.svg" alt="Chat-It" className="h-10 w-auto text-black" />
+              <span className="-translate-y-3">web</span>
+            </div>
+            <p className="text-muted-foreground font-bricolage-semi-condensed text-[12px] leading-relaxed">Select a chat from the sidebar to start messaging, or create a new conversation.</p>
           </div>
         )}
         <Outlet context={{ showInfo, setShowInfo }} />

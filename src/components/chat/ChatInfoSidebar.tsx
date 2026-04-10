@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Avatar } from '@/components/ui/Avatar';
 import { useAuthStore } from '@/stores/authStore';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { Skeleton } from 'boneyard-js/react';
 import {
   Info, Users, Calendar, Shield, Bell,
   ImageIcon, Link as LinkIcon, X, ChevronRight, Ban, UserX
@@ -77,25 +77,41 @@ export const ChatInfoSidebar: React.FC<ChatInfoSidebarProps> = ({ chatId, onClos
     fetchInfo();
   }, [chatId, user?.id]);
 
-  if (loading) {
-    return (
-      <div className={cn("w-full h-full bg-background border-l border-border flex flex-col pt-16 px-6 gap-6", className)}>
-        <Skeleton className="w-32 h-32 rounded-full mx-auto" />
-        <Skeleton className="h-6 w-48 mx-auto" />
-        <div className="space-y-4 pt-10">
-          <Skeleton className="h-20 w-full rounded-2xl" />
-          <Skeleton className="h-20 w-full rounded-2xl" />
-        </div>
-      </div>
-    );
-  }
-
   const name = chatType === 'group' ? details?.name : details?.full_name;
   const avatar = details?.avatar_url;
   const about = chatType === 'group' ? details?.about : details?.about;
 
   return (
-    <div className={cn("w-full h-full bg-background border-l border-border flex flex-col relative", className)}>
+    <Skeleton 
+      name="chat-info-sidebar" 
+      loading={loading}
+      fixture={
+        <div className={cn("w-full h-screen bg-background border-l border-border flex flex-col relative", className)}>
+          {/* Header */}
+          <div className="h-16 flex items-center justify-between px-4 border-b border-border shrink-0">
+            <h3 className="font-bold text-sm uppercase tracking-widest text-muted-foreground opacity-60">Info</h3>
+          </div>
+          <div className="flex-1 overflow-y-auto no-scrollbar">
+            <div className="flex flex-col items-center p-8 bg-secondary/5">
+              <Avatar src={undefined} fallback="?" className="w-28 h-28 rounded-full border-2 border-background ring-1 ring-border/50" size="xl" />
+              <h2 className="text-xl font-bold mt-4 text-center">Loading Data...</h2>
+              <p className="text-xs text-muted-foreground mt-1 font-medium">@loading</p>
+            </div>
+            <div className="p-4 space-y-4">
+              <div className="grid grid-cols-3 gap-2 py-2">
+                <ActionIcon Icon={Bell} label="Mute" />
+                <ActionIcon Icon={ImageIcon} label="Media" />
+                <ActionIcon Icon={LinkIcon} label="Links" />
+              </div>
+              <div className="bg-secondary/10 p-5 rounded-3xl space-y-2">
+                <p className="text-sm leading-relaxed">Loading descriptive details...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    >
+    <div className={cn("w-full h-screen bg-background border-l border-border flex flex-col relative", className)}>
       {/* Header */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-border shrink-0">
         <h3 className="font-bold text-sm uppercase tracking-widest text-muted-foreground opacity-60">Info</h3>
@@ -187,6 +203,7 @@ export const ChatInfoSidebar: React.FC<ChatInfoSidebarProps> = ({ chatId, onClos
         </div>
       </div>
     </div>
+    </Skeleton>
   );
 };
 

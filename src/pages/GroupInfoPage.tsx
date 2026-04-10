@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/Input';
 import { QRCodeSVG } from 'qrcode.react';
 import { useChatPermissions } from '@/hooks/useChatPermissions';
 import type { GroupPermissions } from '@/hooks/useChatPermissions';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { Skeleton } from 'boneyard-js/react';
 
 interface Member {
   user_id: string;
@@ -202,31 +202,39 @@ export const GroupInfoPage = () => {
     }
   };
 
-  if (isLoading || permsLoading) {
-    return (
-      <div className="flex flex-col h-full bg-background absolute inset-0 z-50 overflow-y-auto">
-        <TopBar leftElement={<div className="w-20" />} />
-        <div className="flex flex-col items-center p-8 bg-background border-b border-border">
-          <Skeleton className="w-32 h-32 rounded-full" />
-          <Skeleton className="h-8 w-48 mt-4" />
-          <Skeleton className="h-4 w-24 mt-2" />
-        </div>
-        <div className="max-w-2xl w-full mx-auto p-4 space-y-4">
-          <div className="flex justify-around bg-background p-4 rounded-3xl border border-border">
-            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="w-16 h-16 rounded-2xl" />)}
-          </div>
-          <Skeleton className="h-20 w-full rounded-3xl" />
-          <div className="bg-background rounded-3xl p-5 border border-border space-y-4">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-3/4" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex flex-col h-full bg-secondary/10 absolute inset-0 z-50 overflow-y-auto">
+    <Skeleton 
+      name="group-info" 
+      loading={isLoading || permsLoading}
+      fixture={
+        <div className="flex flex-col h-full bg-secondary/10 absolute inset-0 z-50 overflow-y-auto">
+          <TopBar leftElement={<ArrowLeft className="w-5 h-5" />} title={<span className="font-semibold text-lg">Group Info</span>} />
+          <div className="flex flex-col items-center p-8 bg-background border-b border-border shadow-sm">
+            <Avatar src={undefined} fallback="G" className="w-32 h-32 rounded-full border-4 border-background ring-1 ring-border" size="xl" />
+            <h2 className="text-2xl font-bold mt-4 tracking-tight">Loading Group Name...</h2>
+            <p className="text-muted-foreground mt-1 font-medium">10 members</p>
+          </div>
+          <div className="max-w-2xl w-full mx-auto p-4 space-y-4 pb-20">
+            <div className="flex justify-around bg-background p-4 rounded-3xl shadow-sm border border-border">
+              <ActionButton Icon={MessageSquare} label="Message" onClick={() => {}} />
+              <ActionButton Icon={Bell} label="Mute" onClick={() => {}} />
+              <ActionButton Icon={UserPlus} label="Add" onClick={() => {}} />
+            </div>
+            <button className="w-full bg-background p-5 rounded-3xl shadow-sm border border-border flex items-center justify-between">
+              <div className="flex flex-col items-start gap-1">
+                <span className="text-xs font-black uppercase tracking-widest text-primary">Shared Content</span>
+                <p className="text-xs text-muted-foreground font-medium">Media, Links and Docs</p>
+              </div>
+            </button>
+            <div className="bg-background p-5 rounded-3xl shadow-sm border border-border space-y-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-primary">Description</span>
+              <p className="text-[15px] leading-relaxed">Loading group description details...</p>
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <div className="flex flex-col h-full bg-secondary/10 absolute inset-0 z-50 overflow-y-auto">
       <TopBar 
         leftElement={
           <div className="flex items-center gap-4">
@@ -424,6 +432,7 @@ export const GroupInfoPage = () => {
         </div>
       </BottomSheet>
     </div>
+    </Skeleton>
   );
 };
 

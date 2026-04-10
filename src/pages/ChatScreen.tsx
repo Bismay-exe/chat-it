@@ -25,7 +25,7 @@ import { toast } from 'sonner';
 import { Input } from '@/components/ui/Input';
 import { cn } from '@/lib/utils';
 import { useChatPermissions } from '@/hooks/useChatPermissions';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { Skeleton } from 'boneyard-js/react';
 import { useChatLists } from '@/hooks/useChatLists';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import GradualBlur from '@/components/ui/GradualBlur';
@@ -56,7 +56,7 @@ export const ChatScreen: React.FC = () => {
   const { customLists, memberships, toggleMembership } = useChatLists();
   const chatInfo = chats.find(c => c.chat_id === id);
   const { canSend, isAdmin } = useChatPermissions(id);
-  
+
   const [otherUserId, setOtherUserId] = useState<string | null>(null);
   const { isOnline } = usePresence();
   const { typingUsers, sendTypingStatus } = useTypingIndicator(id);
@@ -83,7 +83,7 @@ export const ChatScreen: React.FC = () => {
       getOtherUser();
     }
   }, [chatInfo?.chat_type, id, user?.id]);
-  
+
   // Group Typing Cycle Logic
   const [currentTyperIndex, setCurrentTyperIndex] = useState(0);
   useEffect(() => {
@@ -97,7 +97,7 @@ export const ChatScreen: React.FC = () => {
   const typingStatus = useMemo(() => {
     if (typingUsers.length === 0) return null;
     if (chatInfo?.chat_type === 'direct') return 'typing...';
-    
+
     // Group logic
     const user = typingUsers[currentTyperIndex];
     if (!user) return null;
@@ -107,9 +107,9 @@ export const ChatScreen: React.FC = () => {
   const onlineStatus = useMemo(() => {
     if (typingStatus) return typingStatus;
     if (chatInfo?.chat_type === 'group') return 'Tap for group details';
-    
+
     if (otherUserId && isOnline(otherUserId)) return 'Online';
-    
+
     // Fallback/Last seen - we need last_seen_at from profiles
     // For now, if not online, show static "View profile"
     return 'View profile';
@@ -124,8 +124,8 @@ export const ChatScreen: React.FC = () => {
   const isSelectionMode = selectedMessageIds.length > 0;
 
   const handleMessageSelect = useCallback((messageId: string) => {
-    setSelectedMessageIds(prev => 
-      prev.includes(messageId) 
+    setSelectedMessageIds(prev =>
+      prev.includes(messageId)
         ? prev.filter(id => id !== messageId)
         : [...prev, messageId]
     );
@@ -141,7 +141,7 @@ export const ChatScreen: React.FC = () => {
       .map(m => m.content)
       .filter(Boolean)
       .join('\n---\n');
-    
+
     if (textToCopy) {
       navigator.clipboard.writeText(textToCopy);
       toast.success(`${selectedMessageIds.length} messages copied to clipboard`);
@@ -158,7 +158,7 @@ export const ChatScreen: React.FC = () => {
 
   const handleConfirmDelete = useCallback(async (forEveryone: boolean) => {
     setIsDeleteSheetOpen(false);
-    
+
     if (forEveryone) {
       try {
         for (const msgId of selectedMessageIds) {
@@ -289,7 +289,7 @@ export const ChatScreen: React.FC = () => {
     }[] = [];
 
     // Reverse messages for flex-col-reverse: newest first
-    const reversedMessages = [...messages].reverse();
+    const reversedMessages = [...messages];
 
     reversedMessages.forEach((msg, idx) => {
       const lastGroup = groups[groups.length - 1];
@@ -370,7 +370,7 @@ export const ChatScreen: React.FC = () => {
             className="animate-in slide-in-from-top-2 duration-300"
             leftElement={
               <div className="flex items-center gap-3">
-                <button 
+                <button
                   onClick={clearSelection}
                   className="p-2 hover:bg-secondary rounded-full transition-colors text-muted-foreground"
                 >
@@ -382,28 +382,28 @@ export const ChatScreen: React.FC = () => {
             title={null}
             rightElement={
               <div className="flex items-center gap-1 text-muted-foreground">
-                <button 
+                <button
                   onClick={handleCopySelected}
                   className="p-2 hover:bg-secondary rounded-full transition-all active:scale-90"
                   title="Copy"
                 >
                   <Copy className="w-5 h-5" />
                 </button>
-                <button 
+                <button
                   onClick={() => toast.info('Starring coming soon!')}
                   className="p-2 hover:bg-secondary rounded-full transition-all active:scale-90"
                   title="Star"
                 >
                   <Star className="w-5 h-5" />
                 </button>
-                <button 
+                <button
                   onClick={() => toast.info('Forwarding coming soon!')}
                   className="p-2 hover:bg-secondary rounded-full transition-all active:scale-90"
                   title="Forward"
                 >
                   <Forward className="w-5 h-5" />
                 </button>
-                <button 
+                <button
                   onClick={handleDeleteSelected}
                   className="p-2 hover:bg-secondary rounded-full transition-all active:scale-90 text-red-500"
                   title="Delete"
@@ -412,14 +412,14 @@ export const ChatScreen: React.FC = () => {
                 </button>
                 <DropdownMenu
                   items={[
-                    { 
-                      label: 'Message Info', 
-                      icon: <Info className="w-4 h-4" />, 
-                      onClick: () => toast.info('Detailed info coming soon') 
+                    {
+                      label: 'Message Info',
+                      icon: <Info className="w-4 h-4" />,
+                      onClick: () => toast.info('Detailed info coming soon')
                     },
-                    { 
-                      label: 'Select all', 
-                      icon: <ListIcon className="w-4 h-4" />, 
+                    {
+                      label: 'Select all',
+                      icon: <ListIcon className="w-4 h-4" />,
                       onClick: () => setSelectedMessageIds(messages.map(m => m.id))
                     }
                   ]}
@@ -452,8 +452,8 @@ export const ChatScreen: React.FC = () => {
                 </div>
                 <span className={cn(
                   "text-[11px] font-medium leading-none transition-colors",
-                  typingStatus ? "text-primary italic animate-pulse" : 
-                  onlineStatus === 'Online' ? "text-green-400 font-bold" : "text-muted-foreground"
+                  typingStatus ? "text-primary italic animate-pulse" :
+                    onlineStatus === 'Online' ? "text-green-400 font-bold" : "text-muted-foreground"
                 )}>
                   {onlineStatus}
                 </span>
@@ -560,8 +560,8 @@ export const ChatScreen: React.FC = () => {
             <div className="pointer-events-none">
               <GradualBlur position="top" className="z-10" height="9rem" opacity={1} curve="ease-in-out" />
             </div>
-            <div className="p-2 -translate-y-4 flex items-center gap-2 animate-in slide-in-from-top duration-300 relative z-40">
-              <div className="relative flex-1">
+            <div className="w-full justify-end p-2 -translate-y-4 flex items-center gap-2 animate-in slide-in-from-top duration-300 relative z-40">
+              <div className="relative flex-1 md:max-w-xs">
                 <Input
                   autoFocus
                   value={searchQuery}
@@ -602,107 +602,105 @@ export const ChatScreen: React.FC = () => {
         )}
       </div>
 
-      <GradualScroll 
+      <GradualScroll
         scrollRef={scrollContainerRef as any}
         className="flex-1 w-full bg-secondary rounded-b-2xl"
-        scrollClassName={cn("pt-[calc(2.5rem+env(safe-area-inset-top,0px))] pb-0 flex flex-col-reverse gap-1 px-2 md:px-6 lg:px-12 scroll-smooth", isSearchVisible && "pt-[calc(6rem+env(safe-area-inset-top,0px))]")}
+        scrollClassName={cn("pt-[calc(4.5rem+env(safe-area-inset-top,0px))] pb-0 flex flex-col-reverse gap-1 px-2 md:px-6 lg:px-12 scroll-smooth", isSearchVisible && "pt-[calc(8rem+env(safe-area-inset-top,0px))]")}
       >
         <div ref={messagesEndRef} className="h-0 w-full" />
-        
-        {isLoading && messages.length === 0 ? (
-          <div className="flex flex-col gap-4 mb-auto">
-            <div className="flex justify-start">
-              <Skeleton className="h-12 w-[60%] rounded-2xl rounded-bl-none" />
+
+        <Skeleton
+          name="chat-messages"
+          loading={isLoading && messages.length === 0}
+          fixture={
+            <div className="flex flex-col gap-4 mb-auto w-full">
+              <MessageBubble id="fixture-1" content="Loading message from the other person..." status="read" isSentByMe={false} timestamp="12:00 PM" />
+              <MessageBubble id="fixture-2" content="Loading response..." status="read" isSentByMe={true} timestamp="12:01 PM" />
+              <MessageBubble id="fixture-3" content="Please hold on..." status="read" isSentByMe={false} timestamp="12:02 PM" />
             </div>
-            <div className="flex justify-end">
-              <Skeleton className="h-10 w-[45%] rounded-2xl rounded-br-none" />
+          }
+        >
+          {messages.length === 0 ? (
+            <div className="h-full mt-auto mb-auto flex flex-col items-center justify-center opacity-30 select-none grayscale">
+              <MessageSquare className="w-16 h-16 mb-4" />
+              <p className="text-sm font-bold tracking-widest uppercase">No messages yet</p>
+              <p className="text-[10px] mt-1">Start the conversation below.</p>
             </div>
-            <div className="flex justify-start">
-              <Skeleton className="h-16 w-[70%] rounded-2xl rounded-bl-none" />
-            </div>
-            <div className="flex justify-end">
-              <Skeleton className="h-12 w-[35%] rounded-2xl rounded-br-none" />
-            </div>
-          </div>
-        ) : messages.length === 0 ? (
-          <div className="h-full mt-auto mb-auto flex flex-col items-center justify-center opacity-30 select-none grayscale">
-            <MessageSquare className="w-16 h-16 mb-4" />
-            <p className="text-sm font-bold tracking-widest uppercase">No messages yet</p>
-            <p className="text-[10px] mt-1">Start the conversation below.</p>
-          </div>
-        ) : (
-          <>
-            {groupedMessages.map((group, gIdx) => {
-              const isSentByMe = group.sender_id === user?.id;
-              
-              return (
-                <div 
-                  key={`group-${group.sender_id}-${gIdx}`} 
-                  className={cn(
-                    "flex items-end w-full gap-2 mb-4",
-                    isSentByMe ? "flex-row-reverse" : "flex-row"
-                  )}
-                >
-                  {/* Sticky Avatar Sidebar - Glide Logic */}
-                  <div className="shrink-0 w-13 flex flex-col justify-end self-stretch">
-                    <div className="sticky top-24 bottom-0 -mb-1">
-                      <AnimatedItem index={gIdx}>
-                        <Avatar 
-                          src={group.profile?.avatar_url} 
-                          fallback={group.profile?.full_name?.charAt(0) || '?'} 
-                          size="sm"
-                          className="shadow-lg rounded-xl border border-black/5"
-                        />
-                      </AnimatedItem>
+
+          ) : (
+            <>
+              {groupedMessages.map((group, gIdx) => {
+                const isSentByMe = group.sender_id === user?.id;
+
+                return (
+                  <div
+                    key={`group-${group.sender_id}-${gIdx}`}
+                    className={cn(
+                      "flex items-end w-full gap-2 mb-4",
+                      isSentByMe ? "flex-row-reverse" : "flex-row"
+                    )}
+                  >
+                    {/* Sticky Avatar Sidebar - Glide Logic */}
+                    <div className="shrink-0 w-13 flex flex-col justify-end self-stretch">
+                      <div className="sticky top-24 bottom-0 -mb-1">
+                        <AnimatedItem index={gIdx}>
+                          <Avatar
+                            src={group.profile?.avatar_url}
+                            fallback={group.profile?.full_name?.charAt(0) || '?'}
+                            size="sm"
+                            className="shadow-lg rounded-xl border border-black/5"
+                          />
+                        </AnimatedItem>
+                      </div>
+                    </div>
+
+                    {/* Messages list for this group (reversed internally to preserve DOM injection anchor) */}
+                    <div className="flex flex-col-reverse gap-1 flex-1 min-w-0">
+                      {group.messages.map(({ msg, originalIndex }: { msg: any; originalIndex: number }, mIdx: number) => (
+                        <AnimatedItem key={msg.id} index={mIdx} delay={0.05}>
+                          <div id={`msg-${msg.id}`} className="transition-all duration-300">
+                            <MessageBubble
+                              id={msg.id}
+                              content={msg.content}
+                              type={msg.type}
+                              media_url={msg.media_url}
+                              file_name={msg.file_name}
+                              file_size={msg.file_size}
+                              timestamp={displayTime(msg.created_at)}
+                              isSentByMe={isSentByMe}
+                              senderName={group.profile?.full_name}
+                              senderAvatar={group.profile?.avatar_url}
+                              isSequence={mIdx > 0}
+                              isLastInSequence={mIdx === group.messages.length - 1}
+                              status={msg.status}
+                              uploadProgress={msg.uploadProgress}
+                              highlight={debouncedQuery}
+                              activeMatchWithinMessage={isSearchVisible && searchResults[currentMatchIndex]?.messageIndex === originalIndex ? searchResults[currentMatchIndex].matchIndexInContent : -1}
+                              onDelete={deleteMessage}
+                              hideAvatar={true}
+                              isSelected={selectedMessageIds.includes(msg.id)}
+                              onSelect={handleMessageSelect}
+                              isSelectionMode={isSelectionMode}
+                            />
+                          </div>
+                        </AnimatedItem>
+                      ))}
                     </div>
                   </div>
-
-                  {/* Messages list for this group (reversed internally to preserve DOM injection anchor) */}
-                  <div className="flex flex-col-reverse gap-1 flex-1 min-w-0">
-                    {group.messages.map(({ msg, originalIndex }: { msg: any; originalIndex: number }, mIdx: number) => (
-                      <AnimatedItem key={msg.id} index={mIdx} delay={0.05}>
-                        <div id={`msg-${msg.id}`} className="transition-all duration-300">
-                          <MessageBubble
-                            id={msg.id}
-                            content={msg.content}
-                            type={msg.type}
-                            media_url={msg.media_url}
-                            file_name={msg.file_name}
-                            file_size={msg.file_size}
-                            timestamp={displayTime(msg.created_at)}
-                            isSentByMe={isSentByMe}
-                            senderName={group.profile?.full_name}
-                            senderAvatar={group.profile?.avatar_url}
-                            isSequence={mIdx > 0}
-                            isLastInSequence={mIdx === group.messages.length - 1}
-                            status={msg.status}
-                            uploadProgress={msg.uploadProgress}
-                            highlight={debouncedQuery}
-                            activeMatchWithinMessage={isSearchVisible && searchResults[currentMatchIndex]?.messageIndex === originalIndex ? searchResults[currentMatchIndex].matchIndexInContent : -1}
-                            onDelete={deleteMessage}
-                            hideAvatar={true}
-                            isSelected={selectedMessageIds.includes(msg.id)}
-                            onSelect={handleMessageSelect}
-                            isSelectionMode={isSelectionMode}
-                          />
-                        </div>
-                      </AnimatedItem>
-                    ))}
+                );
+              })}
+              <div ref={loadMoreRef} className="h-4 flex items-center justify-center py-4">
+                {isFetchingNextPage && (
+                  <div className="flex items-center gap-2 text-[10px] font-black text-primary animate-pulse uppercase tracking-widest">
+                    <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" />
+                    Loading History
+                    <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:0.2s]" />
                   </div>
-                </div>
-              );
-            })}
-            <div ref={loadMoreRef} className="h-4 flex items-center justify-center py-4">
-              {isFetchingNextPage && (
-                <div className="flex items-center gap-2 text-[10px] font-black text-primary animate-pulse uppercase tracking-widest">
-                  <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" />
-                  Loading History
-                  <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:0.2s]" />
-                </div>
-              )}
-            </div>
-          </>
-        )}
+                )}
+              </div>
+            </>
+          )}
+        </Skeleton>
       </GradualScroll>
 
       <MessageComposer
@@ -863,7 +861,7 @@ export const ChatScreen: React.FC = () => {
             </div>
           </div>
 
-          
+
           {/* Actions */}
           <div className="w-full space-y-3">
 

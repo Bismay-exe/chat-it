@@ -8,7 +8,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/authStore';
 import { toast } from 'sonner';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { Skeleton } from 'boneyard-js/react';
 import { GradualScroll } from '@/components/ui/GradualScroll';
 import { AnimatedItem } from '@/components/ui/AnimatedItem';
 
@@ -158,6 +158,25 @@ export const AddContactPage = () => {
       </div>
 
       <GradualScroll className="flex-1" scrollClassName="pb-4">
+        <Skeleton 
+          name="add-contact-results" 
+          loading={isSearching}
+          fixture={
+            <div className="p-2 space-y-1">
+               {[...Array(5)].map((_, i) => (
+                 <AnimatedItem key={i} index={i}>
+                   <button className="w-full flex items-center gap-4 p-3 rounded-2xl text-left group">
+                     <Avatar src={undefined} fallback="?" size="md" />
+                     <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-sm truncate">Loading Name</div>
+                        <div className="text-xs text-muted-foreground truncate">@loading</div>
+                     </div>
+                   </button>
+                 </AnimatedItem>
+               ))}
+            </div>
+          }
+        >
         {results.length > 0 ? (
           <div className="p-2 space-y-1">
              <h3 className="px-4 py-2 text-xs font-bold text-muted-foreground uppercase tracking-widest">On Chat-It</h3>
@@ -179,12 +198,12 @@ export const AddContactPage = () => {
                </AnimatedItem>
              ))}
           </div>
-        ) : query.trim() && !isSearching ? (
+        ) : query.trim() ? (
           <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground">
             <SearchIcon className="w-12 h-12 mb-4 opacity-20" />
             <p>No results for "{query}"</p>
           </div>
-        ) : !query.trim() && (
+        ) : (
           <div className="p-4 space-y-6">
             {!isChatOnly && (
               <div className="space-y-2">
@@ -201,19 +220,7 @@ export const AddContactPage = () => {
             </div>
           </div>
         )}
-        {isSearching && (
-          <div className="p-2 space-y-1">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="flex items-center gap-4 p-3">
-                <Skeleton className="w-12 h-12 rounded-full shrink-0" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-4 w-[40%]" />
-                  <Skeleton className="h-3 w-[60%]" />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        </Skeleton>
       </GradualScroll>
     </div>
   );

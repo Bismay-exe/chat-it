@@ -7,7 +7,7 @@ import { TopBar } from '@/components/layout/TopBar';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/authStore';
 import { toast } from 'sonner';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { Skeleton } from 'boneyard-js/react';
 import { GradualScroll } from '@/components/ui/GradualScroll';
 import { AnimatedItem } from '@/components/ui/AnimatedItem';
 
@@ -185,39 +185,43 @@ export const SearchPage = () => {
       </div>
 
       <GradualScroll className="flex-1" scrollClassName="pb-4">
-        {isSearching && (
-          <div className="p-2 space-y-1">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="flex items-center gap-4 p-3">
-                <Skeleton className="w-12 h-12 rounded-full shrink-0" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-4 w-[40%]" />
-                  <Skeleton className="h-3 w-[60%]" />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-        {!isSearching && localResults.length > 0 && (
-          <div className="p-2 space-y-1">
-            <h3 className="px-4 py-3 text-[10px] font-black text-primary uppercase tracking-[0.2em] opacity-60">Your Chats</h3>
-            {localResults.map((r, i) => (
-              <AnimatedItem key={r.id} index={i}>
-                <SearchResultItem result={r} onClick={() => handleSelect(r)} />
-              </AnimatedItem>
-            ))}
-          </div>
-        )}
-        {!isSearching && platformResults.length > 0 && (
-          <div className="p-2 space-y-1">
-            <h3 className="px-4 py-3 text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] opacity-60">On Chat-It</h3>
-            {platformResults.map((r, i) => (
-              <AnimatedItem key={r.id} index={i}>
-                <SearchResultItem result={r} onClick={() => handleSelect(r)} />
-              </AnimatedItem>
-            ))}
-          </div>
-        )}
+        <Skeleton 
+          name="search-results" 
+          loading={isSearching} 
+          fixture={
+            <div className="p-2 space-y-1">
+              {[...Array(5)].map((_, i) => (
+                <SearchResultItem 
+                  key={i} 
+                  result={{ id: `${i}`, type: 'user', name: 'Loading User Name...', username: 'loading...', avatar_url: null }} 
+                  onClick={() => {}} 
+                />
+              ))}
+            </div>
+          }
+        >
+          {!isSearching && localResults.length > 0 && (
+            <div className="p-2 space-y-1">
+              <h3 className="px-4 py-3 text-[10px] font-black text-primary uppercase tracking-[0.2em] opacity-60">Your Chats</h3>
+              {localResults.map((r, i) => (
+                <AnimatedItem key={r.id} index={i}>
+                  <SearchResultItem result={r} onClick={() => handleSelect(r)} />
+                </AnimatedItem>
+              ))}
+            </div>
+          )}
+          {!isSearching && platformResults.length > 0 && (
+            <div className="p-2 space-y-1">
+              <h3 className="px-4 py-3 text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] opacity-60">On Chat-It</h3>
+              {platformResults.map((r, i) => (
+                <AnimatedItem key={r.id} index={i}>
+                  <SearchResultItem result={r} onClick={() => handleSelect(r)} />
+                </AnimatedItem>
+              ))}
+            </div>
+          )}
+        </Skeleton>
+
         {!isSearching && query.trim().length > 0 && localResults.length === 0 && platformResults.length === 0 && (
           <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground">
             <Search className="w-12 h-12 mb-4 opacity-10" />
