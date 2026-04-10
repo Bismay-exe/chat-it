@@ -240,7 +240,9 @@ const GradualBlur: React.FC<GradualBlurProps> = props => {
     };
 
     if (isVertical) {
-      baseStyle.height = responsiveHeight;
+      baseStyle.height = config.position === 'top' 
+        ? `calc(${responsiveHeight} + env(safe-area-inset-top, 0px))` 
+        : responsiveHeight;
       baseStyle.width = responsiveWidth || '100%';
       baseStyle[config.position] = 0;
       baseStyle.left = 0;

@@ -187,7 +187,7 @@ export const ChatsPage: React.FC = () => {
         isChildActive ? "hidden md:flex" : "flex"
       )}>
         {/* Top Navigation */}
-        <div className="h-20 flex items-center justify-between px-4 bg-background/90 md:rounded-4xl backdrop-blur-sm z-10 shrink-0">
+        <div className="min-h-20 flex items-center justify-between px-4 pt-safe bg-background/90 md:rounded-4xl backdrop-blur-sm z-10 shrink-0">
           {isSelectionMode ? (
             <div className="flex items-center justify-between w-full animate-in fade-in slide-in-from-top-2 duration-300">
               <div className="flex items-center gap-3">

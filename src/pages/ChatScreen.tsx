@@ -558,9 +558,9 @@ export const ChatScreen: React.FC = () => {
         {isSearchVisible && (
           <>
             <div className="pointer-events-none">
-              <GradualBlur position="top" className="z-10" height="10rem" opacity={1} curve="ease-in-out" />
+              <GradualBlur position="top" className="z-10" height="9rem" opacity={1} curve="ease-in-out" />
             </div>
-            <div className="p-2 flex items-center gap-2 animate-in slide-in-from-top duration-300 relative z-10">
+            <div className="p-2 -translate-y-4 flex items-center gap-2 animate-in slide-in-from-top duration-300 relative z-40">
               <div className="relative flex-1">
                 <Input
                   autoFocus
@@ -605,7 +605,7 @@ export const ChatScreen: React.FC = () => {
       <GradualScroll 
         scrollRef={scrollContainerRef as any}
         className="flex-1 w-full bg-secondary rounded-b-2xl"
-        scrollClassName="pt-16 pb-0 flex flex-col-reverse gap-1 px-2 md:px-6 lg:px-12 scroll-smooth"
+        scrollClassName={cn("pt-[calc(2.5rem+env(safe-area-inset-top,0px))] pb-0 flex flex-col-reverse gap-1 px-2 md:px-6 lg:px-12 scroll-smooth", isSearchVisible && "pt-[calc(6rem+env(safe-area-inset-top,0px))]")}
       >
         <div ref={messagesEndRef} className="h-0 w-full" />
         
