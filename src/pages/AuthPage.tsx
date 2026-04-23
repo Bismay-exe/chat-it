@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { MessageSquareText } from 'lucide-react';
 import { GoogleSignIn } from '@capawesome/capacitor-google-sign-in';
+import { Capacitor } from '@capacitor/core';
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -66,7 +67,8 @@ export const AuthPage: React.FC = () => {
       });
       if (error) throw error;
       toast.success('Account created! Please check your email.');
-      if(!supabase.auth.getSession()) {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
         setIsLogin(true);
       } else {
         navigate('/chats');
@@ -78,17 +80,30 @@ export const AuthPage: React.FC = () => {
 
   const handleGoogleLogin = async () => {
     try {
-      const result = await GoogleSignIn.signIn();
-      const idToken = result.idToken;
+      if (Capacitor.isNativePlatform()) {
+        // Native (Android APK)
+        const result = await GoogleSignIn.signIn();
+        const idToken = result.idToken;
 
-      if (!idToken) throw new Error("No ID Token found");
+        if (!idToken) throw new Error("No ID Token found");
 
-      const { error } = await supabase.auth.signInWithIdToken({
-        provider: 'google',
-        token: idToken,
-      });
+        const { error } = await supabase.auth.signInWithIdToken({
+          provider: 'google',
+          token: idToken,
+        });
 
-      if (error) throw error;
+        if (error) throw error;
+      } else {
+        // Web (browser)
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: window.location.origin + '/chats'
+          }
+        });
+
+        if (error) throw error;
+      }
       
       toast.success('Successfully logged in with Google');
       navigate('/chats');
