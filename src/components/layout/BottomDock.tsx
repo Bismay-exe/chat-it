@@ -93,7 +93,7 @@ export const BottomDock: React.FC = () => {
           )}
         >
           <div className="relative">
-            <MessageCircle className={cn('w-6 h-6', location.pathname.startsWith('/chats') && 'fill-primary/20')} />
+            <MessageCircle className={cn('w-6 h-6', location.pathname.startsWith('/chats') && 'fill-primary/80')} />
           </div>
           <span className="text-[10px] font-medium leading-none">Chats</span>
         </button>
@@ -124,7 +124,7 @@ export const BottomDock: React.FC = () => {
           )}
         >
           <div className="relative">
-            <Megaphone className={cn('w-6 h-6', location.pathname.startsWith('/announcements') && 'fill-primary/20')} />
+            <Megaphone className={cn('w-6 h-6', location.pathname.startsWith('/announcements') && 'fill-primary/80')} />
           </div>
           <span className="text-[10px] font-medium leading-none">News</span>
         </button>

@@ -83,7 +83,7 @@ export const AboutPage = () => {
         {/* Logo Section */}
         <div className="mt-8 mb-12 flex flex-col items-center gap-4">
           <div className="w-24 h-24 bg-primary rounded-3xl flex items-center justify-center shadow-xl shadow-primary/20">
-            <img src="/logo/chat-it-logo.svg" alt="Chat-It" className="h-8 w-auto xdark:invert" />
+            <img src="/logo/chat-it-logo.svg" alt="Chat-It" className="h-7 w-auto dark:invert" />
           </div>
           <div className="text-center">
             <h1 className="text-3xl font-black tracking-tighter">Chat-It</h1>

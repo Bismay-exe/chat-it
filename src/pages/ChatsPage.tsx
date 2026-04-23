@@ -327,10 +327,10 @@ export const ChatsPage: React.FC = () => {
                     key={tab}
                     onClick={() => tab === '+' ? navigate('/chats/lists') : setActiveTab(tab)}
                     className={cn(
-                      "px-3 py-1 rounded-full text-sm font-bold premium-transition whitespace-nowrap",
+                      "px-3 py-1 rounded-lg text-sm font-semibold premium-transition whitespace-nowrap",
                       activeTab === tab
-                        ? "bg-primary/20 text-primary border border-primary/20"
-                        : "bg-secondary-foreground/20 text-muted-foreground hover:bg-secondary hover:text-foreground border border-secondary-foreground/20"
+                        ? "bg-[#1c1c1e] text-white/70 border border-primary/20"
+                        : "bg-secondary-foreground/10 text-muted-foreground hover:bg-secondary hover:text-foreground border border-secondary-foreground/10"
                     )}
                   >
                     {tab}
