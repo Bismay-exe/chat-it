@@ -294,10 +294,8 @@ export const ChatScreen: React.FC = () => {
       }[];
     }[] = [];
 
-    // Reverse messages for flex-col-reverse: newest first
-    const reversedMessages = [...messages];
-
-    reversedMessages.forEach((msg, idx) => {
+    // Messages are naturally oldest-first from the source
+    messages.forEach((msg, idx) => {
       const dateStr = formatChatDate(msg.created_at);
       let lastDateGroup = dateGroups[dateGroups.length - 1];
       
@@ -308,12 +306,12 @@ export const ChatScreen: React.FC = () => {
 
       const lastSenderGroup = lastDateGroup.senderGroups[lastDateGroup.senderGroups.length - 1];
       if (lastSenderGroup && lastSenderGroup.sender_id === msg.sender_id) {
-        lastSenderGroup.messages.push({ msg, originalIndex: messages.length - 1 - idx });
+        lastSenderGroup.messages.push({ msg, originalIndex: idx });
       } else {
         lastDateGroup.senderGroups.push({
           sender_id: msg.sender_id,
           profile: msg.profiles,
-          messages: [{ msg, originalIndex: messages.length - 1 - idx }]
+          messages: [{ msg, originalIndex: idx }]
         });
       }
     });
@@ -646,22 +644,24 @@ export const ChatScreen: React.FC = () => {
           ) : (
             <>
               {groupedByDate.map((dateGroup) => (
-                <div key={dateGroup.dateStr} className="flex flex-col-reverse w-full relative z-0">
-                  {dateGroup.senderGroups.map((group, gIdx) => {
+                <div key={dateGroup.dateStr} className="flex flex-col w-full relative z-0">
+                  <DateSeparator date={dateGroup.dateStr} />
+                  {dateGroup.senderGroups.slice().map((group, gIdxReversed) => {
                     const isSentByMe = group.sender_id === user?.id;
+                    const originalGIdx = dateGroup.senderGroups.length - 1 - gIdxReversed;
 
                     return (
                       <div
-                        key={`group-${group.sender_id}-${gIdx}`}
+                        key={`group-${group.sender_id}-${originalGIdx}`}
                         className={cn(
                           "flex items-end w-full gap-2 mb-4",
                           isSentByMe ? "flex-row-reverse" : "flex-row"
                         )}
                       >
-                        {/* Sticky Avatar Sidebar - Glide Logic */}
+                        {/* Avatar Sidebar - Glide Logic */}
                         <div className="shrink-0 w-13 flex flex-col justify-end self-stretch">
                           <div className="sticky top-0 bottom-16 -mb-1">
-                            <AnimatedItem index={gIdx}>
+                            <AnimatedItem index={originalGIdx}>
                               <Avatar
                                 src={group.profile?.avatar_url}
                                 fallback={group.profile?.full_name?.charAt(0) || '?'}
@@ -672,42 +672,44 @@ export const ChatScreen: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Messages list for this group (reversed internally to preserve DOM injection anchor) */}
-                        <div className="flex flex-col-reverse gap-1 flex-1 min-w-0">
-                          {group.messages.map(({ msg, originalIndex }: { msg: any; originalIndex: number }, mIdx: number) => (
-                            <AnimatedItem key={msg.id} index={mIdx} delay={0.05}>
-                              <div id={`msg-${msg.id}`} className="transition-all duration-300">
-                                <MessageBubble
-                                  id={msg.id}
-                                  content={msg.content}
-                                  type={msg.type}
-                                  media_url={msg.media_url}
-                                  file_name={msg.file_name}
-                                  file_size={msg.file_size}
-                                  timestamp={displayTime(msg.created_at)}
-                                  isSentByMe={isSentByMe}
-                                  senderName={group.profile?.full_name}
-                                  senderAvatar={group.profile?.avatar_url}
-                                  isSequence={mIdx > 0}
-                                  isLastInSequence={mIdx === group.messages.length - 1}
-                                  status={msg.status}
-                                  uploadProgress={msg.uploadProgress}
-                                  highlight={debouncedQuery}
-                                  activeMatchWithinMessage={isSearchVisible && searchResults[currentMatchIndex]?.messageIndex === originalIndex ? searchResults[currentMatchIndex].matchIndexInContent : -1}
-                                  onDelete={deleteMessage}
-                                  hideAvatar={true}
-                                  isSelected={selectedMessageIds.includes(msg.id)}
-                                  onSelect={handleMessageSelect}
-                                  isSelectionMode={isSelectionMode}
-                                />
-                              </div>
-                            </AnimatedItem>
-                          ))}
+                        {/* Messages list for this group (strictly chronological top-to-bottom) */}
+                        <div className="flex flex-col gap-1 flex-1 min-w-0">
+                          {group.messages.slice().reverse().map(({ msg, originalIndex }: { msg: any; originalIndex: number }, mIdxReversed: number) => {
+                            const originalMIdx = group.messages.length - 1 - mIdxReversed;
+                            return (
+                              <AnimatedItem key={msg.id} index={originalMIdx} delay={0.05}>
+                                <div id={`msg-${msg.id}`} className="transition-all duration-300">
+                                  <MessageBubble
+                                    id={msg.id}
+                                    content={msg.content}
+                                    type={msg.type}
+                                    media_url={msg.media_url}
+                                    file_name={msg.file_name}
+                                    file_size={msg.file_size}
+                                    timestamp={displayTime(msg.created_at)}
+                                    isSentByMe={isSentByMe}
+                                    senderName={group.profile?.full_name}
+                                    senderAvatar={group.profile?.avatar_url}
+                                    isSequence={mIdxReversed < group.messages.length - 1}
+                                    isLastInSequence={mIdxReversed === 0}
+                                    status={msg.status}
+                                    uploadProgress={msg.uploadProgress}
+                                    highlight={debouncedQuery}
+                                    activeMatchWithinMessage={isSearchVisible && searchResults[currentMatchIndex]?.messageIndex === originalIndex ? searchResults[currentMatchIndex].matchIndexInContent : -1}
+                                    onDelete={deleteMessage}
+                                    hideAvatar={true}
+                                    isSelected={selectedMessageIds.includes(msg.id)}
+                                    onSelect={handleMessageSelect}
+                                    isSelectionMode={isSelectionMode}
+                                  />
+                                </div>
+                              </AnimatedItem>
+                            );
+                          })}
                         </div>
                       </div>
                     );
                   })}
-                  <DateSeparator date={dateGroup.dateStr} />
                 </div>
               ))}
               <div ref={loadMoreRef} className="h-4 flex items-center justify-center py-4">
