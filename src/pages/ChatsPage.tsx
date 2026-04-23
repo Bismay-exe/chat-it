@@ -302,35 +302,35 @@ export const ChatsPage: React.FC = () => {
           )}
 
           <div className="hidden md:block p-4 animate-in slide-in-from-top-2 duration-200">
-              <div className="relative group border border-black/10 rounded-full">
-                <input
-                  type="text"
-                  autoFocus
-                  value={searchQuery}
-                  onChange={onSearchChange}
-                  placeholder="Search chats..."
-                  className="w-full h-10 pl-10 pr-4 rounded-full bg-muted-foreground/10 backdrop-blur-md border-none text-sm font-bold outline-none transition-all placeholder:text-muted-foreground/60"
-                />
-                <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
-                {isSearching && (
-                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                )}
-              </div>
+            <div className="relative group border border-black/10 rounded-full">
+              <input
+                type="text"
+                autoFocus
+                value={searchQuery}
+                onChange={onSearchChange}
+                placeholder="Search chats..."
+                className="w-full h-10 pl-10 pr-4 rounded-full bg-muted-foreground/10 backdrop-blur-md border-none text-sm font-bold outline-none transition-all placeholder:text-muted-foreground/60"
+              />
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
+              {isSearching && (
+                <div className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              )}
             </div>
+          </div>
 
           {/* Filter Tabs */}
-          <div className={cn("px-3 z-10", showSearchBar ? "hidden md:block" : "block")}>
-            <div className="p-0.5 bg-muted-foreground/10 backdrop-blur-md rounded-full border border-black/10 overflow-x-auto no-scrollbar shrink-0">
+          <div className={cn("z-10", showSearchBar ? "hidden md:block" : "block")}>
+            <div className="py-0.5 px-3 bg-muted-foreground/0 rounded-lg border border-black/0 overflow-x-auto no-scrollbar shrink-0">
               <div className="flex gap-2 min-w-max">
                 {allTabs.map(tab => (
                   <button
                     key={tab}
                     onClick={() => tab === '+' ? navigate('/chats/lists') : setActiveTab(tab)}
                     className={cn(
-                      "px-5 py-1 rounded-full text-sm font-bold premium-transition whitespace-nowrap",
+                      "px-3 py-1 rounded-full text-sm font-bold premium-transition whitespace-nowrap",
                       activeTab === tab
                         ? "bg-primary/20 text-primary border border-primary/20"
-                        : "text-muted-foreground hover:bg-secondary hover:text-foreground border border-transparent"
+                        : "bg-secondary-foreground/20 text-muted-foreground hover:bg-secondary hover:text-foreground border border-secondary-foreground/20"
                     )}
                   >
                     {tab}

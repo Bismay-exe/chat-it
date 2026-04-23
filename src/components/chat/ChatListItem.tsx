@@ -167,7 +167,7 @@ export const ChatListItem: React.FC<ChatListItemProps> = React.memo(({
         onPointerUp={cancelLongPress}
         onPointerLeave={cancelLongPress}
         className={cn(
-          'w-full flex gap-3 px-4 py-2 premium-transition text-left relative items-center'
+          'w-full flex gap-3 px-4 py-1 premium-transition text-left relative items-center'
         )}
       >
         <div className={cn(
