@@ -304,7 +304,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
 
         {/* Text Content */}
         {type === 'text' && (
-          <p className="whitespace-pre-wrap break-words break-all md:break-words min-w-0 max-w-full">
+          <p className="whitespace-pre-wrap wrap-break-words break-all min-w-0 max-w-full">
             {(() => {
               if (highlight && typeof highlight === 'string') {
                 const parts = content.split(new RegExp(`(${highlight})`, 'gi'));

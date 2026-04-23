@@ -37,6 +37,13 @@ export const ChatsPage: React.FC = () => {
   const [selectedChatIds, setSelectedChatIds] = useState<string[]>([]);
   const { blockUser } = useUserActions();
 
+  // Generate a beautiful pastel color from string hash
+  const getPastelColor = useCallback((str: string) => {
+    const hash = str.split('').reduce((acc, char) => char.charCodeAt(0) + ((acc << 5) - acc), 0);
+    const h = Math.abs(hash % 360);
+    return `hsl(${h}, 50%, 80%)`;
+  }, []);
+
   const isLoading = isChatsLoading || isListsLoading;
 
   const handleChatClick = useCallback((chatId: string) => {
@@ -75,6 +82,14 @@ export const ChatsPage: React.FC = () => {
     });
   }, [filteredChats, pins, activeTab]);
 
+  const pinnedChats = useMemo(() => {
+    return sortedChats.filter(chat => pins.some(p => p.chat_id === chat.chat_id && p.list_key === activeTab));
+  }, [sortedChats, pins, activeTab]);
+
+  const regularChats = useMemo(() => {
+    return sortedChats.filter(chat => !pins.some(p => p.chat_id === chat.chat_id && p.list_key === activeTab));
+  }, [sortedChats, pins, activeTab]);
+
   // Sidebar Search Logic
   const handleSearch = useCallback(async (q: string) => {
     const trimmed = q.trim();
@@ -111,7 +126,7 @@ export const ChatsPage: React.FC = () => {
   };
 
   const toggleSelection = useCallback((chatId: string) => {
-    setSelectedChatIds(prev => 
+    setSelectedChatIds(prev =>
       prev.includes(chatId) ? prev.filter(id => id !== chatId) : [...prev, chatId]
     );
   }, []);
@@ -132,7 +147,7 @@ export const ChatsPage: React.FC = () => {
   const selectionDropdownItems = useMemo(() => {
     const firstId = selectedChatIds[0];
     const firstChat = chats.find(c => c.chat_id === firstId);
-    
+
     return [
       {
         label: 'Add to Favorites',
@@ -181,7 +196,7 @@ export const ChatsPage: React.FC = () => {
 
   return (
     <div className="flex w-full h-full bg-[#212023] md:pr-3 md:py-3 md:gap-3">
-      {/* Sidebar Chat List */} 
+      {/* Sidebar Chat List */}
       <div className={cn(
         "gradient flex-col w-full md:w-[320px] lg:w-95 h-full md:rounded-2xl border-r border-border shrink-0 top-0 relative",
         isChildActive ? "hidden md:flex" : "flex"
@@ -197,7 +212,7 @@ export const ChatsPage: React.FC = () => {
             {isSelectionMode ? (
               <div className="flex items-center justify-between w-full animate-in fade-in slide-in-from-top-2 duration-300">
                 <div className="flex items-center gap-3">
-                  <button 
+                  <button
                     onClick={clearSelection}
                     className="p-2 hover:bg-secondary rounded-full transition-colors"
                   >
@@ -205,9 +220,9 @@ export const ChatsPage: React.FC = () => {
                   </button>
                   <span className="text-xl font-bold font-bricolage-semi-condensed">{selectedChatIds.length}</span>
                 </div>
-                
+
                 <div className="flex items-center gap-1 text-muted-foreground">
-                  <button 
+                  <button
                     onClick={() => {
                       const allPinned = selectedChatIds.every(id => pins.some(p => p.chat_id === id && p.list_key === activeTab));
                       handleBulkAction((id) => togglePin(id, activeTab, allPinned));
@@ -217,7 +232,7 @@ export const ChatsPage: React.FC = () => {
                   >
                     {selectedChatIds.every(id => pins.some(p => p.chat_id === id && p.list_key === activeTab)) ? <PinOff className="w-5 h-5" /> : <Pin className="w-5 h-5" />}
                   </button>
-                  <button 
+                  <button
                     onClick={() => {
                       const allMuted = selectedChatIds.every(id => chats.find(c => c.chat_id === id)?.is_muted);
                       handleBulkAction((id) => toggleMute(id, allMuted));
@@ -227,7 +242,7 @@ export const ChatsPage: React.FC = () => {
                   >
                     {selectedChatIds.every(id => chats.find(c => c.chat_id === id)?.is_muted) ? <Bell className="w-5 h-5" /> : <BellOff className="w-5 h-5" />}
                   </button>
-                  <button 
+                  <button
                     onClick={() => {
                       const allArchived = selectedChatIds.every(id => chats.find(c => c.chat_id === id)?.is_archived);
                       handleBulkAction((id) => toggleArchive(id, allArchived));
@@ -237,7 +252,7 @@ export const ChatsPage: React.FC = () => {
                   >
                     {selectedChatIds.every(id => chats.find(c => c.chat_id === id)?.is_archived) ? <ArchiveRestore className="w-5 h-5" /> : <Archive className="w-5 h-5" />}
                   </button>
-                  <button 
+                  <button
                     onClick={() => {
                       if (confirm(`Delete ${selectedChatIds.length} chat(s)?`)) {
                         handleBulkAction(deleteChat);
@@ -249,8 +264,8 @@ export const ChatsPage: React.FC = () => {
                     <Trash2 className="w-5 h-5" />
                   </button>
                   <div className="relative">
-                    <DropdownMenu 
-                      items={selectionDropdownItems} 
+                    <DropdownMenu
+                      items={selectionDropdownItems}
                       icon={<MoreVertical className="w-5 h-5" />}
                     />
                   </div>
@@ -260,16 +275,16 @@ export const ChatsPage: React.FC = () => {
               <>
                 <img src="/logo/chat-it.svg" alt="Chat-It" className="h-10 w-auto xdark:invert" />
                 <div className="flex items-center gap-1 text-muted-foreground">
-                  <button 
+                  <button
                     onClick={() => {
                       setShowSearchBar(!showSearchBar);
                       if (showSearchBar) {
                         setSearchQuery('');
                         setSearchResults([]);
                       }
-                    }} 
+                    }}
                     className={cn(
-                      "p-2 rounded-full premium-transition", 
+                      "p-2 rounded-full premium-transition",
                       showSearchBar ? "bg-primary/10 text-primary" : "hover:bg-secondary"
                     )}
                   >
@@ -368,95 +383,156 @@ export const ChatsPage: React.FC = () => {
             </div>
           ) : (
             <>
-            <Skeleton 
-              name="chat-list" 
-              loading={isLoading}
-              fixture={
-                <div className="space-y-1">
-                  {[...Array(6)].map((_, i) => (
-                    <AnimatedItem key={`fixture-${i}`} index={i}>
+              <Skeleton
+                name="chat-list"
+                loading={isLoading}
+                fixture={
+                  <div className="space-y-1">
+                    {[...Array(6)].map((_, i) => (
+                      <AnimatedItem key={`fixture-${i}`} index={i}>
+                        <ChatListItem
+                          chat_id={`fixture-${i}`}
+                          chat_type="direct"
+                          name="Loading User Name"
+                          avatar_url={null}
+                          is_archived={false}
+                          is_favorite={false}
+                          is_muted={false}
+                          is_pinned={false}
+                          isActive={false}
+                          currentListKey="All Chats"
+                          onClick={() => { }}
+                          onArchive={() => { }}
+                          onFavorite={() => { }}
+                          onMute={() => { }}
+                          onPin={() => { }}
+                          onDelete={() => { }}
+                          onManageLists={() => { }}
+                          onInfo={() => { }}
+                          onBlock={() => { }}
+                          onLeaveGroup={() => { }}
+                          isSelected={false}
+                          onSelect={() => { }}
+                          selectionMode={false}
+                        />
+                      </AnimatedItem>
+                    ))}
+                  </div>
+                }
+              >
+                <>
+                  {pinnedChats.length > 0 && (
+                    <div className="mb-4">
+                      <div className="flex items-center gap-2 px-6 py-2 shrink-0">
+                        <Pin className="w-4 h-4 text-foreground fill-foreground rotate-45" />
+                        <h2 className="font-bold text-[16px] text-foreground tracking-tight">Pinned Chats</h2>
+                      </div>
+                      <div className="flex overflow-x-auto no-scrollbar gap-3 pl-6 pr-6 pb-2 snap-x snap-mandatory pt-1">
+                        {pinnedChats.map((chat) => (
+                          <button
+                            key={chat.chat_id}
+                            onClick={() => handleChatClick(chat.chat_id)}
+                            className={cn(
+                              "relative shrink-0 w-35 h-42.5 rounded-[28px] overflow-hidden shadow-md hover:shadow-md transition-shadow text-left flex flex-col justify-end p-4 snap-start",
+                              id === chat.chat_id && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                            )}
+                            style={{ backgroundColor: getPastelColor(chat.name) }}
+                          >
+                            {chat.avatar_url ? (
+                              <img src={chat.avatar_url} alt={chat.name} className="absolute inset-0 w-full h-full object-cover z-0" />
+                            ) : (
+                              <div className="absolute inset-0 w-full h-full bg-linear-to-b from-white/0 to-black/20 z-0"></div>
+                            )}
+                            <div className="absolute inset-0 bg-linear-to-t from-white/60 via-transparent to-transparent z-10"></div>
+                            <div className="absolute inset-0 pointer-events-none">
+                              <GradualBlur position="bottom" className="z-10 -mb-1.5" height="4rem" opacity={0.9} curve="ease-in-out" />
+                            </div>
+
+                            <div className="relative z-20 w-full">
+                              <h3 className="font-bold text-primary text-[16px] truncate font-bricolage-semi-condensed leading-none">{chat.name}</h3>
+                              <p className="text-primary/80 text-[12px] truncate mt-0.5 leading-none">{chat.last_message || 'No messages'}</p>
+                            </div>
+
+                            <div className="absolute top-3 left-3 z-20 flex gap-1">
+                              {chat.unread_count ? (
+                                <div className="bg-foreground text-background text-[11px] font-bold w-6 h-6 rounded-full flex items-center justify-center shadow-md">
+                                  {chat.unread_count}
+                                </div>
+                              ) : (
+                                <div className="bg-background/40 backdrop-blur-md text-white text-[10px] w-6 h-6 rounded-full flex items-center justify-center shadow-sm">
+                                  <Check className="w-3.5 h-3.5 text-white" />
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="absolute top-3 right-3 z-20">
+                              {/* Decorative dot imitating online status similar to the screenshot */}
+                              <div className={cn("w-3 h-3 rounded-full shadow-sm ring-2 ring-transparent", chat.unread_count ? "bg-[#34C759]" : "bg-white/40")}></div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {(pinnedChats.length > 0 || regularChats.length > 0) && (
+                    <div className="flex items-center gap-2 px-6 py-2 mb-1 shrink-0">
+                      <MessageSquareText className="w-4 h-4 text-foreground fill-foreground" />
+                      <h2 className="font-bold text-[16px] text-foreground tracking-tight">All Chats</h2>
+                    </div>
+                  )}
+
+                  {regularChats.map((chat, i) => (
+                    <AnimatedItem key={chat.chat_id} index={i}>
                       <ChatListItem
-                        chat_id={`fixture-${i}`}
-                        chat_type="direct"
-                        name="Loading User Name"
-                        avatar_url={null}
-                        is_archived={false}
-                        is_favorite={false}
-                        is_muted={false}
-                        is_pinned={false}
-                        isActive={false}
-                        currentListKey="All Chats"
-                        onClick={() => {}}
-                        onArchive={() => {}}
-                        onFavorite={() => {}}
-                        onMute={() => {}}
-                        onPin={() => {}}
-                        onDelete={() => {}}
-                        onManageLists={() => {}}
-                        onInfo={() => {}}
-                        onBlock={() => {}}
-                        onLeaveGroup={() => {}}
-                        isSelected={false}
-                        onSelect={() => {}}
-                        selectionMode={false}
+                        {...chat}
+                        is_pinned={pins.some(p => p.chat_id === chat.chat_id && p.list_key === activeTab)}
+                        isActive={id === chat.chat_id}
+                        currentListKey={activeTab}
+                        onClick={() => handleChatClick(chat.chat_id)}
+                        onArchive={toggleArchive}
+                        onFavorite={toggleFavorite}
+                        onMute={toggleMute}
+                        onPin={(id, current) => togglePin(id, activeTab, current)}
+                        onDelete={deleteChat}
+                        onManageLists={setManagingChatId}
+                        onInfo={(chatId) => {
+                          const chat = chats.find(c => c.chat_id === chatId);
+                          if (window.innerWidth < 1024) {
+                            if (chat?.chat_type === 'group') {
+                              navigate(`/chats/${chatId}/info`);
+                            } else if (chat?.other_user_id) {
+                              navigate(`/profile/${chat.other_user_id}`);
+                            }
+                          } else {
+                            handleChatClick(chatId);
+                            setShowInfo(true);
+                          }
+                        }}
+                        onBlock={(userId) => {
+                          if (confirm('Are you sure you want to block this user?')) {
+                            blockUser(userId);
+                          }
+                        }}
+                        onLeaveGroup={(chatId) => {
+                          if (confirm('Are you sure you want to leave this group?')) {
+                            deleteChat(chatId);
+                          }
+                        }}
+                        isSelected={selectedChatIds.includes(chat.chat_id)}
+                        onSelect={toggleSelection}
+                        selectionMode={isSelectionMode}
                       />
                     </AnimatedItem>
                   ))}
-                </div>
-              }
-            >
-              <>
-                {sortedChats.map((chat, i) => (
-                  <AnimatedItem key={chat.chat_id} index={i}>
-                    <ChatListItem
-                      {...chat}
-                      is_pinned={pins.some(p => p.chat_id === chat.chat_id && p.list_key === activeTab)}
-                      isActive={id === chat.chat_id}
-                      currentListKey={activeTab}
-                      onClick={() => handleChatClick(chat.chat_id)}
-                      onArchive={toggleArchive}
-                      onFavorite={toggleFavorite}
-                      onMute={toggleMute}
-                      onPin={(id, current) => togglePin(id, activeTab, current)}
-                      onDelete={deleteChat}
-                      onManageLists={setManagingChatId}
-                      onInfo={(chatId) => {
-                        const chat = chats.find(c => c.chat_id === chatId);
-                        if (window.innerWidth < 1024) {
-                          if (chat?.chat_type === 'group') {
-                            navigate(`/chats/${chatId}/info`);
-                          } else if (chat?.other_user_id) {
-                            navigate(`/profile/${chat.other_user_id}`);
-                          }
-                        } else {
-                          handleChatClick(chatId);
-                          setShowInfo(true);
-                        }
-                      }}
-                      onBlock={(userId) => {
-                        if (confirm('Are you sure you want to block this user?')) {
-                          blockUser(userId);
-                        }
-                      }}
-                      onLeaveGroup={(chatId) => {
-                        if (confirm('Are you sure you want to leave this group?')) {
-                          deleteChat(chatId);
-                        }
-                      }}
-                      isSelected={selectedChatIds.includes(chat.chat_id)}
-                      onSelect={toggleSelection}
-                      selectionMode={isSelectionMode}
-                    />
-                  </AnimatedItem>
-                ))}
-                {sortedChats.length === 0 && (
-                  <div className="h-full flex flex-col items-center justify-center text-muted-foreground p-6 text-center opacity-40">
-                    <MessageSquareText className="w-10 h-10 mb-3" />
-                    <p className="text-sm font-medium">No chats found in "{activeTab}"</p>
-                  </div>
-                )}
-              </>
-            </Skeleton>
+                  {regularChats.length === 0 && pinnedChats.length === 0 && (
+                    <div className="h-full flex flex-col items-center justify-center text-muted-foreground p-6 text-center opacity-40 shrink-0">
+                      <MessageSquareText className="w-10 h-10 mb-3" />
+                      <p className="text-sm font-medium">No chats found in "{activeTab}"</p>
+                    </div>
+                  )}
+                </>
+              </Skeleton>
             </>
           )}
         </GradualScroll>
