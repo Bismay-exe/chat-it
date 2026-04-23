@@ -674,7 +674,7 @@ export const ChatScreen: React.FC = () => {
 
                         {/* Messages list for this group (strictly chronological top-to-bottom) */}
                         <div className="flex flex-col gap-1 flex-1 min-w-0">
-                          {group.messages.slice().reverse().map(({ msg, originalIndex }: { msg: any; originalIndex: number }, mIdxReversed: number) => {
+                          {group.messages.slice().map(({ msg, originalIndex }: { msg: any; originalIndex: number }, mIdxReversed: number) => {
                             const originalMIdx = group.messages.length - 1 - mIdxReversed;
                             return (
                               <AnimatedItem key={msg.id} index={originalMIdx} delay={0.05}>

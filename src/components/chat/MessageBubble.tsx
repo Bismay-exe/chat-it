@@ -257,10 +257,10 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
       )}
     >
       <div className={cn(
-        "relative px-1 py-1 text-[14px] md:text-[15px] leading-tight transition-all duration-300 shadow-sm flex flex-col min-w-20 overflow-hidden",
+        "relative px-1 py-1 backdrop-blur-sm text-[14px] md:text-[15px] leading-tight transition-all duration-300 shadow-sm flex flex-col min-w-20 overflow-hidden",
         isSentByMe 
-          ? cn("bg-[#7C69EF] text-white rounded-xl", isLastInSequence && "rounded-br-sm", isSelected && "bg-[#6A57E0] ring-1 ring-white/50") 
-          : cn("bg-[#F3F4FE] text-slate-900 rounded-xl", isLastInSequence && "rounded-bl-sm", isSelected && "bg-[#E6E8FD] ring-1 ring-[#7C69EF]/50"),
+          ? cn("bg-[#7C69EF]/85 text-white rounded-xl", isLastInSequence && "rounded-br-sm", isSelected && "bg-[#6A57E0] ring-1 ring-white/50") 
+          : cn("bg-background/50 text-slate-900 rounded-xl", isLastInSequence && "rounded-bl-sm", isSelected && "bg-[#E6E8FD] ring-1 ring-[#7C69EF]/50"),
         (type === 'image' || type === 'video') && "p-1 overflow-hidden"
       )}>
         {/* Selection Checkmark */}

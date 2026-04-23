@@ -23,7 +23,7 @@ export const BottomDock: React.FC = () => {
             className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40 transition-opacity" 
             onClick={() => setShowNewMenu(false)} 
           />
-          <div className="fixed bottom-20 left-4 right-4 bg-background border border-border shadow-2xl rounded-3xl p-2 z-50 animate-in slide-in-from-bottom-4 fade-in duration-200">
+          <div className="fixed bottom-20 left-4 right-4 bg-background/60 backdrop-blur-xl border border-border/50 shadow-2xl rounded-3xl p-2 z-50 animate-in slide-in-from-bottom-4 fade-in duration-200">
             <div className="flex flex-col gap-1">
               <button 
                 onClick={() => handleMenuClick(() => navigate('/add?type=chat'))}
