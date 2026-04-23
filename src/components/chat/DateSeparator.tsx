@@ -12,8 +12,8 @@ export function formatChatDate(dateStr: string) {
 export const DateSeparator: React.FC<{ date: string }> = ({ date }) => {
   return (
     <div className="flex items-center justify-center my-3 w-full sticky top-2 z-10 pointer-events-none select-none">
-      <div className="bg-background/80 backdrop-blur-sm rounded-lg px-3 py-1 shadow-[0_1px_3px_rgba(0,0,0,0.08)]">
-        <span className="text-[11px] font-semibold text-muted-foreground/80 tracking-wide">
+      <div className="bg-background/50 border border-border/10 backdrop-blur-xl rounded-lg px-3 py-0.5 shadow-[0_1px_20px_rgba(0,0,0,0.08)]">
+        <span className="text-[11px] font-bold text-muted-foreground/80 tracking-wide">
           {date}
         </span>
       </div>

@@ -619,7 +619,7 @@ export const ChatScreen: React.FC = () => {
       <GradualScroll
         scrollRef={scrollContainerRef as any}
         className={`flex-1 w-full`}
-        scrollClassName={cn("pt-[calc(4.5rem+env(safe-area-inset-top,0px))] pb-10 flex flex-col-reverse gap-1 px-2 md:px-6 lg:px-12 scroll-smooth", isSearchVisible && "pt-[calc(8rem+env(safe-area-inset-top,0px))]")}
+        scrollClassName={cn("pt-[calc(4.5rem+env(safe-area-inset-top,0px))] pb-4 flex flex-col-reverse gap-1 px-2 md:px-6 lg:px-12 scroll-smooth", isSearchVisible && "pt-[calc(8rem+env(safe-area-inset-top,0px))]")}
       >
         <div ref={messagesEndRef} className="h-0 w-full" />
 
@@ -646,13 +646,13 @@ export const ChatScreen: React.FC = () => {
               {groupedByDate.map((dateGroup) => (
                 <div key={dateGroup.dateStr} className="flex flex-col w-full relative z-0">
                   <DateSeparator date={dateGroup.dateStr} />
-                  {dateGroup.senderGroups.slice().map((group, gIdxReversed) => {
+                  {dateGroup.senderGroups.slice().map((group, gIdx) => {
                     const isSentByMe = group.sender_id === user?.id;
-                    const originalGIdx = dateGroup.senderGroups.length - 1 - gIdxReversed;
+                    const stableGroupId = group.messages.length > 0 ? group.messages[0].msg.id : gIdx;
 
                     return (
                       <div
-                        key={`group-${group.sender_id}-${originalGIdx}`}
+                        key={`group-${group.sender_id}-${stableGroupId}`}
                         className={cn(
                           "flex items-end w-full gap-2 mb-4",
                           isSentByMe ? "flex-row-reverse" : "flex-row"
@@ -660,8 +660,8 @@ export const ChatScreen: React.FC = () => {
                       >
                         {/* Avatar Sidebar - Glide Logic */}
                         <div className="shrink-0 w-13 flex flex-col justify-end self-stretch">
-                          <div className="sticky top-0 bottom-16 -mb-1">
-                            <AnimatedItem index={originalGIdx}>
+                          <div className="sticky top-0 bottom-12 -mb-1">
+                            <AnimatedItem index={gIdx}>
                               <Avatar
                                 src={group.profile?.avatar_url}
                                 fallback={group.profile?.full_name?.charAt(0) || '?'}
