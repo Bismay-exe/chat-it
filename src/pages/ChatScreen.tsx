@@ -375,7 +375,10 @@ export const ChatScreen: React.FC = () => {
   const isFavorite = chatInfo?.is_favorite || false;
 
   return (
-    <div className={`flex flex-col h-full w-full bg-[url('${bg}')] bg-cover bg-center md:rounded-b-2xl relative overflow-hidden`}>
+    <div
+      className="flex flex-col h-full w-full bg-cover bg-center md:rounded-b-2xl relative overflow-hidden"
+      style={{ backgroundImage: `url(${bg})` }}
+    >
       <div className="absolute left-0 top-0 right-0 flex flex-col shrink-0 z-20">
         {isSelectionMode ? (
           <TopBar
@@ -579,7 +582,7 @@ export const ChatScreen: React.FC = () => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search in chat..."
-                  className="pl-10 pr-24 h-10 rounded-xl bg-secondary/50 text-muted-foreground border border-border/10 backdrop-blur-xl text-sm"
+                  className="pl-10 pr-24 h-10 rounded-xl bg-secondary/50 shadow-lg text-muted-foreground border border-border/10 backdrop-blur-xl text-sm"
                 />
                 <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 {searchQuery && (
@@ -659,7 +662,8 @@ export const ChatScreen: React.FC = () => {
                         )}
                       >
                         {/* Avatar Sidebar - Glide Logic */}
-                        <div className="shrink-0 w-13 flex flex-col justify-end self-stretch">
+                        {/* Added pb-4.5 to push the avatar up above the timestamp row! */}
+                        <div className="shrink-0 w-13 flex flex-col justify-end self-stretch pb-4.5">
                           <div className="sticky top-0 bottom-12 -mb-1">
                             <AnimatedItem index={gIdx}>
                               <Avatar
@@ -673,9 +677,27 @@ export const ChatScreen: React.FC = () => {
                         </div>
 
                         {/* Messages list for this group (strictly chronological top-to-bottom) */}
-                        <div className="flex flex-col gap-1 flex-1 min-w-0">
-                          {group.messages.slice().map(({ msg, originalIndex }: { msg: any; originalIndex: number }, mIdxReversed: number) => {
-                            const originalMIdx = group.messages.length - 1 - mIdxReversed;
+                        {/* Messages list for this group (strictly chronological top-to-bottom) */}
+                        <div className="flex flex-col flex-1 min-w-0">
+                          {group.messages.slice().map(({ msg, originalIndex }: { msg: any; originalIndex: number }, index: number) => {
+                            // Preserve original animation timing
+                            const originalMIdx = group.messages.length - 1 - index;
+                            
+                            // 1. Calculate time for current and next message
+                            const currentTime = displayTime(msg.created_at);
+                            const nextMsg = group.messages[index + 1]?.msg;
+                            const nextTime = nextMsg ? displayTime(nextMsg.created_at) : null;
+                            
+                            // 2. Logic to group elements visually
+                            // Show time row only if there is no next message, or if the next message is in a different minute
+                            const showMetadata = !nextMsg || currentTime !== nextTime;
+                            
+                            // Show sender name only on the very first message of the group
+                            const showSenderName = index === 0;
+                            
+                            // Apply the sharp tail only to the absolute last message in the sequence
+                            const isLastInSequence = index === group.messages.length - 1;
+
                             return (
                               <AnimatedItem key={msg.id} index={originalMIdx} delay={0.05}>
                                 <div id={`msg-${msg.id}`} className="transition-all duration-300">
@@ -686,12 +708,17 @@ export const ChatScreen: React.FC = () => {
                                     media_url={msg.media_url}
                                     file_name={msg.file_name}
                                     file_size={msg.file_size}
-                                    timestamp={displayTime(msg.created_at)}
+                                    timestamp={currentTime}
                                     isSentByMe={isSentByMe}
                                     senderName={group.profile?.full_name}
                                     senderAvatar={group.profile?.avatar_url}
-                                    isSequence={mIdxReversed < group.messages.length - 1}
-                                    isLastInSequence={mIdxReversed === 0}
+                                    
+                                    // Pass our new grouping props here:
+                                    isSequence={true} 
+                                    isLastInSequence={isLastInSequence}
+                                    showSenderName={showSenderName}
+                                    showMetadata={showMetadata}
+                                    
                                     status={msg.status}
                                     uploadProgress={msg.uploadProgress}
                                     highlight={debouncedQuery}

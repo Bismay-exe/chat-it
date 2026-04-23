@@ -22,10 +22,10 @@ const config: CapacitorConfig = {
       backgroundColor: "#00000000",
     },
   },
-  // server: {
-  //   url: 'http://10.46.218.247:5173',
-  //   cleartext: true
-  // },
+  server: {
+    url: 'http://10.46.218.190:5173',
+    cleartext: true
+  },
 };
 
 export default config;

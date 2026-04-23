@@ -183,7 +183,7 @@ export const ChatsPage: React.FC = () => {
     <div className="flex w-full h-full bg-[#212023] md:pr-3 md:py-3 md:gap-3">
       {/* Sidebar Chat List */} 
       <div className={cn(
-        "flex-col w-full md:w-[320px] lg:w-95 h-full bg-background md:rounded-2xl border-r border-border shrink-0 top-0 relative",
+        "gradient flex-col w-full md:w-[320px] lg:w-95 h-full md:rounded-2xl border-r border-border shrink-0 top-0 relative",
         isChildActive ? "hidden md:flex" : "flex"
       )}>
 

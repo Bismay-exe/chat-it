@@ -58,6 +58,11 @@ head, body, html {
   font-weight: 500;
 }
 
+.gradient {
+  background: #C5BEBB;
+background: linear-gradient(0deg, rgba(197, 190, 187, 1) 0%, rgba(164, 154, 153, 1) 50%, rgba(216, 211, 217, 1) 100%);
+}
+
 
 /* Hide scrollbar but keep scroll */
 .no-scrollbar::-webkit-scrollbar {

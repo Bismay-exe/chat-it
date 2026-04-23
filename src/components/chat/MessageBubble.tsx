@@ -38,6 +38,8 @@ export interface MessageBubbleProps {
   senderAvatar?: string | null;
   isSequence?: boolean;
   isLastInSequence?: boolean;
+  showSenderName?: boolean; // <-- ADD THIS
+  showMetadata?: boolean; // <-- ADD THIS
   highlight?: string | boolean;
   activeMatchWithinMessage?: number;
   onDelete?: (id: string) => void;
@@ -96,7 +98,7 @@ const ProgressCircle = ({ progress, size = 48, strokeWidth = 3, isDownloading = 
 };
 
 export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
-  id, content, type = 'text', media_url, file_name, file_size, timestamp, isSentByMe, status, uploadProgress, senderName, senderAvatar, isSequence = false, isLastInSequence = false, highlight, activeMatchWithinMessage = -1, onDelete, hideAvatar = false, isSelected = false, onSelect, isSelectionMode = false
+  id, content, type = 'text', media_url, file_name, file_size, timestamp, isSentByMe, showSenderName, showMetadata, status, uploadProgress, senderName, senderAvatar, isSequence = false, isLastInSequence = false, highlight, activeMatchWithinMessage = -1, onDelete, hideAvatar = false, isSelected = false, onSelect, isSelectionMode = false
 }) => {
   const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
   const [xhr, setXhr] = useState<XMLHttpRequest | null>(null);
@@ -109,7 +111,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
     longPressTimer.current = setTimeout(() => {
       isLongPress.current = true;
       if (onSelect) onSelect(id);
-    }, 500); // 500ms long press
+    }, 500);
   }, [id, onSelect]);
 
   const endLongPress = useCallback(() => {
@@ -245,251 +247,223 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
   ];
 
   const bubbleContent = (
-    <div 
+    <div
       onClick={handleClick}
       onPointerDown={startLongPress}
       onPointerUp={endLongPress}
       onPointerLeave={endLongPress}
       className={cn(
-        "flex flex-col max-w-[calc(100%-5rem)] md:max-w-[75%] group/bubble relative min-w-0 w-full transition-transform active:scale-[0.98]", 
-        isSentByMe ? "items-end" : "items-start",
-        isSelected
+        "flex flex-col max-w-[calc(100%-5rem)] md:max-w-[75%] group/bubble relative min-w-0 w-full transition-transform active:scale-[0.99]",
+        isSentByMe ? "items-end" : "items-start"
       )}
     >
+      {/* Sender Name for groups (Moved outside bubble for cleaner look) */}
+      {/* UPDATE 1: Use showSenderName for the Sender Name */}
+      {!isSentByMe && senderName && (showSenderName ?? !isSequence) && (
+        <span className="text-[12px] font-semibold text-zinc-500 mb-1.5 px-1">{senderName}</span>
+      )}
+
+      {/* THE ELEGANT BUBBLE */}
       <div className={cn(
-        "relative px-1 py-1 backdrop-blur-sm text-[14px] md:text-[15px] leading-tight transition-all duration-300 shadow-sm flex flex-col min-w-20 overflow-hidden",
-        isSentByMe 
-          ? cn("bg-[#7C69EF]/85 text-white rounded-xl", isLastInSequence && "rounded-br-sm", isSelected && "bg-[#6A57E0] ring-1 ring-white/50") 
-          : cn("bg-background/50 text-slate-900 rounded-xl", isLastInSequence && "rounded-bl-sm", isSelected && "bg-[#E6E8FD] ring-1 ring-[#7C69EF]/50"),
-        (type === 'image' || type === 'video') && "p-1 overflow-hidden"
+        "relative text-[15px] leading-normal tracking-[-0.01em] transition-all duration-300 flex flex-col min-w-12",
+        type === 'text' ? "px-4 py-3" : "p-1.5", // Media gets tighter padding to look like a frame
+
+        isSentByMe
+          ? cn(
+            "bg-[#1C1C1E] text-white shadow-[0_8px_24px_rgba(28,28,30,0.12)]",
+            "rounded-2xl",
+            isLastInSequence ? "rounded-br-sm" : "rounded-br-2xl",
+            isSelected && "ring-2 ring-zinc-800 scale-[0.99] opacity-90"
+          )
+          : cn(
+            "bg-white text-[#333333] border border-black/3 shadow-[0_8px_30px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.02)]",
+            "rounded-2xl",
+            isLastInSequence ? "rounded-bl-sm" : "rounded-bl-2xl",
+            isSelected && "ring-2 ring-zinc-300 scale-[0.99] bg-zinc-50"
+          )
       )}>
-        {/* Selection Checkmark */}
+
+        {/* Selection Checkmark - Monochrome theme */}
         {isSelected && (
           <div className={cn(
-            "absolute bottom-1 left-1 z-40 w-4 h-4 rounded-full flex items-center justify-center animate-in zoom-in-50 duration-200 shadow-sm",
-            isSentByMe ? "bg-white text-[#7C69EF]" : "bg-[#7C69EF] text-white"
+            "absolute -left-3 -top-3 z-40 w-6 h-6 rounded-full flex items-center justify-center animate-in zoom-in-50 duration-200 shadow-md border border-white/10",
+            isSentByMe ? "bg-[#1C1C1E] text-white" : "bg-white text-black"
           )}>
-            <Check className="w-2.5 h-2.5 stroke-3" />
+            <Check className="w-3.5 h-3.5 stroke-3" />
           </div>
         )}
 
-        {/* Action Menu (Desktop Only, and NOT in selection mode) */}
+        {/* Action Menu - Monochrome theme */}
         {!isSelectionMode && (
-          <div className="absolute top-1 right-1 z-30 opacity-0 group-hover/bubble:opacity-100 transition-opacity hidden md:block">
-            <DropdownMenu items={menuItems} icon={<MoreHorizontal className={cn("w-4 h-4 rounded-full p-0.5 backdrop-blur-sm", isSentByMe ? "bg-white/10 text-white" : "bg-black/5 text-slate-400")} />} />
+          <div className={cn(
+            "absolute -top-3 -right-3 z-30 opacity-0 group-hover/bubble:opacity-100 transition-opacity hidden md:block"
+          )}>
+            <DropdownMenu items={menuItems} icon={<MoreHorizontal className={cn("w-7 h-7 rounded-full p-1.5 shadow-sm border border-white/10", isSentByMe ? "bg-[#2C2C2E] text-white hover:bg-[#3C3C3E]" : "bg-white text-zinc-600 hover:bg-zinc-50")} />} />
           </div>
         )}
 
-        {/* Sender Name (Other) */}
-        {!isSentByMe && senderName && !isSequence && (
-          <span className="text-[12px] font-bold text-[#7C69EF]/80 mb-1 px-1">{senderName}</span>
+        {/* Text Content */}
+        {type === 'text' && (
+          <p className="whitespace-pre-wrap break-words break-all md:break-words min-w-0 max-w-full">
+            {(() => {
+              if (highlight && typeof highlight === 'string') {
+                const parts = content.split(new RegExp(`(${highlight})`, 'gi'));
+                let currentOffset = 0;
+                return parts.map((part, i) => {
+                  const isMatch = part.toLowerCase() === highlight.toLowerCase();
+                  const isActive = isMatch && currentOffset === activeMatchWithinMessage;
+                  const element = isMatch ? (
+                    <span
+                      key={i}
+                      id={isActive ? "active-search-match" : undefined}
+                      className={cn(
+                        "transition-all duration-300 rounded-sm font-semibold",
+                        isActive ? "bg-yellow-300 text-yellow-900 px-1" : "bg-zinc-200 text-zinc-900 px-0.5",
+                        isSentByMe && !isActive && "bg-zinc-700 text-white"
+                      )}
+                    >
+                      {part}
+                    </span>
+                  ) : part;
+                  currentOffset += part.length;
+                  return element;
+                });
+              }
+              return content;
+            })()}
+          </p>
         )}
 
-        {type === 'text' ? (
-          <div className="relative px-1 pb-1 min-w-0 w-full overflow-hidden">
-            <p className="whitespace-pre-wrap wrap-anywhere break-all pr-2">
-              {(() => {
-                if (highlight && typeof highlight === 'string') {
-                  const parts = content.split(new RegExp(`(${highlight})`, 'gi'));
-                  let currentOffset = 0;
-                  return parts.map((part, i) => {
-                    const isMatch = part.toLowerCase() === highlight.toLowerCase();
-                    const isActive = isMatch && currentOffset === activeMatchWithinMessage;
-                    const element = isMatch ? (
-                      <span 
-                        key={i} 
-                        id={isActive ? "active-search-match" : undefined}
-                        className={cn(
-                          "transition-all duration-300 rounded-md font-bold",
-                          isActive ? "bg-yellow-400 text-yellow-950 px-1 shadow-sm" : "bg-accent text-accent-foreground px-0.5"
-                        )}
-                      >
-                        {part}
-                      </span>
-                    ) : part;
-                    currentOffset += part.length;
-                    return element;
-                  });
-                }
-                return content;
-              })()}
-            </p>
-            
-            {/* Meta Info Integrated (Text) */}
-            <div className={cn(
-              "flex items-center justify-end gap-1.5 mt-2 -mb-1.5 text-[10px] font-medium opacity-60",
-              isSentByMe ? "text-white/80" : "text-slate-500"
-            )}>
-              {!isSentByMe && (
-                <div className="flex items-center gap-0.5">
-                  <Eye className="w-3 h-3" />
-                  <span>23</span>
-                </div>
-              )}
-              <span>{timestamp}</span>
-              {isSentByMe && status && (
-                <span className="flex items-center">
-                  {status === 'read' ? <CheckCheck className="w-3.5 h-3.5 text-blue-200" /> : status === 'delivered' ? <CheckCheck className="w-3.5 h-3.5" /> : status === 'sending' ? <RefreshCw className="w-2.5 h-2.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                </span>
-              )}
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-1.5 relative">
+        {/* Media Content */}
+        {type !== 'text' && (
+          <div className="flex flex-col gap-1.5 relative w-full">
             {type === 'image' && media_url && (
               <>
-                <div onClick={() => setIsViewerOpen(true)} className="relative group/media rounded-xl overflow-hidden bg-black/5 aspect-square max-h-80 shadow-inner cursor-pointer">
+                <div onClick={() => setIsViewerOpen(true)} className="relative group/media rounded-xl overflow-hidden bg-black/5 aspect-square max-h-80 cursor-pointer">
                   <img src={media_url} alt="Shared" loading="lazy" className="w-full h-full object-cover" />
                   {!isSentByMe && downloadProgress !== null && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/5">
                       <ProgressCircle progress={downloadProgress || 0} isDownloading={true} onCancel={cancelDownload} />
                     </div>
                   )}
-                  {/* Meta Overlay for Images */}
-                  <div className="absolute bottom-1.5 right-1.5 bg-black/40 backdrop-blur-md px-1.5 py-0.5 rounded-md flex items-center gap-1 text-[9px] text-white/90">
-                    <div className="flex items-center gap-0.5">
-                      <Eye className="w-2.5 h-2.5" />
-                      <span>10</span>
+                  {/* Internal Upload Progress overlay */}
+                  {isSentByMe && status === 'sending' && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                      {uploadProgress !== undefined ? (
+                        <span className="flex flex-col items-center gap-2 pointer-events-auto text-white">
+                          <span className="font-bold tracking-tighter">{uploadProgress}%</span>
+                          <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); useUploadStore.getState().cancelUpload(id); }} className="bg-white/20 rounded-full p-2 hover:bg-white/30 transition-colors cursor-pointer" aria-label="Cancel upload">
+                            <X className="w-4 h-4" />
+                          </button>
+                        </span>
+                      ) : <RefreshCw className="w-6 h-6 animate-spin text-white" />}
                     </div>
-                    <span>{timestamp}</span>
-                    {isSentByMe && status && (
-                      <span className="flex items-center ml-1">
-                        {status === 'read' ? <CheckCheck className="w-3.5 h-3.5 text-blue-300" /> : status === 'delivered' ? <CheckCheck className="w-3.5 h-3.5" /> : status === 'sending' ? (
-                          uploadProgress !== undefined ? (
-                            <span className="flex items-center gap-0.5 pointer-events-auto">
-                              <span className="font-bold tracking-tighter">{uploadProgress}%</span>
-                              <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); useUploadStore.getState().cancelUpload(id); }} className="hover:bg-white/20 rounded-full p-px transition-colors cursor-pointer" aria-label="Cancel upload">
-                                <X className="w-2.5 h-2.5" />
-                              </button>
-                            </span>
-                          ) : <RefreshCw className="w-2.5 h-2.5 animate-spin" />
-                        ) : <Check className="w-3.5 h-3.5" />}
-                      </span>
-                    )}
-                  </div>
+                  )}
                 </div>
+                {/* Expanded Viewer */}
                 {isViewerOpen && createPortal(
-                  <div className="fixed inset-0 z-100 bg-black/95 flex items-center justify-center p-2 animate-in fade-in duration-200" onClick={() => setIsViewerOpen(false)}>
-                    <button onClick={(e) => { e.stopPropagation(); setIsViewerOpen(false); }} className="absolute top-4 right-4 z-50 p-3 bg-white/10 rounded-full hover:bg-white/20 text-white backdrop-blur-md transition-colors">
+                  <div className="fixed inset-0 z-100 bg-[#09090B]/95 flex items-center justify-center p-2 animate-in fade-in duration-200" onClick={() => setIsViewerOpen(false)}>
+                    <button onClick={(e) => { e.stopPropagation(); setIsViewerOpen(false); }} className="absolute top-6 right-6 z-50 p-3 bg-white/10 rounded-full hover:bg-white/20 text-white backdrop-blur-md transition-colors">
                       <X className="w-6 h-6" />
                     </button>
-                    <img src={media_url} alt="Expanded" className="max-w-full max-h-full object-contain cursor-default" onClick={(e) => e.stopPropagation()} />
+                    <img src={media_url} alt="Expanded" className="max-w-full max-h-full object-contain cursor-default rounded-lg" onClick={(e) => e.stopPropagation()} />
                   </div>,
                   document.body
                 )}
               </>
             )}
+
             {type === 'video' && media_url && (
               <>
-                <div className="relative group/media rounded-xl overflow-hidden bg-black/5 aspect-video max-h-80 flex items-center justify-center shadow-inner cursor-pointer" onClick={() => setIsViewerOpen(true)}>
-                  <video 
-                    src={media_url} 
+                <div className="relative group/media rounded-xl overflow-hidden bg-black/5 aspect-video max-h-80 flex items-center justify-center cursor-pointer" onClick={() => setIsViewerOpen(true)}>
+                  <video
+                    src={media_url}
                     preload="metadata"
-                    className="w-full h-full object-cover" 
+                    className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 flex items-center justify-center bg-black/20">
                     {!isSentByMe ? (
                       downloadProgress !== null ? <ProgressCircle progress={downloadProgress} isDownloading={true} onCancel={cancelDownload} /> : (
-                        <div className="w-14 h-14 bg-black/40 rounded-full flex items-center justify-center backdrop-blur-sm hover:bg-black/60 transition-colors shadow-xl">
-                          <Play className="w-7 h-7 text-white fill-white ml-0.5" />
+                        <div className="w-14 h-14 bg-white/90 rounded-full flex items-center justify-center backdrop-blur-sm hover:bg-white transition-colors shadow-lg">
+                          <Play className="w-6 h-6 text-black fill-black ml-1" />
                         </div>
                       )
-                    ) : <Play className="w-10 h-10 text-white/30" />}
-                  </div>
-                  {/* Meta Overlay for Videos */}
-                  <div className="absolute bottom-1.5 right-1.5 bg-black/40 backdrop-blur-md px-1.5 py-0.5 rounded-md flex items-center gap-1 text-[9px] text-white/90">
-                    <div className="flex items-center gap-0.5">
-                      <Eye className="w-2.5 h-2.5" />
-                      <span>10</span>
-                    </div>
-                    <span>{timestamp}</span>
-                    {isSentByMe && status && (
-                      <span className="flex items-center ml-1">
-                        {status === 'read' ? <CheckCheck className="w-3.5 h-3.5 text-blue-300" /> : status === 'delivered' ? <CheckCheck className="w-3.5 h-3.5" /> : status === 'sending' ? (
-                          uploadProgress !== undefined ? (
-                            <span className="flex items-center gap-0.5 pointer-events-auto">
-                              <span className="font-bold tracking-tighter">{uploadProgress}%</span>
-                              <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); useUploadStore.getState().cancelUpload(id); }} className="hover:bg-white/20 rounded-full p-px transition-colors cursor-pointer" aria-label="Cancel upload">
-                                <X className="w-2.5 h-2.5" />
-                              </button>
-                            </span>
-                          ) : <RefreshCw className="w-2.5 h-2.5 animate-spin" />
-                        ) : <Check className="w-3.5 h-3.5" />}
-                      </span>
-                    )}
+                    ) : <Play className="w-10 h-10 text-white/50 fill-white/50" />}
                   </div>
                 </div>
+                {/* Expanded Viewer */}
                 {isViewerOpen && createPortal(
-                  <div className="fixed inset-0 z-100 bg-black/95 flex items-center justify-center p-2 animate-in fade-in duration-200" onClick={() => setIsViewerOpen(false)}>
-                    <button onClick={(e) => { e.stopPropagation(); setIsViewerOpen(false); }} className="absolute top-4 right-4 z-50 p-3 bg-white/10 rounded-full hover:bg-white/20 text-white backdrop-blur-md transition-colors">
+                  <div className="fixed inset-0 z-100 bg-[#09090B]/95 flex items-center justify-center p-2 animate-in fade-in duration-200" onClick={() => setIsViewerOpen(false)}>
+                    <button onClick={(e) => { e.stopPropagation(); setIsViewerOpen(false); }} className="absolute top-6 right-6 z-50 p-3 bg-white/10 rounded-full hover:bg-white/20 text-white backdrop-blur-md transition-colors">
                       <X className="w-6 h-6" />
                     </button>
-                    <video src={media_url} controls autoPlay className="max-w-full max-h-full object-contain cursor-default" onClick={(e) => e.stopPropagation()} />
+                    <video src={media_url} controls autoPlay className="max-w-full max-h-full object-contain cursor-default rounded-lg" onClick={(e) => e.stopPropagation()} />
                   </div>,
                   document.body
                 )}
               </>
             )}
+
             {type === 'file' && (
-              <div className={cn("flex items-center gap-4 p-2.5 rounded-xl transition-colors", !isSentByMe ? "cursor-pointer hover:bg-black/5" : "bg-white/10")} onClick={() => !isSentByMe && handleDownload()}>
+              <div className={cn("flex items-center gap-4 p-2 rounded-xl transition-colors", !isSentByMe ? "cursor-pointer hover:bg-black/5" : "bg-white/10")} onClick={() => !isSentByMe && handleDownload()}>
                 <div className="shrink-0 relative">
                   {!isSentByMe ? (
                     <ProgressCircle progress={downloadProgress || 0} size={44} strokeWidth={2.5} isDownloading={downloadProgress !== null} onCancel={cancelDownload} />
                   ) : (
-                    <div className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center shadow-inner">
-                      <FileText className="w-5 h-5 text-white/70" />
+                    <div className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center">
+                      <FileText className="w-5 h-5 text-white/90" />
                     </div>
                   )}
                 </div>
-                <div className="flex flex-col min-w-0 pr-6">
-                  <span className="text-[14px] font-bold truncate tracking-tight">{file_name || 'Document'}</span>
-                  <span className="text-[11px] opacity-70 font-bold uppercase tracking-tighter">
+                <div className="flex flex-col min-w-0 pr-4">
+                  <span className="text-[14px] font-medium truncate tracking-tight">{file_name || 'Document'}</span>
+                  <span className="text-[11px] opacity-70 font-medium tracking-wide">
                     {formatBytes(file_size || 0)} • {downloadProgress !== null ? `${downloadProgress}%` : (isSentByMe ? 'Cloud' : 'Download')}
                   </span>
                 </div>
               </div>
             )}
-            {content && <p className="mt-1 px-1 text-[14px] whitespace-pre-wrap opacity-90 pr-2">{content}</p>}
-            
-            {/* Meta for files/media with captions */}
-            {type === 'file' || (content && (type === 'image' || type === 'video')) ? (
-              <div className={cn(
-                "flex items-center justify-end gap-1.5 mt-1 text-[10px] font-medium opacity-60 px-1 pb-1",
-                isSentByMe ? "text-white/80" : "text-slate-500"
-              )}>
-                {!isSentByMe && (
-                  <div className="flex items-center gap-0.5">
-                    <Eye className="w-3 h-3" />
-                    <span>10</span>
-                  </div>
-                )}
-                <span>{timestamp}</span>
-                {isSentByMe && status && (
-                  <span className="flex items-center gap-1">
-                    {status === 'read' ? <CheckCheck className="w-3.5 h-3.5 text-blue-200" /> : status === 'delivered' ? <CheckCheck className="w-3.5 h-3.5" /> : status === 'sending' ? (
-                      uploadProgress !== undefined ? (
-                        <span className="flex items-center gap-0.5 pointer-events-auto">
-                          <span className="font-bold">{uploadProgress}%</span>
-                          <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); useUploadStore.getState().cancelUpload(id); }} className="hover:bg-white/20 rounded-full p-px transition-colors cursor-pointer" aria-label="Cancel upload">
-                            <X className="w-2.5 h-2.5" />
-                          </button>
-                        </span>
-                      ) : <RefreshCw className="w-2.5 h-2.5 animate-spin" />
-                    ) : <Check className="w-3.5 h-3.5" />}
-                  </span>
-                )}
-              </div>
-            ) : null}
+
+            {/* Optional caption below media */}
+            {content && <p className={cn("mt-1 px-2 text-[14px] whitespace-pre-wrap", isSentByMe ? "text-white/90" : "text-zinc-700")}>{content}</p>}
           </div>
         )}
       </div>
+
+      {/* METADATA EXTRACTED OUTSIDE THE BUBBLE */}
+      {/* UPDATE 2: Wrap the metadata inside a condition checking showMetadata */}
+      {showMetadata !== false && (
+        <div className={cn(
+          "flex items-center gap-1.5 mt-0.5 text-[11px] font-medium text-[#A1A1AA] px-1",
+          isSentByMe ? "justify-end" : "justify-start"
+        )}>
+          {!isSentByMe && (
+            <div className="flex items-center gap-0.5 mr-1">
+              <Eye className="w-3.5 h-3.5" />
+              <span>23</span>
+            </div>
+          )}
+          <span>{timestamp}</span>
+          {isSentByMe && status && (
+            <span className="flex items-center ml-0.5">
+              {status === 'read' ? <CheckCheck className="w-3.5 h-3.5 text-zinc-500" />
+                : status === 'delivered' ? <CheckCheck className="w-3.5 h-3.5" />
+                  : status === 'sending' && type === 'text' ? <RefreshCw className="w-3 h-3 animate-spin" />
+                    : status !== 'sending' ? <Check className="w-3.5 h-3.5" /> : null}
+            </span>
+          )}
+        </div>
+      )}
+
     </div>
   );
 
   if (hideAvatar) {
     return (
       <div className={cn(
-        "flex w-full mb-0.5",
+        "flex w-full",
+        // If it shows the time row, give it breathing room. Otherwise, keep it tight (2px gap).
+        showMetadata ? "mb-2" : "mb-0.5", 
         isSentByMe ? "justify-end" : "justify-start"
       )}>
         {bubbleContent}
@@ -499,21 +473,21 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
 
   return (
     <div className={cn(
-      "flex w-full px-2 md:px-4 group mb-1",
+      "flex w-full px-2 md:px-4 group mb-2", // Increased bottom margin slightly for elegant spacing
       isSentByMe ? "flex-row-reverse" : "flex-row",
-      isSequence ? "mt-0.5" : "mt-4"
+      isSequence ? "mt-1" : "mt-6" // Increased top margin between different senders
     )}>
       {/* Avatar Side */}
-      <div className={cn("shrink-0 flex items-end", isSentByMe ? "ml-2" : "mr-2")}>
+      <div className={cn("shrink-0 flex items-end mb-5", isSentByMe ? "ml-3" : "mr-3")}>
         {isLastInSequence ? (
-          <Avatar 
-            src={senderAvatar || undefined} 
-            fallback={senderName?.charAt(0) || '?'} 
+          <Avatar
+            src={senderAvatar || undefined}
+            fallback={senderName?.charAt(0) || '?'}
             size="sm"
-            className="shadow-lg rounded-xl border border-black/5"
+            className="shadow-sm rounded-full border border-black/5" // Switched back to round avatars for elegance
           />
         ) : (
-          <div className="w-13" /> 
+          <div className="w-9" /> // Matches typical Avatar 'sm' width
         )}
       </div>
 
@@ -521,3 +495,5 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
     </div>
   );
 });
+
+export default MessageBubble;
