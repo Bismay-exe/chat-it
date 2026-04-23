@@ -3,6 +3,7 @@ import { useParams, useNavigate, useOutletContext } from 'react-router';
 import { supabase } from '@/lib/supabase';
 import { TopBar } from '@/components/layout/TopBar';
 import { Avatar } from '@/components/ui/Avatar';
+import bg from '/backgrounds/002.jpg';
 import {
   ChevronLeft, Phone, Video, Search, X,
   ChevronUp, ChevronDown, MessageSquare, Image,
@@ -17,6 +18,7 @@ import {
 } from 'lucide-react';
 import { MessageBubble } from '@/components/chat/MessageBubble';
 import { MessageComposer } from '@/components/chat/MessageComposer';
+import { DateSeparator, formatChatDate } from '@/components/chat/DateSeparator';
 import { useMessages } from '@/hooks/useMessages';
 import { useChats } from '@/hooks/useChats';
 import { useAuthStore } from '@/stores/authStore';
@@ -282,22 +284,33 @@ export const ChatScreen: React.FC = () => {
   };
 
   // Message grouping logic
-  const groupedMessages = useMemo(() => {
-    const groups: {
-      sender_id: string;
-      profile: any;
-      messages: { msg: any; originalIndex: number }[];
+  const groupedByDate = useMemo(() => {
+    const dateGroups: {
+      dateStr: string;
+      senderGroups: {
+        sender_id: string;
+        profile: any;
+        messages: { msg: any; originalIndex: number }[];
+      }[];
     }[] = [];
 
     // Reverse messages for flex-col-reverse: newest first
     const reversedMessages = [...messages];
 
     reversedMessages.forEach((msg, idx) => {
-      const lastGroup = groups[groups.length - 1];
-      if (lastGroup && lastGroup.sender_id === msg.sender_id) {
-        lastGroup.messages.push({ msg, originalIndex: messages.length - 1 - idx });
+      const dateStr = formatChatDate(msg.created_at);
+      let lastDateGroup = dateGroups[dateGroups.length - 1];
+      
+      if (!lastDateGroup || lastDateGroup.dateStr !== dateStr) {
+        dateGroups.push({ dateStr, senderGroups: [] });
+        lastDateGroup = dateGroups[dateGroups.length - 1];
+      }
+
+      const lastSenderGroup = lastDateGroup.senderGroups[lastDateGroup.senderGroups.length - 1];
+      if (lastSenderGroup && lastSenderGroup.sender_id === msg.sender_id) {
+        lastSenderGroup.messages.push({ msg, originalIndex: messages.length - 1 - idx });
       } else {
-        groups.push({
+        lastDateGroup.senderGroups.push({
           sender_id: msg.sender_id,
           profile: msg.profiles,
           messages: [{ msg, originalIndex: messages.length - 1 - idx }]
@@ -305,7 +318,7 @@ export const ChatScreen: React.FC = () => {
       }
     });
 
-    return groups;
+    return dateGroups;
   }, [messages]);
 
   const handleHeaderClick = () => {
@@ -364,7 +377,7 @@ export const ChatScreen: React.FC = () => {
   const isFavorite = chatInfo?.is_favorite || false;
 
   return (
-    <div className="flex flex-col h-full w-full md:bg-secondary relative overflow-hidden">
+    <div className={`flex flex-col h-full w-full bg-[url('${bg}')] bg-cover bg-center md:rounded-b-2xl relative overflow-hidden`}>
       <div className="absolute left-0 top-0 right-0 flex flex-col shrink-0 z-20">
         {isSelectionMode ? (
           <TopBar
@@ -607,8 +620,8 @@ export const ChatScreen: React.FC = () => {
 
       <GradualScroll
         scrollRef={scrollContainerRef as any}
-        className="flex-1 w-full bg-[url('/backgrounds/002.jpg')] bg-cover bg-center md:rounded-b-2xl"
-        scrollClassName={cn("pt-[calc(4.5rem+env(safe-area-inset-top,0px))] pb-0 flex flex-col-reverse gap-1 px-2 md:px-6 lg:px-12 scroll-smooth", isSearchVisible && "pt-[calc(8rem+env(safe-area-inset-top,0px))]")}
+        className={`flex-1 w-full`}
+        scrollClassName={cn("pt-[calc(4.5rem+env(safe-area-inset-top,0px))] pb-10 flex flex-col-reverse gap-1 px-2 md:px-6 lg:px-12 scroll-smooth", isSearchVisible && "pt-[calc(8rem+env(safe-area-inset-top,0px))]")}
       >
         <div ref={messagesEndRef} className="h-0 w-full" />
 
@@ -632,66 +645,71 @@ export const ChatScreen: React.FC = () => {
 
           ) : (
             <>
-              {groupedMessages.map((group, gIdx) => {
-                const isSentByMe = group.sender_id === user?.id;
+              {groupedByDate.map((dateGroup) => (
+                <div key={dateGroup.dateStr} className="flex flex-col-reverse w-full relative z-0">
+                  {dateGroup.senderGroups.map((group, gIdx) => {
+                    const isSentByMe = group.sender_id === user?.id;
 
-                return (
-                  <div
-                    key={`group-${group.sender_id}-${gIdx}`}
-                    className={cn(
-                      "flex items-end w-full gap-2 mb-4",
-                      isSentByMe ? "flex-row-reverse" : "flex-row"
-                    )}
-                  >
-                    {/* Sticky Avatar Sidebar - Glide Logic */}
-                    <div className="shrink-0 w-13 flex flex-col justify-end self-stretch">
-                      <div className="sticky top-0 bottom-16 -mb-1">
-                        <AnimatedItem index={gIdx}>
-                          <Avatar
-                            src={group.profile?.avatar_url}
-                            fallback={group.profile?.full_name?.charAt(0) || '?'}
-                            size="sm"
-                            className="shadow-lg rounded-xl border border-black/5"
-                          />
-                        </AnimatedItem>
-                      </div>
-                    </div>
-
-                    {/* Messages list for this group (reversed internally to preserve DOM injection anchor) */}
-                    <div className="flex flex-col-reverse gap-1 flex-1 min-w-0">
-                      {group.messages.map(({ msg, originalIndex }: { msg: any; originalIndex: number }, mIdx: number) => (
-                        <AnimatedItem key={msg.id} index={mIdx} delay={0.05}>
-                          <div id={`msg-${msg.id}`} className="transition-all duration-300">
-                            <MessageBubble
-                              id={msg.id}
-                              content={msg.content}
-                              type={msg.type}
-                              media_url={msg.media_url}
-                              file_name={msg.file_name}
-                              file_size={msg.file_size}
-                              timestamp={displayTime(msg.created_at)}
-                              isSentByMe={isSentByMe}
-                              senderName={group.profile?.full_name}
-                              senderAvatar={group.profile?.avatar_url}
-                              isSequence={mIdx > 0}
-                              isLastInSequence={mIdx === group.messages.length - 1}
-                              status={msg.status}
-                              uploadProgress={msg.uploadProgress}
-                              highlight={debouncedQuery}
-                              activeMatchWithinMessage={isSearchVisible && searchResults[currentMatchIndex]?.messageIndex === originalIndex ? searchResults[currentMatchIndex].matchIndexInContent : -1}
-                              onDelete={deleteMessage}
-                              hideAvatar={true}
-                              isSelected={selectedMessageIds.includes(msg.id)}
-                              onSelect={handleMessageSelect}
-                              isSelectionMode={isSelectionMode}
-                            />
+                    return (
+                      <div
+                        key={`group-${group.sender_id}-${gIdx}`}
+                        className={cn(
+                          "flex items-end w-full gap-2 mb-4",
+                          isSentByMe ? "flex-row-reverse" : "flex-row"
+                        )}
+                      >
+                        {/* Sticky Avatar Sidebar - Glide Logic */}
+                        <div className="shrink-0 w-13 flex flex-col justify-end self-stretch">
+                          <div className="sticky top-0 bottom-16 -mb-1">
+                            <AnimatedItem index={gIdx}>
+                              <Avatar
+                                src={group.profile?.avatar_url}
+                                fallback={group.profile?.full_name?.charAt(0) || '?'}
+                                size="sm"
+                                className="shadow-lg rounded-xl border border-black/5"
+                              />
+                            </AnimatedItem>
                           </div>
-                        </AnimatedItem>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
+                        </div>
+
+                        {/* Messages list for this group (reversed internally to preserve DOM injection anchor) */}
+                        <div className="flex flex-col-reverse gap-1 flex-1 min-w-0">
+                          {group.messages.map(({ msg, originalIndex }: { msg: any; originalIndex: number }, mIdx: number) => (
+                            <AnimatedItem key={msg.id} index={mIdx} delay={0.05}>
+                              <div id={`msg-${msg.id}`} className="transition-all duration-300">
+                                <MessageBubble
+                                  id={msg.id}
+                                  content={msg.content}
+                                  type={msg.type}
+                                  media_url={msg.media_url}
+                                  file_name={msg.file_name}
+                                  file_size={msg.file_size}
+                                  timestamp={displayTime(msg.created_at)}
+                                  isSentByMe={isSentByMe}
+                                  senderName={group.profile?.full_name}
+                                  senderAvatar={group.profile?.avatar_url}
+                                  isSequence={mIdx > 0}
+                                  isLastInSequence={mIdx === group.messages.length - 1}
+                                  status={msg.status}
+                                  uploadProgress={msg.uploadProgress}
+                                  highlight={debouncedQuery}
+                                  activeMatchWithinMessage={isSearchVisible && searchResults[currentMatchIndex]?.messageIndex === originalIndex ? searchResults[currentMatchIndex].matchIndexInContent : -1}
+                                  onDelete={deleteMessage}
+                                  hideAvatar={true}
+                                  isSelected={selectedMessageIds.includes(msg.id)}
+                                  onSelect={handleMessageSelect}
+                                  isSelectionMode={isSelectionMode}
+                                />
+                              </div>
+                            </AnimatedItem>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <DateSeparator date={dateGroup.dateStr} />
+                </div>
+              ))}
               <div ref={loadMoreRef} className="h-4 flex items-center justify-center py-4">
                 {isFetchingNextPage && (
                   <div className="flex items-center gap-2 text-[10px] font-black text-primary animate-pulse uppercase tracking-widest">

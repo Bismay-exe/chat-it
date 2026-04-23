@@ -160,7 +160,7 @@ export const ChatListItem: React.FC<ChatListItemProps> = React.memo(({
   ], [chat_id, is_favorite, is_archived, is_muted, is_pinned, currentListKey, onFavorite, onArchive, onMute, onManageLists, onDelete, onPin, chat_type, other_user_id, onInfo, onBlock, onLeaveGroup]);
 
   return (
-    <div className={cn("relative group", isSelected && "bg-primary/5")}>
+    <div className={cn("relative group", isSelected && "bg-primary/0 border-l-0 border-primary")}>
       <button
         onClick={handleItemClick}
         onPointerDown={startLongPress}
@@ -171,12 +171,12 @@ export const ChatListItem: React.FC<ChatListItemProps> = React.memo(({
         )}
       >
         <div className={cn(
-          'absolute left-1.5 right-1.5 top-0 bottom-1.5',
-          isActive ? 'bg-primary/20 border border-black/10 rounded-[20px]' : (isSelected ? 'bg-primary/10 rounded-[20px]' : 'hover:bg-secondary/40')
+          'absolute left-2.5 right-1.5 top-0 bottom-1.5',
+          isActive ? 'bg-primary/20 border border-black/10 rounded-[20px]' : (isSelected ? '' : 'hover:bg-secondary/40')
         )}></div>
 
         <div className="relative">
-          <Avatar src={avatar_url} fallback={name} size="lg" className={cn(isActive || isSelected ? 'scale-110' : '')} />
+          <Avatar src={avatar_url} fallback={name} size="lg" className={cn(isActive || isSelected ? 'scale-100' : '')} />
           {isSelected && (
             <div className="absolute -right-1 -bottom-1 bg-primary text-primary-foreground rounded-full p-0.5 border-2 border-background shadow-sm animate-in zoom-in duration-200">
               <Check className="w-3 h-3 stroke-4" />
@@ -184,8 +184,8 @@ export const ChatListItem: React.FC<ChatListItemProps> = React.memo(({
           )}
         </div>
 
-        <div className="flex-1 pr-4 overflow-hidden pointer-events-none">
-          <div className="flex justify-between items-baseline mb-0.5">
+        <div className="flex-1 flex flex-col gap-2 leading-none pr-0 md:pr-4 overflow-hidden pointer-events-none">
+          <div className="flex justify-between items-baseline">
             <h3 className="font-bold font-bricolage-semi-condensed text-[20px] tracking-tight truncate flex items-center gap-2 text-foreground pr-2">
               {name}
             </h3>
