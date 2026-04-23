@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { ArrowLeft, Globe, MessageCircle, ChevronRight, ShieldCheck, FileText, Loader2, Download } from 'lucide-react';
+import { ChevronLeft, Globe, MessageCircle, ChevronRight, ShieldCheck, FileText, Loader2, Download } from 'lucide-react';
 import { TopBar } from '@/components/layout/TopBar';
 import { CURRENT_VERSION } from '@/hooks/useAutoUpdate';
 import { useUpdateStore } from '@/stores/updateStore';
@@ -20,7 +20,7 @@ export const AboutPage = () => {
     const fetchChannelInfo = async () => {
       setIsFetchingChannel(true);
       try {
-        const url = channel === 'stable' 
+        const url = channel === 'stable'
           ? `https://api.github.com/repos/Bismay-exe/chat-it/releases/latest`
           : `https://api.github.com/repos/Bismay-exe/chat-it/releases`;
         const response = await fetch(url);
@@ -30,7 +30,7 @@ export const AboutPage = () => {
         if (Array.isArray(data) && channel === 'beta') {
           latestRelease = data.find((r: any) => r.prerelease || r.tag_name?.toLowerCase().includes('beta')) || data[0];
         }
-        
+
         if (latestRelease) {
           const sanitizeVersion = (v: string) => v.trim().toLowerCase().replace(/^v/, '');
           const version = sanitizeVersion(latestRelease.tag_name || '');
@@ -41,10 +41,10 @@ export const AboutPage = () => {
           setChannelDownloadUrl(dUrl);
           setChannelReleaseNotes(latestRelease.body || '');
         }
-      } catch(err) {
-         console.error(err);
+      } catch (err) {
+        console.error(err);
       } finally {
-         setIsFetchingChannel(false);
+        setIsFetchingChannel(false);
       }
     };
     fetchChannelInfo();
@@ -68,11 +68,11 @@ export const AboutPage = () => {
 
   return (
     <div className="flex flex-col h-full bg-secondary/10 absolute inset-0 z-50 overflow-y-auto">
-      <TopBar 
+      <TopBar
         leftElement={
           <div className="flex items-center gap-4">
             <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-secondary rounded-full premium-transition">
-              <ArrowLeft className="w-5 h-5" />
+              <ChevronLeft className="w-5 h-5" />
             </button>
             <span className="font-semibold text-lg">About</span>
           </div>
@@ -121,22 +121,22 @@ export const AboutPage = () => {
 
             {/* Latest Version Info */}
             <div className="p-4 flex flex-col gap-3 border-t border-border">
-               <div className="flex items-center justify-between">
-                 <span className="text-sm font-semibold capitalize">{channel} Build</span>
-                 {isFetchingChannel ? (
-                   <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-                 ) : (
-                   <span className="text-sm font-bold text-primary max-w-30 truncate" title={channelLatestVersion}>{channelLatestVersion || 'N/A'}</span>
-                 )}
-               </div>
-               <button 
-                  onClick={() => setUpdateAvailable(channelLatestVersion, channelDownloadUrl, channelReleaseNotes, channel, true)}
-                  disabled={isFetchingChannel || !channelDownloadUrl}
-                  className="w-full bg-primary/10 text-primary py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-primary hover:text-white transition-all disabled:opacity-50 mt-1"
-               >
-                  <Download className="w-4 h-4" />
-                  Install Latest {channel === 'stable' ? 'Stable' : 'Beta'}
-               </button>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold capitalize">{channel} Build</span>
+                {isFetchingChannel ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                ) : (
+                  <span className="text-sm font-bold text-primary max-w-30 truncate" title={channelLatestVersion}>{channelLatestVersion || 'N/A'}</span>
+                )}
+              </div>
+              <button
+                onClick={() => setUpdateAvailable(channelLatestVersion, channelDownloadUrl, channelReleaseNotes, channel, true)}
+                disabled={isFetchingChannel || !channelDownloadUrl}
+                className="w-full bg-primary/10 text-primary py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-primary hover:text-white transition-all disabled:opacity-50 mt-1"
+              >
+                <Download className="w-4 h-4" />
+                Install Latest {channel === 'stable' ? 'Stable' : 'Beta'}
+              </button>
             </div>
           </div>
 

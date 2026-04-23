@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { ArrowLeft, ArrowRight, Camera, Check, X, Shield, MessageSquare, UserPlus, Link, ShieldCheck, Loader2 } from 'lucide-react';
+import { ChevronLeft, ArrowRight, Camera, Check, X, Shield, MessageSquare, UserPlus, Link, ShieldCheck, Loader2 } from 'lucide-react';
 import { TopBar } from '@/components/layout/TopBar';
 import { Input } from '@/components/ui/Input';
 import { Avatar } from '@/components/ui/Avatar';
@@ -23,12 +23,12 @@ interface Contact {
 export const NewGroupPage = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  
+
   const [step, setStep] = useState(1);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<Contact[]>([]);
   const [search, setSearch] = useState('');
-  
+
   const [name, setName] = useState('');
   const [about, setAbout] = useState('');
   const [isPublic, setIsPublic] = useState(false);
@@ -37,7 +37,7 @@ export const NewGroupPage = () => {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [permissions, setPermissions] = useState({
     can_edit_group_settings: false,
     can_send_messages: true,
@@ -56,9 +56,9 @@ export const NewGroupPage = () => {
   }, [user]);
 
   const toggleUser = (u: Contact) => {
-    setSelectedUsers(prev => 
-      prev.find(item => item.id === u.id) 
-        ? prev.filter(item => item.id !== u.id) 
+    setSelectedUsers(prev =>
+      prev.find(item => item.id === u.id)
+        ? prev.filter(item => item.id !== u.id)
         : [...prev, u]
     );
   };
@@ -104,7 +104,7 @@ export const NewGroupPage = () => {
         .insert({ type: 'group', created_by: user.id })
         .select()
         .single();
-      
+
       if (chatError) {
         console.error('Chat creation error:', chatError);
         throw new Error('Failed to initialize group chat: ' + chatError.message);
@@ -114,14 +114,14 @@ export const NewGroupPage = () => {
       console.log('Chat created:', chatData.id);
 
       // 2. Group info
-      const { error: infoError } = await supabase.from('group_info').insert({ 
-        chat_id: chatData.id, 
-        name: name.trim(), 
+      const { error: infoError } = await supabase.from('group_info').insert({
+        chat_id: chatData.id,
+        name: name.trim(),
         about: about.trim(),
         is_public: isPublic,
         avatar_url: avatarUrl
       });
-      
+
       if (infoError) {
         console.error('Group info error:', infoError);
         throw new Error('Failed to save group details: ' + infoError.message);
@@ -147,9 +147,9 @@ export const NewGroupPage = () => {
         { chat_id: chatData.id, user_id: user.id, role: 'admin' },
         ...selectedUsers.map(u => ({ chat_id: chatData.id, user_id: u.id, role: 'member' }))
       ];
-      
+
       const { error: membersError } = await supabase.from('chat_members').insert(members);
-      
+
       if (membersError) {
         console.error('Members insertion error:', membersError);
         throw new Error('Failed to add group members: ' + membersError.message);
@@ -166,19 +166,19 @@ export const NewGroupPage = () => {
     }
   };
 
-  const filteredContacts = contacts.filter(c => 
-    c.full_name.toLowerCase().includes(search.toLowerCase()) || 
+  const filteredContacts = contacts.filter(c =>
+    c.full_name.toLowerCase().includes(search.toLowerCase()) ||
     c.username.toLowerCase().includes(search.toLowerCase())
   );
 
   if (step === 1) {
     return (
       <div className="flex flex-col h-full bg-background absolute inset-0 z-50">
-        <TopBar 
+        <TopBar
           leftElement={
             <div className="flex items-center gap-2">
               <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-secondary rounded-full premium-transition">
-                <ArrowLeft className="w-5 h-5" />
+                <ChevronLeft className="w-5 h-5" />
               </button>
               <div className="flex flex-col">
                 <span className="font-semibold text-lg leading-tight">Add Members</span>
@@ -187,12 +187,12 @@ export const NewGroupPage = () => {
             </div>
           }
         />
-        
+
         <div className="px-4 py-2">
-          <Input 
-            placeholder="Search contacts" 
-            value={search} 
-            onChange={e => setSearch(e.target.value)} 
+          <Input
+            placeholder="Search contacts"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
             className="bg-secondary/50 border-none"
           />
         </div>
@@ -202,7 +202,7 @@ export const NewGroupPage = () => {
             const isSelected = selectedUsers.find(u => u.id === c.id);
             return (
               <AnimatedItem key={c.id} index={i}>
-                <button 
+                <button
                   onClick={() => toggleUser(c)}
                   className="w-full flex items-center gap-4 px-4 py-3 hover:bg-secondary/30 premium-transition group"
                 >
@@ -231,7 +231,7 @@ export const NewGroupPage = () => {
                 <div key={u.id} className="relative shrink-0 flex flex-col items-center gap-1 w-14">
                   <Avatar src={u.avatar_url} fallback={u.full_name} size="md" />
                   <span className="text-[10px] text-muted-foreground truncate w-full text-center">{u.full_name}</span>
-                  <button 
+                  <button
                     onClick={() => toggleUser(u)}
                     className="absolute -top-1 -right-1 bg-secondary rounded-full p-1 shadow-sm border border-border"
                   >
@@ -244,7 +244,7 @@ export const NewGroupPage = () => {
         )}
 
         <div className={cn("p-4 flex justify-end transition-all", selectedUsers.length === 0 && "opacity-0 pointer-events-none")}>
-          <button 
+          <button
             onClick={() => setStep(2)}
             className="w-14 h-14 bg-primary text-primary-foreground rounded-full flex items-center justify-center hover:bg-primary/90 shadow-lg"
           >
@@ -257,11 +257,11 @@ export const NewGroupPage = () => {
 
   return (
     <div className="flex flex-col h-full bg-background absolute inset-0 z-50 overflow-y-auto">
-      <TopBar 
+      <TopBar
         leftElement={
           <div className="flex items-center gap-2">
             <button onClick={() => setStep(1)} className="p-2 -ml-2 hover:bg-secondary rounded-full premium-transition">
-              <ArrowLeft className="w-5 h-5" />
+              <ChevronLeft className="w-5 h-5" />
             </button>
             <span className="font-semibold text-lg">New Group</span>
           </div>
@@ -270,28 +270,28 @@ export const NewGroupPage = () => {
 
       <div className="p-6 space-y-8 max-w-xl mx-auto w-full">
         <div className="flex flex-col items-center space-y-4">
-          <div 
+          <div
             className="relative group cursor-pointer"
             onClick={() => !isUploading && fileInputRef.current?.click()}
           >
-            <Avatar 
-              src={avatarUrl || undefined} 
-              fallback={name} 
+            <Avatar
+              src={avatarUrl || undefined}
+              fallback={name}
               className="w-24 h-24 rounded-full border-4 border-background shadow-xl"
               size="xl"
             />
             <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 premium-transition flex items-center justify-center">
               {isUploading ? <Loader2 className="w-8 h-8 text-white animate-spin" /> : <Camera className="w-8 h-8 text-white" />}
             </div>
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              onChange={handleAvatarUpload} 
-              className="hidden" 
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleAvatarUpload}
+              className="hidden"
               accept="image/*"
             />
           </div>
-          <Input 
+          <Input
             className="text-center text-xl py-6 border-x-0 border-t-0 border-b rounded-none focus:ring-0"
             placeholder="Group Subject"
             value={name}
@@ -301,7 +301,7 @@ export const NewGroupPage = () => {
 
         <div className="space-y-4">
           <label className="text-sm font-medium text-muted-foreground uppercase tracking-widest px-1">About</label>
-          <textarea 
+          <textarea
             placeholder="Group description (optional)"
             className="w-full bg-secondary/30 rounded-2xl p-4 min-h-24 resize-none outline-none focus:ring-1 focus:ring-primary/20"
             value={about}
@@ -319,7 +319,7 @@ export const NewGroupPage = () => {
               <div className="text-xs text-muted-foreground">Anyone can join via search</div>
             </div>
           </div>
-          <button 
+          <button
             onClick={() => setIsPublic(!isPublic)}
             className={cn("w-12 h-6 rounded-full transition-colors relative", isPublic ? "bg-primary" : "bg-muted-foreground/30")}
           >
@@ -327,7 +327,7 @@ export const NewGroupPage = () => {
           </button>
         </div>
 
-        <button 
+        <button
           onClick={() => setShowPermissions(true)}
           className="w-full flex items-center justify-between p-4 bg-secondary/30 rounded-2xl hover:bg-secondary/50 transition-colors"
         >
@@ -354,7 +354,7 @@ export const NewGroupPage = () => {
       </div>
 
       <div className="mt-auto p-4 flex justify-end">
-        <button 
+        <button
           onClick={handleCreateGroup}
           disabled={!name.trim() || isCreating}
           className="w-14 h-14 bg-primary text-primary-foreground rounded-full flex items-center justify-center hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed premium-transition shadow-lg shadow-primary/20"
@@ -372,10 +372,10 @@ export const NewGroupPage = () => {
             <PermissionToggle label="Add other members" icon={UserPlus} value={permissions.can_add_members} onChange={(v: boolean) => setPermissions(p => ({ ...p, can_add_members: v }))} />
             <PermissionToggle label="Invite via link or QR code" icon={Link} value={permissions.can_invite_via_link} onChange={(v: boolean) => setPermissions(p => ({ ...p, can_invite_via_link: v }))} />
           </div>
-          
+
           <div className="space-y-4 pt-4 border-t border-border">
-             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Admin Controls:</h3>
-             <PermissionToggle label="Approve new members" icon={ShieldCheck} value={permissions.require_admin_approval} onChange={(v: boolean) => setPermissions(p => ({ ...p, require_admin_approval: v }))} />
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Admin Controls:</h3>
+            <PermissionToggle label="Approve new members" icon={ShieldCheck} value={permissions.require_admin_approval} onChange={(v: boolean) => setPermissions(p => ({ ...p, require_admin_approval: v }))} />
           </div>
 
           <button onClick={() => setShowPermissions(false)} className="w-full bg-primary text-primary-foreground py-3 rounded-xl font-medium mt-4">Done</button>
@@ -391,7 +391,7 @@ const PermissionToggle = ({ label, icon: Icon, value, onChange }: { label: strin
       <Icon className="w-5 h-5 text-muted-foreground" />
       <span className="text-[15px]">{label}</span>
     </div>
-    <button 
+    <button
       onClick={() => onChange(!value)}
       className={cn("w-10 h-5 rounded-full transition-colors relative", value ? "bg-primary" : "bg-muted-foreground/30")}
     >

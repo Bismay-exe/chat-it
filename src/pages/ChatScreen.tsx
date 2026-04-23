@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { TopBar } from '@/components/layout/TopBar';
 import { Avatar } from '@/components/ui/Avatar';
 import {
-  ArrowLeft, Phone, Video, Search, X,
+  ChevronLeft, Phone, Video, Search, X,
   ChevronUp, ChevronDown, MessageSquare, Image,
   FileText, Link as LinkIcon, BellOff, Bell, Palette,
   MoreHorizontal, LogOut, Download, List as ListIcon, Star, Check, Info,
@@ -12,7 +12,8 @@ import {
   MoreVertical,
   Globe,
   User,
-  TriangleAlert
+  TriangleAlert,
+  Loader2
 } from 'lucide-react';
 import { MessageBubble } from '@/components/chat/MessageBubble';
 import { MessageComposer } from '@/components/chat/MessageComposer';
@@ -437,7 +438,7 @@ export const ChatScreen: React.FC = () => {
             leftElement={
               <div className="flex items-center gap-1">
                 <button onClick={() => navigate('/chats')} className="md:hidden mr-1 hover:bg-secondary rounded-full premium-transition">
-                  <ArrowLeft className="w-5 h-5" />
+                  <ChevronLeft className="w-5 h-5" />
                 </button>
                 <div className="flex items-center cursor-pointer" onClick={handleHeaderClick}>
                   <Avatar src={chatInfo?.avatar_url} fallback={chatInfo?.name || 'C'} size="sm" />
@@ -567,13 +568,15 @@ export const ChatScreen: React.FC = () => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search in chat..."
-                  className="pl-10 pr-24 h-10 rounded-xl bg-secondary-foreground/20 backdrop-blur-sm border-black/10 text-sm"
+                  className="pl-10 pr-24 h-10 rounded-xl bg-secondary/50 text-muted-foreground border border-border/10 backdrop-blur-xl text-sm"
                 />
                 <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 {searchQuery && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-[10px] font-black text-primary bg-primary/10 px-2 py-1 rounded-md border border-primary/10 transition-all">
                     {searchQuery !== debouncedQuery ? (
-                      <span className="animate-pulse">SEARCHING...</span>
+                      <span className="animate-spin">
+                        <Loader2 className="w-5 h-5" />
+                      </span>
                     ) : (
                       searchResults.length > 0 ? `${currentMatchIndex + 1} OF ${searchResults.length}` : '0 RESULTS'
                     )}
@@ -586,14 +589,14 @@ export const ChatScreen: React.FC = () => {
                   onClick={handleNextMatch}
                   className="p-2 hover:bg-secondary rounded-xl disabled:opacity-20 active:scale-90 transition-all"
                 >
-                  <ChevronUp className="w-4 h-4" />
+                  <ChevronUp className="w-5 h-5 -mr-3" />
                 </button>
                 <button
                   disabled={searchResults.length === 0}
                   onClick={handlePrevMatch}
                   className="p-2 hover:bg-secondary rounded-xl disabled:opacity-20 active:scale-90 transition-all"
                 >
-                  <ChevronDown className="w-4 h-4" />
+                  <ChevronDown className="w-5 h-5 -mr-2" />
                 </button>
                 <button onClick={() => setIsSearchVisible(false)} className="p-2 hover:bg-secondary rounded-xl active:scale-90 transition-all"><X className="w-4 h-4" /></button>
               </div>
@@ -604,7 +607,7 @@ export const ChatScreen: React.FC = () => {
 
       <GradualScroll
         scrollRef={scrollContainerRef as any}
-        className="flex-1 w-full bg-secondary rounded-b-2xl"
+        className="flex-1 w-full bg-[url('/backgrounds/002.jpg')] bg-cover bg-center md:rounded-b-2xl"
         scrollClassName={cn("pt-[calc(4.5rem+env(safe-area-inset-top,0px))] pb-0 flex flex-col-reverse gap-1 px-2 md:px-6 lg:px-12 scroll-smooth", isSearchVisible && "pt-[calc(8rem+env(safe-area-inset-top,0px))]")}
       >
         <div ref={messagesEndRef} className="h-0 w-full" />
@@ -642,7 +645,7 @@ export const ChatScreen: React.FC = () => {
                   >
                     {/* Sticky Avatar Sidebar - Glide Logic */}
                     <div className="shrink-0 w-13 flex flex-col justify-end self-stretch">
-                      <div className="sticky top-24 bottom-0 -mb-1">
+                      <div className="sticky top-0 bottom-16 -mb-1">
                         <AnimatedItem index={gIdx}>
                           <Avatar
                             src={group.profile?.avatar_url}

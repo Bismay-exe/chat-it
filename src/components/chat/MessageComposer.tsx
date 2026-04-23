@@ -3,6 +3,7 @@ import { Send, Paperclip, X, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import imageCompression from 'browser-image-compression';
+import GradualBlur from '../ui/GradualBlur';
 
 export interface MessageComposerProps {
   onSendMessage: (content: string) => void;
@@ -108,7 +109,10 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
   };
 
   return (
-    <div className="xabsolute bottom-0 left-0 right-0 p-3 mt-auto md:border-t border-border">
+    <div className="absolute bottom-0 left-0 right-0 p-3 mt-auto z-10">
+      <div className="pointer-events-none">
+        <GradualBlur position="bottom" className="z-10" height="4.5rem" opacity={1} curve="ease-in-out" />
+      </div>
       <input
         type="file"
         ref={fileInputRef}
@@ -173,7 +177,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
       )}
       <form onSubmit={handleSubmit} className="flex items-end gap-2 max-w-4xl mx-auto">
 
-        <div className="flex-1 bg-secondary/50 border border-border/30 rounded-4xl flex items-center pr-1 premium-transition">
+        <div className="flex-1 bg-secondary/50 backdrop-blur-md border border-border/10 rounded-4xl flex items-center pr-1 premium-transition z-10">
           <textarea
             value={text}
             onChange={(e) => handleTextChange(e.target.value)}
@@ -198,10 +202,10 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
           type="submit"
           disabled={!text.trim() || disabled}
           className={cn(
-            "p-3 rounded-full premium-transition shrink-0 mb-0.5 flex items-center justify-center border",
+            "p-3 backdrop-blur-md rounded-full premium-transition shrink-0 mb-0.5 flex items-center justify-center border z-10",
             text.trim() && !disabled
-              ? "bg-primary text-primary-foreground hover:bg-primary/90 border-primary shadow-md shadow-primary/20"
-              : "bg-secondary/50 text-muted-foreground border-border/30 cursor-not-allowed"
+              ? "bg-primary text-primary-foreground hover:bg-primary/90 border-primary"
+              : "bg-secondary/50 text-muted-foreground border-border/10 cursor-not-allowed"
           )}
         >
           <Send className="w-5 h-5" />

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { ArrowLeft, Edit3, ImagePlus, Check, X, Loader2, Globe, Link as LinkIcon, Plus, Trash2, AlertCircle } from 'lucide-react';
+import { ChevronLeft, Edit3, ImagePlus, Check, X, Loader2, Globe, Link as LinkIcon, Plus, Trash2, AlertCircle } from 'lucide-react';
 import { TopBar } from '@/components/layout/TopBar';
 import { Avatar } from '@/components/ui/Avatar';
 import { useAuthStore } from '@/stores/authStore';
@@ -12,20 +12,20 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 export const OwnProfilePage = () => {
   const navigate = useNavigate();
   const { profile, setProfile, user } = useAuthStore();
-  
+
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingAbout, setIsEditingAbout] = useState(false);
   const [isEditingUsername, setIsEditingUsername] = useState(false);
-  
+
   const [newName, setNewName] = useState(profile?.full_name || '');
   const [newAbout, setNewAbout] = useState(profile?.about || '');
   const [newUsername, setNewUsername] = useState(profile?.username || '');
-  
+
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [usernameError, setUsernameError] = useState<string | null>(null);
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isAddingSocial, setIsAddingSocial] = useState(false);
@@ -51,7 +51,7 @@ export const OwnProfilePage = () => {
           .select('id')
           .eq('username', newUsername.toLowerCase())
           .single();
-        
+
         if (data && data.id !== user?.id) {
           setUsernameError('Username is already taken');
         } else {
@@ -81,7 +81,7 @@ export const OwnProfilePage = () => {
         .from('profiles')
         .update(updates)
         .eq('id', user.id);
-      
+
       if (error) throw error;
       setProfile({ ...profile, ...updates });
       toast.success('Profile updated');
@@ -128,36 +128,36 @@ export const OwnProfilePage = () => {
 
   return (
     <div className="flex flex-col h-full bg-secondary/10 absolute inset-0 z-50 overflow-y-auto">
-      <TopBar 
+      <TopBar
         leftElement={
           <div className="flex items-center gap-4">
             <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-secondary rounded-full premium-transition">
-              <ArrowLeft className="w-5 h-5" />
+              <ChevronLeft className="w-5 h-5" />
             </button>
             <span className="font-semibold text-lg">Profile</span>
           </div>
         }
       />
-      
+
       <div className="flex flex-col items-center mt-8 space-y-4 px-4 pb-12">
-        <div 
+        <div
           className="relative group cursor-pointer"
           onClick={() => !isUploading && fileInputRef.current?.click()}
         >
-          <Avatar 
-            src={profile?.avatar_url} 
-            fallback={profile?.full_name} 
+          <Avatar
+            src={profile?.avatar_url}
+            fallback={profile?.full_name}
             className="w-32 h-32 rounded-full border-4 border-background shadow-xl"
             size="xl"
           />
           <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 premium-transition flex items-center justify-center">
             {isUploading ? <Loader2 className="w-8 h-8 text-white animate-spin" /> : <ImagePlus className="w-8 h-8 text-white" />}
           </div>
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleAvatarUpload} 
-            className="hidden" 
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleAvatarUpload}
+            className="hidden"
             accept="image/*"
           />
         </div>
@@ -169,7 +169,7 @@ export const OwnProfilePage = () => {
             <div className="flex items-center justify-between gap-4">
               {isEditingName ? (
                 <div className="flex-1 flex items-center gap-2">
-                  <input 
+                  <input
                     autoFocus
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
@@ -200,7 +200,7 @@ export const OwnProfilePage = () => {
                 <div className="flex-1 space-y-2">
                   <div className="flex items-center gap-2">
                     <div className="relative flex-1">
-                      <input 
+                      <input
                         autoFocus
                         value={newUsername}
                         onChange={(e) => setNewUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
@@ -209,9 +209,9 @@ export const OwnProfilePage = () => {
                       />
                       {isCheckingUsername && <Loader2 className="absolute right-3 top-2.5 w-4 h-4 animate-spin text-muted-foreground" />}
                     </div>
-                    <button 
+                    <button
                       disabled={!!usernameError || isCheckingUsername}
-                      onClick={() => { handleUpdateProfile({ username: newUsername }); setIsEditingUsername(false); }} 
+                      onClick={() => { handleUpdateProfile({ username: newUsername }); setIsEditingUsername(false); }}
                       className="p-2 text-primary hover:bg-primary/10 rounded-full premium-transition disabled:opacity-30"
                     >
                       <Check className="w-5 h-5" />
@@ -240,14 +240,14 @@ export const OwnProfilePage = () => {
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-primary uppercase tracking-wider">Social Links</span>
-              <button 
+              <button
                 onClick={() => setIsAddingSocial(true)}
                 className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
               >
                 <Plus className="w-3 h-3" /> Add Link
               </button>
             </div>
-            
+
             <div className="space-y-3">
               {(profile?.social_links as any[])?.map((link, idx) => {
                 const Icon = socialIcons[link.platform.toLowerCase()] || socialIcons.default;
@@ -257,7 +257,7 @@ export const OwnProfilePage = () => {
                       <Icon className="w-4 h-4 text-muted-foreground" />
                       <span className="text-sm font-medium truncate max-w-50">{link.url}</span>
                     </div>
-                    <button 
+                    <button
                       onClick={() => {
                         const links = (profile?.social_links as any[]).filter((_, i) => i !== idx);
                         handleUpdateProfile({ social_links: links });
@@ -283,7 +283,7 @@ export const OwnProfilePage = () => {
             <div className="flex items-center justify-between gap-4">
               {isEditingAbout ? (
                 <div className="flex-1 flex items-center gap-2">
-                  <textarea 
+                  <textarea
                     autoFocus
                     value={newAbout}
                     onChange={(e) => setNewAbout(e.target.value)}
@@ -307,8 +307,8 @@ export const OwnProfilePage = () => {
 
         {isSaving && (
           <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-black/80 text-white px-6 py-3 rounded-full flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-300">
-             <Loader2 className="w-4 h-4 animate-spin" />
-             <span className="text-sm font-medium">Saving changes...</span>
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span className="text-sm font-medium">Saving changes...</span>
           </div>
         )}
       </div>
@@ -329,20 +329,20 @@ export const OwnProfilePage = () => {
                     onClick={() => setNewSocialPlatform(p)}
                     className={cn(
                       "px-4 py-3 rounded-2xl text-sm font-medium border-2 transition-all capitalize",
-                      newSocialPlatform === p 
-                        ? "border-primary bg-primary/5 text-primary" 
+                      newSocialPlatform === p
+                        ? "border-primary bg-primary/5 text-primary"
                         : "border-transparent bg-secondary/30 text-muted-foreground hover:bg-secondary/50"
                     )}
                   >
                     {p}
                   </button>
-                ) )}
+                ))}
               </div>
             </div>
 
             <div>
               <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">URL</label>
-              <input 
+              <input
                 type="url"
                 placeholder="https://..."
                 value={newSocialUrl}
@@ -352,7 +352,7 @@ export const OwnProfilePage = () => {
             </div>
           </div>
 
-          <button 
+          <button
             disabled={isSaving || !newSocialUrl}
             onClick={handleAddSocialLink}
             className="w-full bg-primary text-primary-foreground py-4 rounded-2xl font-bold shadow-lg shadow-primary/20 disabled:opacity-50"

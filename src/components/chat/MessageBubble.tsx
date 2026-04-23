@@ -499,7 +499,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
 
   return (
     <div className={cn(
-      "flex w-full px-2 md:px-4 group mb-1", 
+      "flex w-full px-2 md:px-4 group mb-1",
       isSentByMe ? "flex-row-reverse" : "flex-row",
       isSequence ? "mt-0.5" : "mt-4"
     )}>

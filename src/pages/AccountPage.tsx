@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { ArrowLeft, Key, Smartphone, FileText, Trash2, Loader2, Mail, Lock } from 'lucide-react';
+import { ChevronLeft, Key, Smartphone, FileText, Trash2, Loader2, Mail, Lock } from 'lucide-react';
 import { TopBar } from '@/components/layout/TopBar';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/authStore';
@@ -98,7 +98,7 @@ export const AccountPage = () => {
         leftElement={
           <div className="flex items-center gap-4">
             <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-secondary rounded-full premium-transition">
-              <ArrowLeft className="w-5 h-5" />
+              <ChevronLeft className="w-5 h-5" />
             </button>
             <span className="font-semibold text-lg">Account</span>
           </div>
@@ -146,14 +146,14 @@ export const AccountPage = () => {
       <BottomSheet isOpen={isChangingEmail} onClose={() => setIsChangingEmail(false)} title="Change Email">
         <div className="p-6 space-y-4">
           <p className="text-sm text-muted-foreground">Enter a new email address. You will need to confirm the change via email.</p>
-          <input 
+          <input
             type="email"
             placeholder="New email address"
             value={newEmail}
             onChange={(e) => setNewEmail(e.target.value)}
             className="w-full bg-secondary/50 rounded-2xl p-4 outline-none border-2 border-transparent focus:border-primary transition-all"
           />
-          <button 
+          <button
             disabled={isUpdating}
             onClick={handleUpdateEmail}
             className="w-full bg-primary text-primary-foreground py-4 rounded-2xl font-bold shadow-lg shadow-primary/20 disabled:opacity-50"
@@ -167,14 +167,14 @@ export const AccountPage = () => {
       <BottomSheet isOpen={isChangingPassword} onClose={() => setIsChangingPassword(false)} title="Change Password">
         <div className="p-6 space-y-4">
           <p className="text-sm text-muted-foreground">Enter a new password (min. 6 characters).</p>
-          <input 
+          <input
             type="password"
             placeholder="New password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             className="w-full bg-secondary/50 rounded-2xl p-4 outline-none border-2 border-transparent focus:border-primary transition-all"
           />
-          <button 
+          <button
             disabled={isUpdating}
             onClick={handleUpdatePassword}
             className="w-full bg-primary text-primary-foreground py-4 rounded-2xl font-bold shadow-lg shadow-primary/20 disabled:opacity-50"

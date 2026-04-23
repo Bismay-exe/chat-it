@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { ArrowLeft, MessageSquare, Phone, Video, Info, UserX, Ban } from 'lucide-react';
+import { ChevronLeft, MessageSquare, Phone, Video, Info, UserX, Ban } from 'lucide-react';
 import { TopBar } from '@/components/layout/TopBar';
 import { Avatar } from '@/components/ui/Avatar';
 import { supabase } from '@/lib/supabase';
@@ -41,21 +41,21 @@ export const UserProfilePage = () => {
 
   return (
     <div className="flex flex-col h-full bg-secondary/10 absolute inset-0 z-50 overflow-y-auto">
-      <TopBar 
+      <TopBar
         leftElement={
           <div className="flex items-center gap-4">
             <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-secondary rounded-full premium-transition">
-              <ArrowLeft className="w-5 h-5" />
+              <ChevronLeft className="w-5 h-5" />
             </button>
             <span className="font-semibold text-lg">Contact Info</span>
           </div>
         }
       />
-      
+
       <div className="flex flex-col items-center p-8 bg-background border-b border-border shadow-sm">
-        <Avatar 
-          src={profile?.avatar_url} 
-          fallback={profile?.full_name || 'U'} 
+        <Avatar
+          src={profile?.avatar_url}
+          fallback={profile?.full_name || 'U'}
           className="w-32 h-32 rounded-full mb-4 shadow-xl border-4 border-background ring-1 ring-border"
           size="xl"
         />
@@ -67,20 +67,20 @@ export const UserProfilePage = () => {
         {/* Actions Grid */}
         <div className="grid grid-cols-4 gap-2 bg-background p-4 rounded-2xl shadow-sm border border-border">
           <button onClick={() => navigate(`/chats/${id}`)} className="flex flex-col items-center gap-2 p-2 hover:bg-secondary rounded-xl premium-transition text-primary">
-             <MessageSquare className="w-6 h-6" />
-             <span className="text-[11px] font-medium">Message</span>
+            <MessageSquare className="w-6 h-6" />
+            <span className="text-[11px] font-medium">Message</span>
           </button>
           <button className="flex flex-col items-center gap-2 p-2 hover:bg-secondary rounded-xl premium-transition text-foreground">
-             <Phone className="w-6 h-6" />
-             <span className="text-[11px] font-medium">Audio</span>
+            <Phone className="w-6 h-6" />
+            <span className="text-[11px] font-medium">Audio</span>
           </button>
           <button className="flex flex-col items-center gap-2 p-2 hover:bg-secondary rounded-xl premium-transition text-foreground">
-             <Video className="w-6 h-6" />
-             <span className="text-[11px] font-medium">Video</span>
+            <Video className="w-6 h-6" />
+            <span className="text-[11px] font-medium">Video</span>
           </button>
           <button className="flex flex-col items-center gap-2 p-2 hover:bg-secondary rounded-xl premium-transition text-foreground">
-             <Info className="w-6 h-6" />
-             <span className="text-[11px] font-medium">Search</span>
+            <Info className="w-6 h-6" />
+            <span className="text-[11px] font-medium">Search</span>
           </button>
         </div>
 
@@ -90,7 +90,7 @@ export const UserProfilePage = () => {
         </div>
 
         <div className="bg-background rounded-2xl shadow-sm border border-border overflow-hidden mt-6">
-          <button 
+          <button
             disabled={isLoading}
             onClick={handleBlockToggle}
             className="w-full p-4 flex items-center gap-4 hover:bg-red-500/10 premium-transition text-left text-red-500 disabled:opacity-50"
@@ -99,7 +99,7 @@ export const UserProfilePage = () => {
             <span className="font-medium text-[15px]">{id && isBlocked(id) ? 'Unblock User' : 'Block User'}</span>
           </button>
           <div className="w-full h-px bg-border ml-14" />
-          <button 
+          <button
             disabled={isLoading}
             onClick={handleReport}
             className="w-full p-4 flex items-center gap-4 hover:bg-red-500/10 premium-transition text-left text-red-500 disabled:opacity-50"

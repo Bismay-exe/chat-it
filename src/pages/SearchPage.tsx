@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { ArrowLeft, Search, MessageSquare, Users, Globe } from 'lucide-react';
+import { ChevronLeft, Search, MessageSquare, Users, Globe } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Avatar } from '@/components/ui/Avatar';
 import { TopBar } from '@/components/layout/TopBar';
@@ -157,18 +157,18 @@ export const SearchPage = () => {
 
   return (
     <div className="flex flex-col h-full bg-background absolute inset-0 z-50">
-      <TopBar 
+      <TopBar
         leftElement={
           <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-secondary rounded-full premium-transition">
-            <ArrowLeft className="w-5 h-5" />
+            <ChevronLeft className="w-5 h-5" />
           </button>
         }
         title={<span className="font-semibold text-lg">Search</span>}
       />
-      
+
       <div className="p-4 border-b border-border shadow-sm">
         <div className="relative">
-          <Input 
+          <Input
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -185,16 +185,16 @@ export const SearchPage = () => {
       </div>
 
       <GradualScroll className="flex-1" scrollClassName="pb-4">
-        <Skeleton 
-          name="search-results" 
-          loading={isSearching} 
+        <Skeleton
+          name="search-results"
+          loading={isSearching}
           fixture={
             <div className="p-2 space-y-1">
               {[...Array(5)].map((_, i) => (
-                <SearchResultItem 
-                  key={i} 
-                  result={{ id: `${i}`, type: 'user', name: 'Loading User Name...', username: 'loading...', avatar_url: null }} 
-                  onClick={() => {}} 
+                <SearchResultItem
+                  key={i}
+                  result={{ id: `${i}`, type: 'user', name: 'Loading User Name...', username: 'loading...', avatar_url: null }}
+                  onClick={() => { }}
                 />
               ))}
             </div>
@@ -230,11 +230,11 @@ export const SearchPage = () => {
         )}
         {!query.trim() && (
           <div className="flex flex-col items-center justify-center p-12 text-center opacity-40 grayscale">
-             <div className="w-20 h-20 bg-secondary rounded-3xl flex items-center justify-center mb-6">
-                <Search className="w-10 h-10" />
-             </div>
-             <p className="text-sm font-bold tracking-widest uppercase">Global Search</p>
-             <p className="text-[10px] mt-1 max-w-45">Type at least 2 characters to search across all chats and people.</p>
+            <div className="w-20 h-20 bg-secondary rounded-3xl flex items-center justify-center mb-6">
+              <Search className="w-10 h-10" />
+            </div>
+            <p className="text-sm font-bold tracking-widest uppercase">Global Search</p>
+            <p className="text-[10px] mt-1 max-w-45">Type at least 2 characters to search across all chats and people.</p>
           </div>
         )}
       </GradualScroll>
@@ -243,7 +243,7 @@ export const SearchPage = () => {
 };
 
 const SearchResultItem = ({ result, onClick }: { result: SearchResult; onClick: () => void }) => (
-  <button 
+  <button
     onClick={onClick}
     className="w-full flex items-center gap-4 p-3 rounded-2xl hover:bg-secondary/40 transition-all text-left group active:scale-[0.98]"
   >

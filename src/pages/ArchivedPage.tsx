@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { ArrowLeft, Archive, ArchiveRestore, Loader2, X, Trash2, MoreVertical, Star, Info } from 'lucide-react';
+import { ChevronLeft, Archive, ArchiveRestore, Loader2, X, Trash2, MoreVertical, Star, Info } from 'lucide-react';
 import { TopBar } from '@/components/layout/TopBar';
 import { DropdownMenu } from '@/components/ui/DropdownMenu';
 import { useChats } from '@/hooks/useChats';
@@ -12,11 +12,11 @@ export const ArchivedPage = () => {
   const { chats, isLoading, toggleArchive, toggleFavorite, toggleMute, deleteChat } = useChats();
   const { blockUser } = useUserActions();
   const [selectedChatIds, setSelectedChatIds] = useState<string[]>([]);
-  
+
   const archivedChats = chats.filter(c => c.is_archived);
 
   const toggleSelection = (chatId: string) => {
-    setSelectedChatIds(prev => 
+    setSelectedChatIds(prev =>
       prev.includes(chatId) ? prev.filter(id => id !== chatId) : [...prev, chatId]
     );
   };
@@ -63,7 +63,7 @@ export const ArchivedPage = () => {
 
   return (
     <div className="flex flex-col h-full bg-background absolute inset-0 z-50">
-      <TopBar 
+      <TopBar
         leftElement={
           isSelectionMode ? (
             <div className="flex items-center gap-4">
@@ -75,7 +75,7 @@ export const ArchivedPage = () => {
           ) : (
             <div className="flex items-center gap-4">
               <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-secondary rounded-full premium-transition">
-                <ArrowLeft className="w-5 h-5" />
+                <ChevronLeft className="w-5 h-5" />
               </button>
               <span className="font-semibold text-lg">Archived</span>
             </div>
@@ -84,11 +84,11 @@ export const ArchivedPage = () => {
         rightElement={
           isSelectionMode && (
             <div className="flex items-center gap-1">
-              <button 
+              <button
                 onClick={() => {
                   const allArchived = selectedChatIds.every(id => chats.find(c => c.chat_id === id)?.is_archived);
                   handleBulkAction((id) => toggleArchive(id, allArchived));
-                }} 
+                }}
                 className="p-2 hover:bg-secondary rounded-full transition-colors"
                 title={selectedChatIds.every(id => chats.find(c => c.chat_id === id)?.is_archived) ? "Unarchive" : "Archive"}
               >
@@ -102,11 +102,11 @@ export const ArchivedPage = () => {
           )
         }
       />
-      
+
       <div className="text-center p-3 text-[13px] text-muted-foreground bg-secondary/20">
         These chats stay archived when new messages are received.
       </div>
-      
+
       <div className="flex-1 overflow-y-auto">
         {isLoading ? (
           <div className="h-full flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>
@@ -118,9 +118,9 @@ export const ArchivedPage = () => {
         ) : (
           <div className="divide-y divide-border/50">
             {archivedChats.map(chat => (
-              <ChatListItem 
-                key={chat.chat_id} 
-                {...chat} 
+              <ChatListItem
+                key={chat.chat_id}
+                {...chat}
                 onClick={() => navigate(`/chats/${chat.chat_id}`)}
                 onArchive={() => toggleArchive(chat.chat_id, chat.is_archived)}
                 onFavorite={() => toggleFavorite(chat.chat_id, chat.is_favorite)}

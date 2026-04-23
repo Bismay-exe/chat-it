@@ -13,9 +13,9 @@ interface GradualScrollProps {
  * GradualScroll provides dynamic top/bottom fading gradients 
  * based on scroll position, exactly like modern premium list interfaces.
  */
-export const GradualScroll: React.FC<GradualScrollProps> = ({ 
-  children, 
-  className, 
+export const GradualScroll: React.FC<GradualScrollProps> = ({
+  children,
+  className,
   scrollClassName,
   showGradients = true,
   scrollRef: externalRef
@@ -27,10 +27,10 @@ export const GradualScroll: React.FC<GradualScrollProps> = ({
 
   const calculateGradients = (target: HTMLElement) => {
     const { scrollTop, scrollHeight, clientHeight } = target;
-    
+
     // Top gradient: fully opaque after 50px of scrolling
     setTopOpacity(Math.min(scrollTop / 50, 1));
-    
+
     // Bottom gradient: fully opaque 50px away from the bottom
     const bottomDist = scrollHeight - (scrollTop + clientHeight);
     // If no scroll is needed, hide bottom gradient
@@ -62,8 +62,8 @@ export const GradualScroll: React.FC<GradualScrollProps> = ({
     });
     if (scrollRef.current) observer.observe(scrollRef.current);
     return () => {
-       observer.disconnect();
-       if (requestRef.current) cancelAnimationFrame(requestRef.current);
+      observer.disconnect();
+      if (requestRef.current) cancelAnimationFrame(requestRef.current);
     };
   }, [children]);
 
@@ -82,17 +82,17 @@ export const GradualScroll: React.FC<GradualScrollProps> = ({
           {/* Top Fade Gradient */}
           <div
             className="absolute top-0 left-0 right-0 h-10 pointer-events-none z-10 transition-opacity duration-300 ease-in-out"
-            style={{ 
+            style={{
               opacity: topOpacity,
-              background: 'linear-gradient(to bottom, hsl(var(--secondary)), transparent)' 
+              background: 'linear-gradient(to bottom, hsl(var(--secondary)), transparent)'
             }}
           />
           {/* Bottom Fade Gradient */}
           <div
             className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none z-10 transition-opacity duration-300 ease-in-out"
-            style={{ 
+            style={{
               opacity: bottomOpacity,
-              background: 'linear-gradient(to top, hsl(var(--secondary)), transparent)' 
+              background: 'linear-gradient(to top, hsl(var(--secondary)), transparent)'
             }}
           />
         </>

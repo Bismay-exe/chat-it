@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router';
-import { ArrowLeft, UserPlus, Copy, Share2, Check } from 'lucide-react';
+import { ChevronLeft, UserPlus, Copy, Share2, Check } from 'lucide-react';
 import { TopBar } from '@/components/layout/TopBar';
 import { toast } from 'sonner';
 import { useState } from 'react';
@@ -35,7 +35,7 @@ export const InvitePage = () => {
         leftElement={
           <div className="flex items-center gap-4">
             <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-secondary rounded-full premium-transition">
-              <ArrowLeft className="w-5 h-5" />
+              <ChevronLeft className="w-5 h-5" />
             </button>
             <span className="font-semibold text-lg whitespace-nowrap">Invite a friend</span>
           </div>

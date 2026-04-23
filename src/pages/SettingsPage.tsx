@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 import { useNavigate } from 'react-router';
-import { ArrowLeft, Key, Bell, HelpCircle, Palette, Lock, User, Globe } from 'lucide-react';
+import { ChevronLeft, Key, Bell, HelpCircle, Palette, Lock, User, Globe } from 'lucide-react';
 import { TopBar } from '@/components/layout/TopBar';
 import { Avatar } from '@/components/ui/Avatar';
 import { useAuthStore } from '@/stores/authStore';
@@ -38,7 +38,7 @@ export const SettingsPage = () => {
         leftElement={
           <div className="flex items-center gap-4">
             <button onClick={() => navigate('/chats')} className="p-2 -ml-2 hover:bg-secondary rounded-full premium-transition">
-              <ArrowLeft className="w-5 h-5" />
+              <ChevronLeft className="w-5 h-5" />
             </button>
             <span className="font-semibold text-lg">Settings</span>
           </div>
