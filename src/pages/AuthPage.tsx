@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/Input';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { MessageSquareText } from 'lucide-react';
+import { GoogleSignIn } from '@capawesome/capacitor-google-sign-in';
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -76,13 +77,25 @@ export const AuthPage: React.FC = () => {
   };
 
   const handleGoogleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin + '/chats'
-      }
-    });
-    if (error) toast.error(error.message);
+    try {
+      const result = await GoogleSignIn.signIn();
+      const idToken = result.idToken;
+
+      if (!idToken) throw new Error("No ID Token found");
+
+      const { error } = await supabase.auth.signInWithIdToken({
+        provider: 'google',
+        token: idToken,
+      });
+
+      if (error) throw error;
+      
+      toast.success('Successfully logged in with Google');
+      navigate('/chats');
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.message || "Failed to sign in with Google");
+    }
   };
 
   return (

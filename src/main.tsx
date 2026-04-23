@@ -12,6 +12,12 @@ import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persist
 window.onerror = null;
 window.onunhandledrejection = null;
 
+import { GoogleSignIn } from '@capawesome/capacitor-google-sign-in';
+
+GoogleSignIn.initialize({
+  clientId: '386785142814-66lvss57us9jo249t6rjual6jmpo4v59.apps.googleusercontent.com',
+});
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

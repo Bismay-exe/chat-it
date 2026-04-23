@@ -63,6 +63,26 @@ head, body, html {
 background: linear-gradient(0deg, rgba(197, 190, 187, 1) 0%, rgba(164, 154, 153, 1) 50%, rgba(216, 211, 217, 1) 100%);
 }
 
+/* .text-shadow {
+  background-color: #ffffff3a;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+} */
+
+.glow {
+  box-shadow:
+    0 0 5px rgba(0, 255, 255, 0.6),
+    0 0 10px rgba(0, 255, 255, 0.5),
+    0 0 20px rgba(0, 255, 255, 0.4),
+    0 0 40px rgba(0, 255, 255, 0.3);
+}
+
+.text-glow {
+  color: #000;
+  text-shadow:
+    0 0 5px #fff,
+    0 0 10px #fff;
+}
 
 /* Hide scrollbar but keep scroll */
 .no-scrollbar::-webkit-scrollbar {

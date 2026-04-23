@@ -260,7 +260,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
       {/* Sender Name for groups (Moved outside bubble for cleaner look) */}
       {/* UPDATE 1: Use showSenderName for the Sender Name */}
       {!isSentByMe && senderName && (showSenderName ?? !isSequence) && (
-        <span className="text-[12px] font-semibold text-zinc-500 mb-1.5 px-1">{senderName}</span>
+        <span className="text-[14px] font-serif text-[#1c1c1a] mb-1.5 px-1">{senderName}</span>
       )}
 
       {/* THE ELEGANT BUBBLE */}
@@ -434,7 +434,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
       {/* UPDATE 2: Wrap the metadata inside a condition checking showMetadata */}
       {showMetadata !== false && (
         <div className={cn(
-          "flex items-center gap-1.5 mt-0.5 text-[11px] font-medium text-[#A1A1AA] px-1",
+          "flex items-center gap-1.5 mt-0.5 text-[11px] font-medium text-[#424242] px-1",
           isSentByMe ? "justify-end" : "justify-start"
         )}>
           {!isSentByMe && (

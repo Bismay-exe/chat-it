@@ -462,7 +462,7 @@ export const ChatScreen: React.FC = () => {
             title={
               <div className="flex flex-col cursor-pointer" onClick={handleHeaderClick}>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xl font-bricolage-semi-condensed font-bold tracking-tight">{chatInfo?.name || 'Chat'}</span>
+                  <span className="text-glow text-xl font-bricolage-semi-condensed font-bold tracking-tight">{chatInfo?.name || 'Chat'}</span>
                   {chatInfo?.chat_type === 'group' && <span className="text-[9px] font-black bg-primary/10 text-primary px-1.5 py-0.5 rounded-sm border border-primary/20 leading-none">GP</span>}
                 </div>
                 <span className={cn(
