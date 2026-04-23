@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { MessageSquareText } from 'lucide-react';
 import { GoogleSignIn } from '@capawesome/capacitor-google-sign-in';
 import { Capacitor } from '@capacitor/core';
 
@@ -119,10 +118,10 @@ export const AuthPage: React.FC = () => {
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[100px]" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent/10 rounded-full blur-[100px]" />
       
-      <div className="w-full max-w-md bg-card border border-border rounded-2xl p-6 md:p-8 shadow-xl shadow-black/5 z-10">
+      <div className="w-full max-w-md p-6 md:p-8 z-10">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-3">
-            <MessageSquareText className="w-6 h-6 text-primary" />
+          <div className="w-18 h-18 bg-primary rounded-2xl flex items-center justify-center shadow-xl shadow-primary/20">
+            <img src="/logo/chat-it-logo.svg" alt="Chat-It" className="h-6 w-auto dark:invert" />
           </div>
           <h2 className="text-2xl font-bold">{isLogin ? 'Welcome Back' : 'Create Account'}</h2>
           <p className="text-muted-foreground text-sm mt-1 text-center">
