@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_logs: {
+        Row: {
+          action: string
+          admin_id: string | null
+          created_at: string | null
+          details: Json | null
+          id: string
+          target_id: string | null
+          target_type: string | null
+        }
+        Insert: {
+          action: string
+          admin_id?: string | null
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Update: {
+          action?: string
+          admin_id?: string | null
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_logs_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       announcements: {
         Row: {
           body: string
@@ -59,6 +97,35 @@ export type Database = {
           },
         ]
       }
+      app_settings: {
+        Row: {
+          key: string
+          updated_at: string | null
+          updated_by: string | null
+          value: Json | null
+        }
+        Insert: {
+          key: string
+          updated_at?: string | null
+          updated_by?: string | null
+          value?: Json | null
+        }
+        Update: {
+          key?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          value?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       archived_chats: {
         Row: {
           archived_at: string | null
@@ -89,6 +156,39 @@ export type Database = {
           {
             foreignKeyName: "archived_chats_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      blocked_users: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string | null
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string | null
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blocked_users_blocked_id_fkey"
+            columns: ["blocked_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blocked_users_blocker_id_fkey"
+            columns: ["blocker_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -501,6 +601,45 @@ export type Database = {
           },
         ]
       }
+      pinned_chats: {
+        Row: {
+          chat_id: string | null
+          created_at: string | null
+          id: string
+          list_key: string
+          user_id: string | null
+        }
+        Insert: {
+          chat_id?: string | null
+          created_at?: string | null
+          id?: string
+          list_key: string
+          user_id?: string | null
+        }
+        Update: {
+          chat_id?: string | null
+          created_at?: string | null
+          id?: string
+          list_key?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pinned_chats_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "chats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pinned_chats_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           about: string | null
@@ -508,6 +647,8 @@ export type Database = {
           created_at: string | null
           full_name: string
           id: string
+          is_banned: boolean
+          role: string
           social_links: Json | null
           updated_at: string | null
           username: string
@@ -518,6 +659,8 @@ export type Database = {
           created_at?: string | null
           full_name: string
           id: string
+          is_banned?: boolean
+          role?: string
           social_links?: Json | null
           updated_at?: string | null
           username: string
@@ -528,28 +671,127 @@ export type Database = {
           created_at?: string | null
           full_name?: string
           id?: string
+          is_banned?: boolean
+          role?: string
           social_links?: Json | null
           updated_at?: string | null
           username?: string
         }
         Relationships: []
       }
+      reports: {
+        Row: {
+          chat_id: string | null
+          created_at: string | null
+          id: string
+          reason: string
+          reported_id: string | null
+          reporter_id: string | null
+        }
+        Insert: {
+          chat_id?: string | null
+          created_at?: string | null
+          id?: string
+          reason: string
+          reported_id?: string | null
+          reporter_id?: string | null
+        }
+        Update: {
+          chat_id?: string | null
+          created_at?: string | null
+          id?: string
+          reason?: string
+          reported_id?: string | null
+          reporter_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_reported_id_fkey"
+            columns: ["reported_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      get_chat_messages: {
+        Args: {
+          p_before?: string
+          p_chat_id: string
+          p_limit?: number
+          p_user_id: string
+        }
+        Returns: {
+          res_chat_id: string
+          res_content: string
+          res_created_at: string
+          res_file_name: string
+          res_id: string
+          res_media_url: string
+          res_profiles: Json
+          res_reply_to_id: string
+          res_sender_id: string
+          res_status: string
+          res_type: string
+        }[]
+      }
+      get_direct_chat_between_users: {
+        Args: { user1_id: string; user2_id: string }
+        Returns: {
+          chat_id: string
+        }[]
+      }
+      get_recent_contacts: {
+        Args: { p_user_id: string }
+        Returns: {
+          avatar_url: string
+          full_name: string
+          id: string
+          username: string
+        }[]
+      }
+      get_unread_message_ids: {
+        Args: { p_chat_id: string; p_user_id: string }
+        Returns: {
+          id: string
+        }[]
+      }
       get_user_chats: {
         Args: { p_user_id: string }
+        Returns: {
+          res_avatar_url: string
+          res_chat_id: string
+          res_chat_type: string
+          res_is_archived: boolean
+          res_is_favorite: boolean
+          res_is_muted: boolean
+          res_last_message: string
+          res_last_message_time: string
+          res_name: string
+          res_other_user_id: string
+          res_unread_count: number
+        }[]
+      }
+      search_user_chats: {
+        Args: { p_query: string; p_user_id: string }
         Returns: {
           avatar_url: string
           chat_id: string
           chat_type: string
-          is_muted: boolean
-          last_message: string
-          last_message_time: string
           name: string
-          unread_count: number
+          username: string
         }[]
       }
     }
@@ -684,3 +926,4 @@ export const Constants = {
     Enums: {},
   },
 } as const
+

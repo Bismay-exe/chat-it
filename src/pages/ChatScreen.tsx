@@ -36,10 +36,14 @@ import { usePresence } from '@/hooks/usePresence';
 import { useTypingIndicator } from '@/hooks/useTypingIndicator';
 import { GradualScroll } from '@/components/ui/GradualScroll';
 import { AnimatedItem } from '@/components/ui/AnimatedItem';
+import { SYSTEM_CHAT_ID } from '@/lib/constants';
+import { useLocation } from 'react-router';
 
 export const ChatScreen: React.FC = () => {
   const { showInfo, setShowInfo } = useOutletContext<{ showInfo: boolean; setShowInfo: (v: boolean) => void }>() || { showInfo: false, setShowInfo: () => { } };
-  const { id } = useParams();
+  const { id: paramId } = useParams();
+  const location = useLocation();
+  const id = (paramId === 'chat-it' || location.pathname.includes('/admin/chatscreen')) ? SYSTEM_CHAT_ID : paramId;
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -370,7 +374,8 @@ export const ChatScreen: React.FC = () => {
     }
   };
 
-  const isRestricted = chatInfo?.chat_type === 'group' && !canSend;
+  const isSystemChat = id === SYSTEM_CHAT_ID;
+  const isRestricted = (chatInfo?.chat_type === 'group' && !canSend) || (isSystemChat && !isAdmin);
   const isMuted = chatInfo?.is_muted || false;
   const isFavorite = chatInfo?.is_favorite || false;
 

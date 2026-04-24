@@ -4,6 +4,7 @@ import { supabase, supabaseUrl } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/authStore';
 import { useUploadStore } from '@/stores/uploadStore';
 import { toast } from 'sonner';
+import { SYSTEM_CHAT_ID, SYSTEM_USER_ID } from '@/lib/constants';
 
 // Safe UUID generator for Capacitor WebViews that might lack crypto.randomUUID
 function generateUUID(): string {
@@ -31,9 +32,12 @@ export interface MessageData {
   status?: 'sending' | 'sent' | 'error' | 'read';
 }
 
-export function useMessages(chatId: string | undefined) {
+export function useMessages(paramChatId: string | undefined) {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
+
+  const isSystemChat = paramChatId === 'chat-it' || paramChatId === SYSTEM_CHAT_ID;
+  const chatId = isSystemChat ? SYSTEM_CHAT_ID : paramChatId;
 
   const {
     data,
@@ -157,9 +161,10 @@ export function useMessages(chatId: string | undefined) {
   const sendMessageMutation = useMutation({
     mutationFn: async ({ content, tempId }: { content: string, tempId: string }) => {
       if (!chatId || !user) throw new Error('Not initialized');
+      const senderId = isSystemChat && user.role === 'admin' ? SYSTEM_USER_ID : user.id;
       const { data, error } = await supabase
         .from('messages')
-        .insert({ id: tempId, chat_id: chatId, sender_id: user.id, content: content.trim(), type: 'text' })
+        .insert({ id: tempId, chat_id: chatId, sender_id: senderId, content: content.trim(), type: 'text' })
         .select()
         .single();
       if (error) throw error;
@@ -303,12 +308,13 @@ export function useMessages(chatId: string | undefined) {
       const publicUrl = `${supabaseUrl}/functions/v1/telegram-proxy?file_id=${encodeURIComponent(fileId)}`;
 
       // 2. Insert Message with predefined ID
+      const senderId = isSystemChat && user.role === 'admin' ? SYSTEM_USER_ID : user.id;
       const { data, error } = await supabase
         .from('messages')
         .insert({
           id: tempId,
           chat_id: chatId,
-          sender_id: user.id,
+          sender_id: senderId,
           content: '',
           type,
           media_url: publicUrl,

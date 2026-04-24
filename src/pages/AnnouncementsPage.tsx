@@ -38,10 +38,25 @@ export const AnnouncementsPage = () => {
         console.error(error);
       } else {
         // Flatten the data because of nested group_info select
-        const items = data.map((item: any) => ({
-          ...item,
-          group_info: item.group_info[0]?.group_info
-        }));
+        const items = data.map((item: any) => {
+          // Check if global announcement (chat_id is null)
+          if (!item.chat_id) {
+            return {
+              ...item,
+              group_info: {
+                name: 'Chat-It System',
+                avatar_url: '' // Will use fallback 'C'
+              }
+            };
+          }
+          
+          return {
+            ...item,
+            group_info: Array.isArray(item.group_info) 
+              ? item.group_info[0]?.group_info 
+              : item.group_info
+          };
+        });
         setAnnouncements(items);
       }
       setIsLoading(false);

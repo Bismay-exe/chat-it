@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 import { useNavigate } from 'react-router';
-import { ChevronLeft, Key, Bell, HelpCircle, Palette, Lock, User, Globe } from 'lucide-react';
+import { ChevronLeft, Key, Bell, HelpCircle, Palette, Lock, User, Globe, Shield } from 'lucide-react';
 import { TopBar } from '@/components/layout/TopBar';
 import { Avatar } from '@/components/ui/Avatar';
 import { useAuthStore } from '@/stores/authStore';
@@ -28,6 +28,7 @@ export const SettingsPage = () => {
     { icon: Palette, label: 'Appearance', desc: 'Theme colors, chat wallpaper', path: '/settings/appearance' },
     { icon: Bell, label: 'Notifications', desc: 'Message tones, group alerts', path: '/announcements/settings' },
     { icon: User, label: 'Profile', desc: 'About, phone number, name', path: '/profile' },
+    ...(profile?.role === 'admin' ? [{ icon: Shield, label: 'Admin System', desc: 'Manage users, reports, and app settings', path: '/admin' }] : []),
     { icon: HelpCircle, label: 'Help', desc: 'Help center, privacy policy', path: '/settings/help' },
     { icon: Globe, label: 'About', desc: 'Version, updates, social links', path: '/about' },
   ];

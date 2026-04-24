@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import bg from '/backgrounds/002.jpg';
-import { Search, Settings, MessageSquareText, List as ListIcon, Check, X, Pin, PinOff, Bell, BellOff, Archive, ArchiveRestore, Trash2, MoreVertical, Star, Info, Ban, LogOut } from 'lucide-react';
+import { Search, Settings, MessageSquareText, List as ListIcon, Check, X, Pin, PinOff, Bell, BellOff, Archive, ArchiveRestore, Trash2, MoreVertical, Star, Info, Ban, LogOut, Shield } from 'lucide-react';
 import { DropdownMenu } from '@/components/ui/DropdownMenu';
 import { ChatListItem } from '@/components/chat/ChatListItem';
 import { cn } from '@/lib/utils';
@@ -19,10 +19,12 @@ import { supabase } from '@/lib/supabase';
 import { Avatar } from '@/components/ui/Avatar';
 import GradualBlur from '@/components/ui/GradualBlur';
 import { useUserActions } from '@/hooks/useUserActions';
+import { SYSTEM_CHAT_ID } from '@/lib/constants';
 
 export const ChatsPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { profile } = useAuthStore();
   const [activeTab, setActiveTab] = useState('All Chats');
   const [managingChatId, setManagingChatId] = useState<string | null>(null);
 
@@ -48,7 +50,11 @@ export const ChatsPage: React.FC = () => {
   const isLoading = isChatsLoading || isListsLoading;
 
   const handleChatClick = useCallback((chatId: string) => {
-    navigate(`/chats/${chatId}`);
+    if (chatId === SYSTEM_CHAT_ID) {
+      navigate('/chats/chat-it');
+    } else {
+      navigate(`/chats/${chatId}`);
+    }
   }, [navigate]);
 
   const defaultTabs = ['All Chats', 'Unread', 'Favourite', 'Groups', 'Archived'];
@@ -291,6 +297,10 @@ export const ChatsPage: React.FC = () => {
                   >
                     <Search className={cn("w-5 h-5", showSearchBar ? "fill-primary" : "")} />
                   </button>
+                  {/* admin button */}
+                  {(profile?.role === 'admin' || profile?.role === 'member') && (
+                    <button onClick={() => navigate('/admin')} className="p-2 hover:bg-secondary rounded-full premium-transition"><Shield className="w-5 h-5" /></button>
+                  )}
                   <button onClick={() => navigate('/settings')} className="p-2 hover:bg-secondary rounded-full premium-transition"><Settings className="w-5 h-5" /></button>
                 </div>
               </>

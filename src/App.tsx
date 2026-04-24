@@ -34,6 +34,14 @@ import { AppearancePage } from '@/pages/AppearancePage';
 import { HelpPage } from '@/pages/HelpPage';
 import { AboutPage } from '@/pages/AboutPage';
 
+import { AdminShell } from '@/components/admin/AdminShell';
+import { AdminDashboard } from '@/pages/admin/AdminDashboard';
+import { AdminUsers } from '@/pages/admin/AdminUsers';
+import { AdminReports } from '@/pages/admin/AdminReports';
+import { AdminAnnouncements } from '@/pages/admin/AdminAnnouncements';
+import { AdminLogs } from '@/pages/admin/AdminLogs';
+import { AdminSettings } from '@/pages/admin/AdminSettings';
+
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useAuthStore();
@@ -44,6 +52,26 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+  
+  return <>{children}</>;
+};
+
+// Admin Route Wrapper
+const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, profile, isLoading } = useAuthStore();
+  
+  if (isLoading) {
+    return <div className="h-svh w-full flex items-center justify-center bg-background"><span className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
+  }
+  
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  // Double check the role is fetched before kicking
+  if (profile && profile.role !== 'admin') {
+    return <Navigate to="/chats" replace />;
   }
   
   return <>{children}</>;
@@ -79,7 +107,16 @@ export const App: React.FC = () => {
           .eq('id', session.user.id)
           .single()
           .then(({ data, error }) => {
-            if (!error && data) useAuthStore.getState().setProfile(data);
+            if (!error && data) {
+              if (data.is_banned) {
+                // If the user is banned, force logout and prevent entry
+                supabase.auth.signOut();
+                useAuthStore.getState().setProfile(null);
+                useAuthStore.getState().setUser(null);
+                return;
+              }
+              useAuthStore.getState().setProfile(data);
+            }
           });
       } else {
         useAuthStore.getState().setProfile(null);
@@ -146,6 +183,17 @@ export const App: React.FC = () => {
           <Route path="/about" element={<AboutPage />} />
           
           <Route path="/invite" element={<InvitePage />} />
+        </Route>
+
+        {/* Admin Routes */}
+        <Route path="/admin" element={<AdminRoute><AdminShell /></AdminRoute>}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="reports" element={<AdminReports />} />
+          <Route path="announcements" element={<AdminAnnouncements />} />
+          <Route path="chatscreen" element={<ChatScreen />} />
+          <Route path="logs" element={<AdminLogs />} />
+          <Route path="settings" element={<AdminSettings />} />
         </Route>
 
         {/* Fallback */}
