@@ -31,7 +31,12 @@ const signupSchema = z.object({
 export const AuthPage: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [showEmailForm, setShowEmailForm] = useState(false);
+  const [step, setStep] = useState<'form' | 'otp'>('form');
+  const [otpEmail, setOtpEmail] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpToken, setOtpToken] = useState('');
   const navigate = useNavigate();
+
 
   const loginForm = useRHForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -47,13 +52,21 @@ export const AuthPage: React.FC = () => {
         email: data.email,
         password: data.password,
       });
-      if (error) throw error;
-      toast.success('Welcome back!');
+      if (error) {
+        if (error.message.includes('Email not confirmed')) {
+          setOtpEmail(data.email);
+          setStep('otp');
+          toast.info('Please verify your email code.');
+          return;
+        }
+        throw error;
+      }
       navigate('/chats');
     } catch (error: any) {
       toast.error(error.message);
     }
   };
+
 
   const onSignup = async (data: z.infer<typeof signupSchema>) => {
     try {
@@ -68,17 +81,33 @@ export const AuthPage: React.FC = () => {
         }
       });
       if (error) throw error;
-      toast.success('Account created! Please check your email.');
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) {
-        setIsLogin(true);
-      } else {
-        navigate('/chats');
-      }
+      
+      setOtpEmail(data.email);
+      setStep('otp');
     } catch (error: any) {
       toast.error(error.message);
     }
   };
+
+  const handleVerifyOtp = async () => {
+    if (otpToken.length !== 6) return;
+    setOtpLoading(true);
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email: otpEmail,
+        token: otpToken,
+        type: 'signup'
+      });
+      if (error) throw error;
+      toast.success('Email verified! Redirecting...');
+      navigate('/chats');
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
 
   const handleGoogleLogin = async () => {
     try {
@@ -259,19 +288,21 @@ export const AuthPage: React.FC = () => {
       <BottomSheet 
         isOpen={showEmailForm} 
         onClose={() => setShowEmailForm(false)} 
-        title=" "
+        title={isLogin ? 'Welcome Back' : 'Create Account'}
       >
         <div className="flex-1 flex flex-col pt-0">
-          <h1 className="text-[2.5rem] leading-[1.1] font-extrabold tracking-tight mb-3">
+          {/* <h1 className="text-[2.5rem] leading-[1.1] font-extrabold tracking-tight mb-3">
             {isLogin ? 'Welcome back.' : 'Create account.'}
-          </h1>
-          <p className="text-[#A79BBD] text-[1.1rem] mb-10">
+          </h1> */}
+          {/* <p className="text-[#A79BBD] text-[1.1rem] mb-10">
             {isLogin ? 'Sign in to access your chats.' : 'Join Chat-It and connect instantly.'}
-          </p>
+          </p> */}
 
           {/* Premium Pill Tab Switcher */}
-          <div className="flex bg-primary/10 p-1.5 rounded-[1.25rem] mb-8 border border-black/5 backdrop-blur-xl relative">
-            <div className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-background rounded-2xl shadow-sm transition-all duration-300 ease-out ${isLogin ? 'left-1.5' : 'left-[calc(50%)]'}`} />
+          <div className={`flex bg-primary/5 p-1.5 rounded-[1.25rem] mb-8 border border-black/5 relative
+            ${step === 'otp' ? 'hidden' : ''}
+          `}>
+            <div className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-background/50 border-border/50 border rounded-2xl shadow-sm transition-all duration-300 ease-out ${isLogin ? 'left-1.5' : 'left-[calc(50%)]'}`} />
             <button
               className={`flex-1 py-3 text-[0.95rem] font-semibold rounded-xl transition-all z-10 ${isLogin ? 'text-primary' : 'text-gray-500 hover:text-primary'}`}
               onClick={() => setIsLogin(true)}
@@ -288,7 +319,46 @@ export const AuthPage: React.FC = () => {
 
           {/* Forms Container */}
           <div className="relative w-full">
-            {isLogin ? (
+            {step === 'otp' ? (
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="text-center space-y-2">
+                  <p className="text-sm text-muted-foreground italic">Check your inbox for a 6-digit code</p>
+                  <p className="text-xs font-bold text-primary">{otpEmail}</p>
+                </div>
+                
+                <div className="flex justify-center">
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={otpToken}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      setOtpToken(val);
+                    }}
+                    placeholder="000000"
+                    className="w-64 text-center text-3xl font-black tracking-[0.5em] h-20 bg-primary/5 border-black/5 rounded-3xl"
+                    autoFocus
+                  />
+                </div>
+
+                <Button
+                  onClick={handleVerifyOtp}
+                  disabled={otpToken.length !== 6 || otpLoading}
+                  isLoading={otpLoading}
+                  className="w-full h-14 rounded-2xl text-[1.05rem] font-semibold bg-primary text-primary-foreground shadow-xl"
+                >
+                  Verify & Join
+                </Button>
+
+                <button 
+                  onClick={() => setStep('form')}
+                  className="w-full text-xs font-bold text-muted-foreground uppercase tracking-widest hover:text-primary transition-colors"
+                >
+                  Wait, I made a mistake
+                </button>
+              </div>
+            ) : isLogin ? (
               <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4 animate-in fade-in zoom-in-[0.98] duration-300">
                 <div className="space-y-1.5">
                   <Input
@@ -379,6 +449,7 @@ export const AuthPage: React.FC = () => {
               </form>
             )}
           </div>
+
         </div>
       </BottomSheet>
     </div>

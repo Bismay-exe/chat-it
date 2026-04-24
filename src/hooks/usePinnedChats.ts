@@ -76,9 +76,6 @@ export function usePinnedChats() {
 
       return { previousPins };
     },
-    onSuccess: (_, { isPinned, listKey }) => {
-      toast.success(isPinned ? `Unpinned from ${listKey}` : `Pinned to ${listKey}`);
-    },
     onError: (err: any, __, context) => {
       if (context?.previousPins) {
         queryClient.setQueryData(['pinned_chats', user?.id], context.previousPins);

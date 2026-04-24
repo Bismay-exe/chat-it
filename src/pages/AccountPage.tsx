@@ -29,7 +29,6 @@ export const AccountPage = () => {
     try {
       const { error } = await supabase.auth.updateUser({ email: newEmail });
       if (error) throw error;
-      toast.success("Confirmation email sent to " + newEmail);
       setIsChangingEmail(false);
     } catch (err: any) {
       toast.error(err.message);

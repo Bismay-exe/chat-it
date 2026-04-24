@@ -128,7 +128,6 @@ export const GroupInfoPage = () => {
 
       if (updatedMembers) setMembers(updatedMembers as any);
 
-      toast.success("Member added");
       setShowAddMember(false);
     } catch (err: any) {
       toast.error("Failed to add: " + err.message);
@@ -147,7 +146,6 @@ export const GroupInfoPage = () => {
 
       if (error) throw error;
       setIsMuted(newMuteState);
-      toast.success(newMuteState ? "Group muted" : "Group unmuted");
     } catch (err: any) {
       toast.error("Failed to update mute: " + err.message);
     }
@@ -161,7 +159,6 @@ export const GroupInfoPage = () => {
         .update(newPerms)
         .eq('chat_id', id);
       if (error) throw error;
-      toast.success("Permissions updated");
     } catch (err: any) {
       toast.error("Update failed: " + err.message);
     }

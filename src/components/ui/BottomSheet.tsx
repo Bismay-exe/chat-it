@@ -25,7 +25,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({ isOpen, onClose, title
   return (
     <div 
       className={cn(
-        "fixed inset-0 z-100 flex items-end justify-center sm:items-center",
+        "fixed inset-0 p-2 z-100 flex items-end justify-center sm:items-center",
         // CRITICAL: Prevent invisible barrier blocking clicks when closed
         !isOpen && "pointer-events-none" 
       )}
@@ -35,7 +35,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({ isOpen, onClose, title
       {/* Backdrop */}
       <div 
         className={cn(
-          "absolute inset-0 bg-black/40 backdrop-blur-sm transition-all duration-300",
+          "absolute inset-0 bg-black/40 backdrop-blur-xs transition-all duration-300",
           isOpen ? "opacity-100" : "opacity-0"
         )}
         onClick={onClose}
@@ -45,7 +45,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({ isOpen, onClose, title
       {/* Sheet */}
       <div 
         className={cn(
-          "relative w-full max-w-lg bg-background rounded-t-4xl sm:rounded-4xl shadow-2xl transition-all duration-500 mx-auto flex flex-col max-h-[90dvh]",
+          "relative w-full max-w-lg bg-background/50 backdrop-blur-xl rounded-4xl sm:rounded-4xl shadow-2xl transition-all duration-500 mx-auto flex flex-col max-h-[90dvh]",
           // Custom spring-like easing for a native feel
           "ease-[cubic-bezier(0.32,0.72,0,1)]",
           // Mobile: Slide up | Desktop (sm): Fade and scale

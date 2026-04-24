@@ -65,7 +65,6 @@ export const ListsPage = () => {
         });
 
       if (error) throw error;
-      toast.success('List created');
       setNewListName('');
       setShowCreateModal(false);
       fetchLists();
@@ -84,7 +83,6 @@ export const ListsPage = () => {
         .eq('id', id);
 
       if (error) throw error;
-      toast.success('List deleted');
       fetchLists();
     } catch (err: any) {
       toast.error('Failed to delete list');

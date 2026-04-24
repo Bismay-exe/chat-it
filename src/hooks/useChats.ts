@@ -117,9 +117,6 @@ export function useChats() {
       );
       return { previousChats };
     },
-    onSuccess: (_, { isArchived }) => {
-      toast.success(isArchived ? 'Chat unarchived' : 'Chat archived');
-    },
     onError: (err: any, __, context) => {
       if (context?.previousChats) {
         queryClient.setQueryData(['chats', user?.id], context.previousChats);
@@ -154,9 +151,6 @@ export function useChats() {
       );
       return { previousChats };
     },
-    onSuccess: (_, { isFavorite }) => {
-      toast.success(isFavorite ? 'Removed from Favorites' : 'Added to Favorites');
-    },
     onError: (err: any, __, context) => {
       if (context?.previousChats) {
         queryClient.setQueryData(['chats', user?.id], context.previousChats);
@@ -181,9 +175,6 @@ export function useChats() {
         old?.map(c => c.chat_id === chatId ? { ...c, is_muted: !isMuted } : c)
       );
       return { previousChats };
-    },
-    onSuccess: (_, { isMuted }) => {
-      toast.success(isMuted ? 'Unmuted' : 'Muted');
     },
     onError: (err: any, __, context) => {
       if (context?.previousChats) {
