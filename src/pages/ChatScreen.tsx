@@ -14,8 +14,10 @@ import {
   Globe,
   User,
   TriangleAlert,
-  Loader2
+  Loader2,
+  BadgeCheck
 } from 'lucide-react';
+
 import { MessageBubble } from '@/components/chat/MessageBubble';
 import { MessageComposer } from '@/components/chat/MessageComposer';
 import { DateSeparator, formatChatDate } from '@/components/chat/DateSeparator';
@@ -36,7 +38,8 @@ import { usePresence } from '@/hooks/usePresence';
 import { useTypingIndicator } from '@/hooks/useTypingIndicator';
 import { GradualScroll } from '@/components/ui/GradualScroll';
 import { AnimatedItem } from '@/components/ui/AnimatedItem';
-import { SYSTEM_CHAT_ID } from '@/lib/constants';
+import { SYSTEM_CHAT_ID, SYSTEM_USER_ID } from '@/lib/constants';
+
 import { useLocation } from 'react-router';
 
 export const ChatScreen: React.FC = () => {
@@ -45,7 +48,8 @@ export const ChatScreen: React.FC = () => {
   const location = useLocation();
   const id = (paramId === 'chat-it' || location.pathname.includes('/admin/chatscreen')) ? SYSTEM_CHAT_ID : paramId;
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const { user, profile } = useAuthStore();
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -375,7 +379,9 @@ export const ChatScreen: React.FC = () => {
   };
 
   const isSystemChat = id === SYSTEM_CHAT_ID;
-  const isRestricted = (chatInfo?.chat_type === 'group' && !canSend) || (isSystemChat && !isAdmin);
+  const isPlatformAdmin = profile?.role === 'admin';
+  const isRestricted = (chatInfo?.chat_type === 'group' && !canSend) || (isSystemChat && !isPlatformAdmin);
+
   const isMuted = chatInfo?.is_muted || false;
   const isFavorite = chatInfo?.is_favorite || false;
 
@@ -468,8 +474,12 @@ export const ChatScreen: React.FC = () => {
               <div className="flex flex-col cursor-pointer" onClick={handleHeaderClick}>
                 <div className="flex items-center gap-1.5">
                   <span className="text-glow text-xl font-bricolage-semi-condensed font-bold tracking-tight">{chatInfo?.name || 'Chat'}</span>
-                  {chatInfo?.chat_type === 'group' && <span className="text-[9px] font-black bg-primary/10 text-primary px-1.5 py-0.5 rounded-sm border border-primary/20 leading-none">GP</span>}
+                  {isSystemChat && (
+                    <BadgeCheck className="w-5 h-5 text-blue-500 fill-blue-500/10 shrink-0" />
+                  )}
+                  {chatInfo?.chat_type === 'group' && !isSystemChat && <span className="text-[9px] font-black bg-primary/10 text-primary px-1.5 py-0.5 rounded-sm border border-primary/20 leading-none">GP</span>}
                 </div>
+
                 <span className={cn(
                   "text-[11px] font-medium leading-none transition-colors",
                   typingStatus ? "text-primary italic animate-pulse" :
@@ -715,10 +725,11 @@ export const ChatScreen: React.FC = () => {
                                     file_size={msg.file_size}
                                     timestamp={currentTime}
                                     isSentByMe={isSentByMe}
-                                    senderName={group.profile?.full_name}
-                                    senderAvatar={group.profile?.avatar_url}
+                                    senderName={group.sender_id === SYSTEM_USER_ID ? 'Chat It' : (group.profile?.full_name || 'User')}
+                                    senderAvatar={group.sender_id === SYSTEM_USER_ID ? '/logo.svg' : group.profile?.avatar_url}
                                     
                                     // Pass our new grouping props here:
+
                                     isSequence={true} 
                                     isLastInSequence={isLastInSequence}
                                     showSenderName={showSenderName}
@@ -733,7 +744,9 @@ export const ChatScreen: React.FC = () => {
                                     isSelected={selectedMessageIds.includes(msg.id)}
                                     onSelect={handleMessageSelect}
                                     isSelectionMode={isSelectionMode}
+                                    isSystemMessage={msg.sender_id === SYSTEM_USER_ID}
                                   />
+
                                 </div>
                               </AnimatedItem>
                             );

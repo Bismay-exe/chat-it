@@ -5,6 +5,8 @@ import { TopBar } from '@/components/layout/TopBar';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/authStore';
 import { toast } from 'sonner';
+import { SYSTEM_CHAT_ID, SYSTEM_USER_ID } from '@/lib/constants';
+
 
 export const AdminAnnouncements: React.FC = () => {
   const navigate = useNavigate();
@@ -22,14 +24,23 @@ export const AdminAnnouncements: React.FC = () => {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7); // Default 7 days expiry
 
-    const { error } = await supabase.from('announcements').insert({
+    const { error: annError } = await supabase.from('announcements').insert({
       title,
       body,
       created_by: profile?.id,
       expires_at: expiresAt.toISOString(),
     });
 
-    if (error) {
+    // Also send as a chat message to the Official Channel
+    const { error: msgError } = await supabase.from('messages').insert({
+      chat_id: SYSTEM_CHAT_ID,
+      sender_id: SYSTEM_USER_ID,
+      content: `*${title}*\n\n${body}`,
+      type: 'text'
+    });
+
+    if (annError || msgError) {
+
       toast.error('Failed to broadcast announcement');
     } else {
       toast.success('Global announcement sent successfully!');

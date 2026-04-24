@@ -298,9 +298,10 @@ export const ChatsPage: React.FC = () => {
                     <Search className={cn("w-5 h-5", showSearchBar ? "fill-primary" : "")} />
                   </button>
                   {/* admin button */}
-                  {(profile?.role === 'admin' || profile?.role === 'member') && (
+                  {profile?.role === 'admin' || profile?.role === 'member' && (
                     <button onClick={() => navigate('/admin')} className="p-2 hover:bg-secondary rounded-full premium-transition"><Shield className="w-5 h-5" /></button>
                   )}
+
                   <button onClick={() => navigate('/settings')} className="p-2 hover:bg-secondary rounded-full premium-transition"><Settings className="w-5 h-5" /></button>
                 </div>
               </>

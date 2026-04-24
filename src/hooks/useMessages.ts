@@ -33,7 +33,8 @@ export interface MessageData {
 }
 
 export function useMessages(paramChatId: string | undefined) {
-  const { user } = useAuthStore();
+  const { user, profile } = useAuthStore();
+
   const queryClient = useQueryClient();
 
   const isSystemChat = paramChatId === 'chat-it' || paramChatId === SYSTEM_CHAT_ID;
@@ -161,7 +162,8 @@ export function useMessages(paramChatId: string | undefined) {
   const sendMessageMutation = useMutation({
     mutationFn: async ({ content, tempId }: { content: string, tempId: string }) => {
       if (!chatId || !user) throw new Error('Not initialized');
-      const senderId = isSystemChat && user.role === 'admin' ? SYSTEM_USER_ID : user.id;
+      const senderId = isSystemChat && profile?.role === 'admin' ? SYSTEM_USER_ID : user.id;
+
       const { data, error } = await supabase
         .from('messages')
         .insert({ id: tempId, chat_id: chatId, sender_id: senderId, content: content.trim(), type: 'text' })
@@ -181,8 +183,10 @@ export function useMessages(paramChatId: string | undefined) {
         content: content.trim(),
         type: 'text',
         created_at: new Date().toISOString(),
-        status: 'sending'
+        status: 'sending',
+        profiles: isSystemChat && profile?.role === 'admin' ? { full_name: 'Chat It', avatar_url: '/logo.svg' } : { full_name: user?.user_metadata?.full_name || 'Me', avatar_url: user?.user_metadata?.avatar_url || '' }
       };
+
 
       queryClient.setQueryData(['messages', chatId, user?.id], (old: any) => {
         if (!old) return { pages: [[optimisticMessage]], pageParams: [null] };
@@ -204,8 +208,9 @@ export function useMessages(paramChatId: string | undefined) {
         if (!old || !old.pages?.[0]) return old;
         const updatedPages = [...old.pages];
         updatedPages[0] = updatedPages[0].map((m: MessageData) => 
-          m.id === context?.tempId ? { ...data, status: 'sent' as const, profiles: { full_name: user?.user_metadata?.full_name || 'Me' } } : m
+          m.id === context?.tempId ? { ...data, status: 'sent' as const, profiles: isSystemChat && profile?.role === 'admin' ? { full_name: 'Chat It', avatar_url: '/logo.svg' } : { full_name: user?.user_metadata?.full_name || 'Me', avatar_url: user?.user_metadata?.avatar_url || '' } } : m
         );
+
         return { ...old, pages: updatedPages };
       });
     },
@@ -308,7 +313,8 @@ export function useMessages(paramChatId: string | undefined) {
       const publicUrl = `${supabaseUrl}/functions/v1/telegram-proxy?file_id=${encodeURIComponent(fileId)}`;
 
       // 2. Insert Message with predefined ID
-      const senderId = isSystemChat && user.role === 'admin' ? SYSTEM_USER_ID : user.id;
+      const senderId = isSystemChat && profile?.role === 'admin' ? SYSTEM_USER_ID : user.id;
+
       const { data, error } = await supabase
         .from('messages')
         .insert({
@@ -367,8 +373,9 @@ export function useMessages(paramChatId: string | undefined) {
         if (!old || !old.pages?.[0]) return old;
         const updatedPages = [...old.pages];
         updatedPages[0] = updatedPages[0].map((m: any) => 
-          m.id === context?.tempId ? { ...data, status: 'sent' as const, profiles: { full_name: user?.user_metadata?.full_name || 'Me' } } : m
+          m.id === context?.tempId ? { ...data, status: 'sent' as const, profiles: isSystemChat && profile?.role === 'admin' ? { full_name: 'Chat It', avatar_url: '/logo.svg' } : { full_name: user?.user_metadata?.full_name || 'Me', avatar_url: user?.user_metadata?.avatar_url || '' } } : m
         );
+
         return { ...old, pages: updatedPages };
       });
     },

@@ -3,7 +3,9 @@ import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { DropdownMenu } from '@/components/ui/DropdownMenu';
-import { Archive, Star, StarOff, BellOff, ArchiveRestore, Trash2, Plus, Pin, Info, Ban, LogOut, Check } from 'lucide-react';
+import { Archive, Star, StarOff, BellOff, ArchiveRestore, Trash2, Plus, Pin, Info, Ban, LogOut, Check, BadgeCheck } from 'lucide-react';
+import { SYSTEM_CHAT_ID } from '@/lib/constants';
+
 
 export interface ChatListItemProps {
   chat_id: string;
@@ -172,8 +174,9 @@ export const ChatListItem: React.FC<ChatListItemProps> = React.memo(({
       >
         <div className={cn(
           'absolute left-2.5 right-1.5 top-0 bottom-1.5',
-          isActive ? 'bg-primary/20 border border-black/10 rounded-[20px]' : (isSelected ? '' : 'hover:bg-secondary/40')
+          isActive ? 'bg-primary/20 border border-black/10 rounded-[20px]' : (isSelected ? '' : (chat_id === SYSTEM_CHAT_ID ? 'bg-blue-500/5 hover:bg-blue-500/10' : 'hover:bg-secondary/40'))
         )}></div>
+
 
         <div className="relative">
           <Avatar src={avatar_url} fallback={name} size="lg" className={cn(isActive || isSelected ? 'scale-100' : '')} />
@@ -186,8 +189,12 @@ export const ChatListItem: React.FC<ChatListItemProps> = React.memo(({
 
         <div className="flex-1 flex flex-col gap-2 leading-none pr-0 md:pr-4 overflow-hidden pointer-events-none">
           <div className="flex justify-between items-baseline">
-            <h3 className="font-bold font-bricolage-semi-condensed text-[20px] tracking-tight truncate flex items-center gap-2 text-foreground pr-2">
-              {name}
+            <h3 className="font-bold font-bricolage-semi-condensed text-[20px] tracking-tight truncate flex items-center gap-2 text-primary pr-2">
+              <span className={cn(chat_id === SYSTEM_CHAT_ID && "text-primary font-black")}>{name}</span>
+              {chat_id === SYSTEM_CHAT_ID && (
+                <BadgeCheck className="w-5 h-5 text-primary fill-primary/10 shrink-0" />
+              )}
+
             </h3>
             <span className={cn('text-[14px] font-semibold shrink-0', (unread_count || 0) > 0 ? 'text-primary' : 'text-muted-foreground')}>
               {timestamp}

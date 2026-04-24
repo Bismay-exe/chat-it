@@ -69,10 +69,16 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/auth" replace />;
   }
 
-  // Double check the role is fetched before kicking
-  if (profile && profile.role !== 'admin') {
+  // Ensure profile is loaded and check role
+  if (!profile) {
+    // If user exists but profile is missing, we might still be fetching it
+    return <div className="h-svh w-full flex items-center justify-center bg-background"><span className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
+  }
+
+  if (profile.role !== 'admin') {
     return <Navigate to="/chats" replace />;
   }
+
   
   return <>{children}</>;
 };

@@ -47,7 +47,9 @@ export interface MessageBubbleProps {
   isSelected?: boolean;
   onSelect?: (id: string) => void;
   isSelectionMode?: boolean;
+  isSystemMessage?: boolean;
 }
+
 
 const formatBytes = (bytes: number, decimals = 1) => {
   if (!bytes) return '0 B';
@@ -98,8 +100,9 @@ const ProgressCircle = ({ progress, size = 48, strokeWidth = 3, isDownloading = 
 };
 
 export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
-  id, content, type = 'text', media_url, file_name, file_size, timestamp, isSentByMe, showSenderName, showMetadata, status, uploadProgress, senderName, senderAvatar, isSequence = false, isLastInSequence = false, highlight, activeMatchWithinMessage = -1, onDelete, hideAvatar = false, isSelected = false, onSelect, isSelectionMode = false
+  id, content, type = 'text', media_url, file_name, file_size, timestamp, isSentByMe, showSenderName, showMetadata, status, uploadProgress, senderName, senderAvatar, isSequence = false, isLastInSequence = false, highlight, activeMatchWithinMessage = -1, onDelete, hideAvatar = false, isSelected = false, onSelect, isSelectionMode = false, isSystemMessage = false
 }) => {
+
   const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
   const [xhr, setXhr] = useState<XMLHttpRequest | null>(null);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
@@ -260,8 +263,14 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(({
       {/* Sender Name for groups (Moved outside bubble for cleaner look) */}
       {/* UPDATE 1: Use showSenderName for the Sender Name */}
       {!isSentByMe && senderName && (showSenderName ?? !isSequence) && (
-        <span className="text-[14px] font-serif text-[#1c1c1a] mb-1.5 px-1">{senderName}</span>
+        <div className="flex items-center gap-1.5 mb-1.5 px-1">
+          <span className="text-[14px] font-serif text-[#1c1c1a]">{senderName}</span>
+          {isSystemMessage && (
+            <span className="text-[9px] font-black bg-blue-500/10 text-blue-500 px-1.5 py-0.5 rounded-sm border border-blue-500/20 scale-90 -translate-x-0.5">OFFICIAL</span>
+          )}
+        </div>
       )}
+
 
       {/* THE ELEGANT BUBBLE */}
       <div className={cn(
