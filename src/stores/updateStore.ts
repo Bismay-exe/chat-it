@@ -32,5 +32,5 @@ export const useUpdateStore = create<UpdateState>((set) => ({
     channel,
     autoStartDownload
   }),
-  closeUpdate: () => set({ updateAvailable: false }),
+  closeUpdate: () => set({ updateAvailable: false, autoStartDownload: false }),
 }));
