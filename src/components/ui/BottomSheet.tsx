@@ -25,7 +25,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({ isOpen, onClose, title
   return (
     <div 
       className={cn(
-        "fixed inset-0 p-2 z-100 flex items-end justify-center sm:items-center",
+        "fixed inset-0 p-2 pb-[calc(8px+env(safe-area-inset-bottom))] z-100 flex items-end justify-center sm:items-center",
         // CRITICAL: Prevent invisible barrier blocking clicks when closed
         !isOpen && "pointer-events-none" 
       )}
@@ -60,23 +60,23 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({ isOpen, onClose, title
         </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 pt-8 pb-4 sm:pt-6 sm:pb-4 z-10 shrink-0">
-          <h3 className="text-3xl font-bricolage-semi-condensed font-bold tracking-tighter leading-[0.8] text-foreground">
+        <div className="flex items-center justify-between px-6 pt-10 pb-4 sm:pt-6 sm:pb-4 z-10 shrink-0">
+          <h3 className="text-[2.5rem] font-thunder font-extrabold xtracking-wide leading-[0.8] text-foreground">
             {title || 'Options'}
           </h3>
           <button 
             onClick={onClose} 
-            className="p-2 -mr-2 bg-secondary/50 hover:bg-secondary text-muted-foreground hover:text-foreground rounded-full transition-all active:scale-95"
+            className="p-2 -mr-2 mb-2 text-primary hover:text-primary-foreground rounded-full transition-all active:scale-95"
             aria-label="Close modal"
           >
-            <X className="w-5 h-5" strokeWidth={3} />
+            <X className="w-7 h-7" strokeWidth={3} />
           </button>
         </div>
         
         {/* Content Area */}
         <div className="overflow-y-auto overscroll-contain px-6 pb-safe sm:pb-6 pt-2">
           {/* pb-safe ensures it doesn't get hidden behind the iPhone home indicator */}
-          <div className="pb-8"> 
+          <div className="pb-0"> 
             {children}
           </div>
         </div>

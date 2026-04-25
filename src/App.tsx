@@ -155,7 +155,7 @@ export const App: React.FC = () => {
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<RedirectIfSignedIn><LandingPage /></RedirectIfSignedIn>} />
-        <Route path="/auth" element={<RedirectIfSignedIn><AuthPage /></RedirectIfSignedIn>} />
+        <Route path="/auth" element={<AuthPage />} />
 
         {/* Protected Routes inside AppShell */}
         <Route element={<ProtectedRoute><AppShell /></ProtectedRoute>}>

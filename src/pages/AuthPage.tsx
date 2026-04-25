@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router';
+import React, { useState, useCallback, useRef } from 'react';
+import { useNavigate, Navigate } from 'react-router';
 import { useForm as useRHForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -11,6 +11,7 @@ import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { GoogleSignIn } from '@capawesome/capacitor-google-sign-in';
 import { Capacitor } from '@capacitor/core';
+import { useAuthStore } from '@/stores/authStore';
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -35,7 +36,33 @@ export const AuthPage: React.FC = () => {
   const [otpEmail, setOtpEmail] = useState('');
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpToken, setOtpToken] = useState('');
+  const [emailSuccess, setEmailSuccess] = useState(false);
   const navigate = useNavigate();
+  const user = useAuthStore((s) => s.user);
+
+  // For browser OAuth: sessionStorage flag survives the full page reload.
+  // Initialize googleSuccess to true if we're returning from a Google OAuth redirect.
+  const [googleSuccess, setGoogleSuccess] = useState(() => {
+    const pending = sessionStorage.getItem('google_auth_pending');
+    if (pending) {
+      sessionStorage.removeItem('google_auth_pending');
+      return true;
+    }
+    return false;
+  });
+
+  // Ref to block redirect while an auth call is in-flight (for native/email flows)
+  const authInProgress = useRef(false);
+
+  const handleDone = useCallback(() => {
+    navigate('/chats');
+  }, [navigate]);
+
+  // RENDER-TIME redirect: if user is signed in but we're not showing
+  // a success screen and no auth call is in-flight, redirect to /chats.
+  if (user && !googleSuccess && !emailSuccess && !authInProgress.current) {
+    return <Navigate to="/chats" replace />;
+  }
 
 
   const loginForm = useRHForm<z.infer<typeof loginSchema>>({
@@ -48,11 +75,13 @@ export const AuthPage: React.FC = () => {
 
   const onLogin = async (data: z.infer<typeof loginSchema>) => {
     try {
+      authInProgress.current = true;
       const { error } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
       });
       if (error) {
+        authInProgress.current = false;
         if (error.message.includes('Email not confirmed')) {
           setOtpEmail(data.email);
           setStep('otp');
@@ -61,8 +90,9 @@ export const AuthPage: React.FC = () => {
         }
         throw error;
       }
-      navigate('/chats');
+      setEmailSuccess(true);
     } catch (error: any) {
+      authInProgress.current = false;
       toast.error(error.message);
     }
   };
@@ -81,7 +111,7 @@ export const AuthPage: React.FC = () => {
         }
       });
       if (error) throw error;
-      
+
       setOtpEmail(data.email);
       setStep('otp');
     } catch (error: any) {
@@ -93,15 +123,16 @@ export const AuthPage: React.FC = () => {
     if (otpToken.length !== 6) return;
     setOtpLoading(true);
     try {
+      authInProgress.current = true;
       const { error } = await supabase.auth.verifyOtp({
         email: otpEmail,
         token: otpToken,
         type: 'signup'
       });
       if (error) throw error;
-      toast.success('Email verified! Redirecting...');
-      navigate('/chats');
+      setEmailSuccess(true);
     } catch (error: any) {
+      authInProgress.current = false;
       toast.error(error.message);
     } finally {
       setOtpLoading(false);
@@ -117,26 +148,40 @@ export const AuthPage: React.FC = () => {
 
         if (!idToken) throw new Error("No ID Token found");
 
+        // Set ref BEFORE signInWithIdToken — ref is synchronous,
+        // so the useEffect redirect check sees it immediately
+        authInProgress.current = true;
+
         const { error } = await supabase.auth.signInWithIdToken({
           provider: 'google',
           token: idToken,
         });
 
-        if (error) throw error;
+        if (error) {
+          authInProgress.current = false;
+          throw error;
+        }
+
+        // NOW show the visible success overlay
+        setGoogleSuccess(true);
       } else {
+        // Browser OAuth: page will fully reload after Google auth.
+        // Save flag to sessionStorage so we can show success screen on return.
+        sessionStorage.setItem('google_auth_pending', '1');
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: window.location.origin + '/chats'
+            redirectTo: window.location.origin + '/auth'
           }
         });
 
-        if (error) throw error;
+        if (error) {
+          sessionStorage.removeItem('google_auth_pending');
+          throw error;
+        }
       }
-
-      toast.success('Successfully logged in with Google');
-      navigate('/chats');
     } catch (error: any) {
+      authInProgress.current = false;
       console.error(error);
       toast.error(error.message || "Failed to sign in with Google");
     }
@@ -144,12 +189,42 @@ export const AuthPage: React.FC = () => {
 
   return (
     <div
-      className="flex flex-col items-center justify-between py-12 px-6 text-[#1b1b1b] relative min-h-svh overflow-x-hidden pt-safe"
+      className="flex flex-col items-center justify-between bg-cover bg-center bg-no-repeat py-12 px-6 text-[#1b1b1b] relative min-h-svh overflow-x-hidden pt-safe"
       style={{
         backgroundImage: `url(${bg})`,
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
       }}
     >
+      {/* ── Google Login Full-Screen Success Overlay ── */}
+      {googleSuccess && (
+        <div className="fixed inset-0 z-9999 flex flex-col items-center justify-center bg-cover bg-no-repeat bg-center animate-in fade-in duration-500" style={{
+          backgroundImage: `url(${bg})`
+        }}>
+          {/* Animated checkmark */}
+          <div className="relative mb-18">
+            <div className="relative mb-6">
+              <svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 24 24" fill="#000000" stroke="#000000" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-badge-icon lucide-badge"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z" /></svg>
+              <div className='absolute inset-0 h-full w-full flex items-center justify-center'>
+                <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-check-icon lucide-check"><path d="M20 6 9 17l-5-5" /></svg>
+              </div>
+            </div>
+            {/* Decorative particles */}
+            <div className="absolute -top-3 -right-3 w-4 h-2 -rotate-75 bg-[#686BBD]" />
+            <div className="absolute bottom-2 left-2 w-2 h-4 rotate-45 bg-[#BF90A8]" />
+            <div className="absolute top-0 -left-6 w-4 h-2.5 rotate-45 bg-[#FCCCFB]" />
+            <div className="absolute bottom-0 right-2 w-2 h-4 -rotate-45 bg-[#627B99]" />
+          </div>
+          <h1 className="text-[4rem] font-thunder font-extrabold leading-none md:leading-normal text-primary mb-2 animate-in slide-in-from-bottom-4 duration-500">You're In!</h1>
+          <p className="text-primary/60 font-bricolage-semi-condensed font-bold text-2xl text-center px-8 mb-8 animate-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: '0.15s' }}>Signed in with Google successfully.</p>
+          <button
+            onClick={handleDone}
+            className="absolute md:static bottom-8 left-6 right-6 h-14 md:w-100  rounded-4xl bg-primary text-primary-foreground text-lg font-bold shadow-xl hover:shadow-[0_12px_40px_rgba(76,175,80,0.5)] transition-all active:scale-95 hover:scale-[1.02] animate-in slide-in-from-bottom-6 duration-700"
+            style={{ animationDelay: '0.3s' }}
+          >
+            Start Chatting
+          </button>
+        </div>
+      )}
       {/* Chat Bubbles Section */}
       <section className="scale-90 w-full max-w-sm relative h-75.5 mt-18 shrink-0">
         {/* Chat Card 1: Daniel */}
@@ -285,9 +360,9 @@ export const AuthPage: React.FC = () => {
       </main>
 
       {/* Email Bottom Sheet */}
-      <BottomSheet 
-        isOpen={showEmailForm} 
-        onClose={() => setShowEmailForm(false)} 
+      <BottomSheet
+        isOpen={showEmailForm}
+        onClose={() => setShowEmailForm(false)}
         title={isLogin ? 'Welcome Back' : 'Create Account'}
       >
         <div className="flex-1 flex flex-col pt-0">
@@ -300,7 +375,7 @@ export const AuthPage: React.FC = () => {
 
           {/* Premium Pill Tab Switcher */}
           <div className={`flex bg-primary/5 p-1.5 rounded-[1.25rem] mb-8 border border-black/5 relative
-            ${step === 'otp' ? 'hidden' : ''}
+            ${step === 'otp' || emailSuccess ? 'hidden' : ''}
           `}>
             <div className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-background/50 border-border/50 border rounded-2xl shadow-sm transition-all duration-300 ease-out ${isLogin ? 'left-1.5' : 'left-[calc(50%)]'}`} />
             <button
@@ -319,13 +394,40 @@ export const AuthPage: React.FC = () => {
 
           {/* Forms Container */}
           <div className="relative w-full">
-            {step === 'otp' ? (
+            {emailSuccess ? (
+              /* ── Email Auth Success View (inside bottom sheet) ── */
+              <div className="flex flex-col items-center justify-center py-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="relative mb-6">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 24 24" fill="#000000" stroke="#000000" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-badge-icon lucide-badge"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z" /></svg>
+                  <div className='absolute inset-0 h-full w-full flex items-center justify-center'>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-check-icon lucide-check"><path d="M20 6 9 17l-5-5" /></svg>
+                  </div>
+
+                  {/* Decorative particles */}
+                  <div className="absolute -top-3 -right-3 w-4 h-2 -rotate-75 bg-[#686BBD]" />
+                  <div className="absolute bottom-2 left-2 w-2 h-4 rotate-45 bg-[#BF90A8]" />
+                  <div className="absolute top-0 -left-6 w-4 h-2.5 rotate-45 bg-[#FCCCFB]" />
+                  <div className="absolute bottom-0 right-2 w-2 h-4 -rotate-45 bg-[#627B99]" />
+                </div>
+                <h2 className="text-[3rem] font-thunder font-extrabold text-primary mb-1 animate-in slide-in-from-bottom-4 duration-500">Successful</h2>
+                <p className="text-primary/70 font-bricolage-semi-condensed text-xl text-center px-4 mb-8 animate-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: '0.15s' }}>
+                  {isLogin ? 'Welcome back — pick up where you left off.' : 'Your account is ready. Start chatting.'}
+                </p>
+                <button
+                  onClick={handleDone}
+                  className="w-full h-14 rounded-2xl text-[1.05rem] font-semibold bg-primary text-primary-foreground shadow-xl"
+                  style={{ animationDelay: '0.3s' }}
+                >
+                  Start Chatting
+                </button>
+              </div>
+            ) : step === 'otp' ? (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="text-center space-y-2">
                   <p className="text-sm text-muted-foreground italic">Check your inbox for a 6-digit code</p>
                   <p className="text-xs font-bold text-primary">{otpEmail}</p>
                 </div>
-                
+
                 <div className="flex justify-center">
                   <Input
                     type="text"
@@ -351,7 +453,7 @@ export const AuthPage: React.FC = () => {
                   Verify & Join
                 </Button>
 
-                <button 
+                <button
                   onClick={() => setStep('form')}
                   className="w-full text-xs font-bold text-muted-foreground uppercase tracking-widest hover:text-primary transition-colors"
                 >
