@@ -33,7 +33,7 @@ import { useChatPermissions } from '@/hooks/useChatPermissions';
 import { Skeleton } from 'boneyard-js/react';
 import { useChatLists } from '@/hooks/useChatLists';
 import { BottomSheet } from '@/components/ui/BottomSheet';
-import GradualBlur from '@/components/ui/GradualBlur';
+// GradualBlur removed — replaced with plain CSS gradient for search overlay
 import { usePresence } from '@/hooks/usePresence';
 import { useTypingIndicator } from '@/hooks/useTypingIndicator';
 import { GradualScroll } from '@/components/ui/GradualScroll';
@@ -41,6 +41,7 @@ import { AnimatedItem } from '@/components/ui/AnimatedItem';
 import { SYSTEM_CHAT_ID, SYSTEM_USER_ID } from '@/lib/constants';
 
 import { useLocation } from 'react-router';
+import GradualBlur from '@/components/ui/GradualBlur';
 
 export const ChatScreen: React.FC = () => {
   const { showInfo, setShowInfo } = useOutletContext<{ showInfo: boolean; setShowInfo: (v: boolean) => void }>() || { showInfo: false, setShowInfo: () => { } };
@@ -587,6 +588,8 @@ export const ChatScreen: React.FC = () => {
 
         {isSearchVisible && (
           <>
+            {/* Plain gradient replaces GradualBlur in search overlay */}
+            {/* <div className="pointer-events-none absolute top-0 left-0 right-0 h-36 z-10" style={{ background: 'linear-gradient(to bottom, rgba(245,245,245,0.95) 0%, rgba(245,245,245,0.7) 60%, transparent 100%)' }} /> */}
             <div className="pointer-events-none">
               <GradualBlur position="top" className="z-10" height="9rem" opacity={1} curve="ease-in-out" />
             </div>
@@ -637,7 +640,7 @@ export const ChatScreen: React.FC = () => {
       <GradualScroll
         scrollRef={scrollContainerRef as any}
         className={`flex-1 w-full`}
-        scrollClassName={cn("pt-[calc(4.5rem+env(safe-area-inset-top,0px))] pb-4 flex flex-col-reverse gap-1 px-2 md:px-6 lg:px-12 scroll-smooth", isSearchVisible && "pt-[calc(8rem+env(safe-area-inset-top,0px))]")}
+        scrollClassName={cn("pt-[calc(4.5rem+env(safe-area-inset-top,0px))] pb-4 flex flex-col-reverse gap-1 px-2 md:px-6 lg:px-12", isSearchVisible && "pt-[calc(8rem+env(safe-area-inset-top,0px))]")}
       >
         <div ref={messagesEndRef} className="h-0 w-full" />
 

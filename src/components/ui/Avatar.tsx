@@ -10,7 +10,7 @@ interface AvatarProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const CACHE_KEY = 'chat-it-avatar-cache';
 
-// Load initial cache from localStorage
+// Load initial cache from localStorage (which URLs we've seen before)
 const getInitialCache = (): Set<string> => {
   try {
     const saved = localStorage.getItem(CACHE_KEY);
@@ -20,7 +20,29 @@ const getInitialCache = (): Set<string> => {
   }
 };
 
+// Module-level set of URLs that are already in the browser HTTP image cache
 const loadedAvatars = getInitialCache();
+
+/**
+ * Pre-warm the browser's HTTP image cache for a batch of avatar URLs.
+ * Call this when chat list data loads so all avatars are cached before
+ * the user opens any individual chat. Images load from disk = instant.
+ */
+export const preloadAvatarBatch = (urls: (string | null | undefined)[]) => {
+  urls.forEach(url => {
+    if (!url || loadedAvatars.has(url)) return;
+    // Create off-screen image to trigger browser HTTP cache population
+    const img = new window.Image();
+    img.src = url;
+    img.onload = () => {
+      loadedAvatars.add(url);
+      // Persist so next app session knows these are cached
+      try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify(Array.from(loadedAvatars)));
+      } catch { /* quota exceeded */ }
+    };
+  });
+};
 
 export const Avatar: React.FC<AvatarProps> = ({ src, fallback, size = 'md', className, ...props }) => {
   const [isLoaded, setIsLoaded] = useState(() => src ? loadedAvatars.has(src) : false);
@@ -33,26 +55,18 @@ export const Avatar: React.FC<AvatarProps> = ({ src, fallback, size = 'md', clas
   };
 
   const handleLoad = () => {
+    setIsLoaded(true);
     if (src && !loadedAvatars.has(src)) {
       loadedAvatars.add(src);
-      setIsLoaded(true);
-      // Persist update in background
       try {
         localStorage.setItem(CACHE_KEY, JSON.stringify(Array.from(loadedAvatars)));
-      } catch (e) {
-        console.warn('Failed to persist avatar cache', e);
-      }
-    } else {
-      setIsLoaded(true);
+      } catch { /* quota exceeded */ }
     }
   };
 
-  // If the src changes, re-evaluate isLoaded from the cache
+  // Re-evaluate when src changes
   useEffect(() => {
-    if (src) {
-      const alreadyLoaded = loadedAvatars.has(src);
-      setIsLoaded(alreadyLoaded);
-    }
+    if (src) setIsLoaded(loadedAvatars.has(src));
   }, [src]);
 
   return (
@@ -69,6 +83,8 @@ export const Avatar: React.FC<AvatarProps> = ({ src, fallback, size = 'md', clas
           src={src}
           alt={fallback || 'Avatar'}
           onLoad={handleLoad}
+          loading="eager"
+          decoding="async"
           className={cn(
             "absolute inset-0 w-full h-full object-cover transition-opacity duration-300",
             isLoaded ? "opacity-100" : "opacity-0"

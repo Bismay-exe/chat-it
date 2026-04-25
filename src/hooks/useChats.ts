@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/authStore';
 import { toast } from 'sonner';
 import { notificationService } from '@/utils/notifications';
+import { preloadAvatarBatch } from '@/components/ui/Avatar';
 
 export interface ChatData {
   chat_id: string;
@@ -46,6 +47,14 @@ export function useChats() {
     enabled: !!user,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
+
+  // Pre-warm all avatar images into browser HTTP cache as soon as chat list loads.
+  // This means by the time user opens any chat, all avatars are already cached on disk.
+  useEffect(() => {
+    if (chats.length > 0) {
+      preloadAvatarBatch(chats.map(c => c.avatar_url));
+    }
+  }, [chats]);
 
   const timeoutRef = useRef<any>(null);
   const debouncedRefetch = useCallback(() => {

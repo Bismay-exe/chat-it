@@ -1,4 +1,3 @@
-import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router'
 import './index.css'
@@ -34,14 +33,27 @@ const persister = createSyncStoragePersister({
 })
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <BrowserRouter>
-      <PersistQueryClientProvider 
-        client={queryClient}
-        persistOptions={{ persister }}
-      >
-        <App />
-      </PersistQueryClientProvider>
-    </BrowserRouter>
-  </StrictMode>,
+  <BrowserRouter>
+    <PersistQueryClientProvider 
+      client={queryClient}
+      persistOptions={{ 
+        persister,
+        // Bump this string any time you make breaking schema changes to query data
+        buster: 'v2',
+      }}
+    >
+      <App />
+    </PersistQueryClientProvider>
+  </BrowserRouter>,
 )
+
+// Pre-warm the most frequently used page chunks immediately after mount.
+// These run after the main thread is free — not blocking initial render.
+// On first visit they download in the background; on all subsequent visits
+// they're served from disk cache instantly (zero delay on navigation).
+setTimeout(() => {
+  import('@/pages/AuthPage');
+  import('@/pages/ChatsPage');
+  import('@/pages/ChatScreen');
+}, 100);
+

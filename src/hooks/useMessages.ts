@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useUploadStore } from '@/stores/uploadStore';
 import { toast } from 'sonner';
 import { SYSTEM_CHAT_ID, SYSTEM_USER_ID } from '@/lib/constants';
+import { preloadAvatarBatch } from '@/components/ui/Avatar';
 
 // Safe UUID generator for Capacitor WebViews that might lack crypto.randomUUID
 function generateUUID(): string {
@@ -83,6 +84,18 @@ export function useMessages(paramChatId: string | undefined) {
   // Flatten messages for UI: Reverse pages so oldest page is first, then flatten
   const messages = data?.pages ? [...data.pages].reverse().flat() : [];
 
+  // Pre-warm sender avatar images into browser HTTP cache on first message load
+  useEffect(() => {
+    if (messages.length > 0) {
+      const avatarUrls = messages
+        .map(m => m.profiles?.avatar_url)
+        .filter(Boolean);
+      preloadAvatarBatch(avatarUrls);
+    }
+  // Only run when first page loads, not on every message
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatId, data?.pages?.length]);
+
 
   useEffect(() => {
     if (!chatId || !user) return;
@@ -132,7 +145,7 @@ export function useMessages(paramChatId: string | undefined) {
     };
   }, [chatId, user?.id, queryClient]);
 
-  // Optimized Mark as Read: Updates last_read_at in chat_members
+  // Optimized Mark as Read: Debounced to avoid a DB write on every single message append
   useEffect(() => {
     if (!chatId || !user || messages.length === 0) return;
     
@@ -140,7 +153,8 @@ export function useMessages(paramChatId: string | undefined) {
     // Only mark as read if the last message is not from us
     if (lastMessage.sender_id === user.id) return;
 
-    const markRead = async () => {
+    // Debounce: wait 1.5s after last message before writing to DB
+    const timer = setTimeout(async () => {
       try {
         const { error } = await supabase
           .from('chat_members')
@@ -155,8 +169,9 @@ export function useMessages(paramChatId: string | undefined) {
       } catch (err) {
         console.error('Failed to update last_read_at:', err);
       }
-    };
-    markRead();
+    }, 1500);
+
+    return () => clearTimeout(timer);
   }, [messages.length, chatId, user?.id, queryClient]);
 
   const sendMessageMutation = useMutation({

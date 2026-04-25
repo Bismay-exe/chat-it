@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router';
 import { Toaster } from 'sonner';
 import { Capacitor } from '@capacitor/core';
@@ -10,37 +10,49 @@ import { SplashScreen } from '@capacitor/splash-screen';
 
 import { AppShell } from '@/components/layout/AppShell';
 import { UpdateScreen } from '@/components/layout/UpdateScreen';
-import { LandingPage } from '@/pages/LandingPage';
-import { AuthPage } from '@/pages/AuthPage';
-import { ChatsPage } from '@/pages/ChatsPage';
-import { ChatScreen } from '@/pages/ChatScreen';
-import { SearchPage } from '@/pages/SearchPage';
-import { AddContactPage } from '@/pages/AddContactPage';
-import { NewGroupPage } from '@/pages/NewGroupPage';
-import { GroupInfoPage } from '@/pages/GroupInfoPage';
-import { UserProfilePage } from '@/pages/UserProfilePage';
-import { OwnProfilePage } from '@/pages/OwnProfilePage';
-import { SettingsPage } from '@/pages/SettingsPage';
-import { AnnouncementsPage } from '@/pages/AnnouncementsPage';
-import { GroupMediaPage } from '@/pages/GroupMediaPage';
-import { AccountPage } from '@/pages/AccountPage';
-import { ListsPage } from '@/pages/ListsPage';
-import { ArchivedPage } from '@/pages/ArchivedPage';
-import { ArchivedSettingsPage } from '@/pages/ArchivedSettingsPage';
-import { AnnouncementsSettingsPage } from '@/pages/AnnouncementsSettingsPage';
-import { InvitePage } from '@/pages/InvitePage';
-import { PrivacyPage } from '@/pages/PrivacyPage';
-import { AppearancePage } from '@/pages/AppearancePage';
-import { HelpPage } from '@/pages/HelpPage';
-import { AboutPage } from '@/pages/AboutPage';
 
-import { AdminShell } from '@/components/admin/AdminShell';
-import { AdminDashboard } from '@/pages/admin/AdminDashboard';
-import { AdminUsers } from '@/pages/admin/AdminUsers';
-import { AdminReports } from '@/pages/admin/AdminReports';
-import { AdminAnnouncements } from '@/pages/admin/AdminAnnouncements';
-import { AdminLogs } from '@/pages/admin/AdminLogs';
-import { AdminSettings } from '@/pages/admin/AdminSettings';
+// Lazy-load ALL pages — each becomes its own small chunk instead of 1 giant 1.1MB bundle.
+// This makes initial load fast and each page transition nearly instant on revisit.
+const LandingPage = lazy(() => import('@/pages/LandingPage').then(m => ({ default: m.LandingPage })));
+const AuthPage = lazy(() => import('@/pages/AuthPage').then(m => ({ default: m.AuthPage })));
+const ChatsPage = lazy(() => import('@/pages/ChatsPage').then(m => ({ default: m.ChatsPage })));
+const ChatScreen = lazy(() => import('@/pages/ChatScreen').then(m => ({ default: m.ChatScreen })));
+const SearchPage = lazy(() => import('@/pages/SearchPage').then(m => ({ default: m.SearchPage })));
+const AddContactPage = lazy(() => import('@/pages/AddContactPage').then(m => ({ default: m.AddContactPage })));
+const NewGroupPage = lazy(() => import('@/pages/NewGroupPage').then(m => ({ default: m.NewGroupPage })));
+const GroupInfoPage = lazy(() => import('@/pages/GroupInfoPage').then(m => ({ default: m.GroupInfoPage })));
+const UserProfilePage = lazy(() => import('@/pages/UserProfilePage').then(m => ({ default: m.UserProfilePage })));
+const OwnProfilePage = lazy(() => import('@/pages/OwnProfilePage').then(m => ({ default: m.OwnProfilePage })));
+const SettingsPage = lazy(() => import('@/pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
+const AnnouncementsPage = lazy(() => import('@/pages/AnnouncementsPage').then(m => ({ default: m.AnnouncementsPage })));
+const GroupMediaPage = lazy(() => import('@/pages/GroupMediaPage').then(m => ({ default: m.GroupMediaPage })));
+const AccountPage = lazy(() => import('@/pages/AccountPage').then(m => ({ default: m.AccountPage })));
+const ListsPage = lazy(() => import('@/pages/ListsPage').then(m => ({ default: m.ListsPage })));
+const ArchivedPage = lazy(() => import('@/pages/ArchivedPage').then(m => ({ default: m.ArchivedPage })));
+const ArchivedSettingsPage = lazy(() => import('@/pages/ArchivedSettingsPage').then(m => ({ default: m.ArchivedSettingsPage })));
+const AnnouncementsSettingsPage = lazy(() => import('@/pages/AnnouncementsSettingsPage').then(m => ({ default: m.AnnouncementsSettingsPage })));
+const InvitePage = lazy(() => import('@/pages/InvitePage').then(m => ({ default: m.InvitePage })));
+const PrivacyPage = lazy(() => import('@/pages/PrivacyPage').then(m => ({ default: m.PrivacyPage })));
+const AppearancePage = lazy(() => import('@/pages/AppearancePage').then(m => ({ default: m.AppearancePage })));
+const HelpPage = lazy(() => import('@/pages/HelpPage').then(m => ({ default: m.HelpPage })));
+const AboutPage = lazy(() => import('@/pages/AboutPage').then(m => ({ default: m.AboutPage })));
+
+// Admin pages — separate chunk group
+const AdminShell = lazy(() => import('@/components/admin/AdminShell').then(m => ({ default: m.AdminShell })));
+const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
+const AdminUsers = lazy(() => import('@/pages/admin/AdminUsers').then(m => ({ default: m.AdminUsers })));
+const AdminReports = lazy(() => import('@/pages/admin/AdminReports').then(m => ({ default: m.AdminReports })));
+const AdminAnnouncements = lazy(() => import('@/pages/admin/AdminAnnouncements').then(m => ({ default: m.AdminAnnouncements })));
+const AdminLogs = lazy(() => import('@/pages/admin/AdminLogs').then(m => ({ default: m.AdminLogs })));
+const AdminSettings = lazy(() => import('@/pages/admin/AdminSettings').then(m => ({ default: m.AdminSettings })));
+
+// Minimal page-level loading skeleton shown ONLY if the chunk is slow to download
+// (on fast networks / after first visit this never shows — chunk is already cached)
+const PageLoader = () => (
+  <div className="h-svh w-full flex items-center justify-center bg-background">
+    <span className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+  </div>
+);
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -69,9 +81,7 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/auth" replace />;
   }
 
-  // Ensure profile is loaded and check role
   if (!profile) {
-    // If user exists but profile is missing, we might still be fetching it
     return <div className="h-svh w-full flex items-center justify-center bg-background"><span className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
   }
 
@@ -152,61 +162,64 @@ export const App: React.FC = () => {
     <>
       <Toaster position="top-center" richColors theme="system" />
       <UpdateScreen />
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<RedirectIfSignedIn><LandingPage /></RedirectIfSignedIn>} />
-        <Route path="/auth" element={<AuthPage />} />
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<RedirectIfSignedIn><LandingPage /></RedirectIfSignedIn>} />
+          <Route path="/auth" element={<AuthPage />} />
 
-        {/* Protected Routes inside AppShell */}
-        <Route element={<ProtectedRoute><AppShell /></ProtectedRoute>}>
-        <Route path="/chats" element={<ChatsPage />}>
-          <Route path=":id" element={<ChatScreen />} />
-        </Route>
-          <Route path="/chats/:id/info" element={<GroupInfoPage />} />
-          <Route path="/chats/:id/media" element={<GroupMediaPage />} />
-          <Route path="/chats/lists" element={<ListsPage />} />
-          
-          <Route path="/search" element={<SearchPage />} />
-          
-          <Route path="/add" element={<AddContactPage />} />
-          <Route path="/add/new-group" element={<NewGroupPage />} />
-          
-          <Route path="/profile" element={<OwnProfilePage />} />
-          <Route path="/profile/:id" element={<UserProfilePage />} />
-          
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/account" element={<AccountPage />} />
-          
-          <Route path="/archived" element={<ArchivedPage />} />
-          <Route path="/archived/settings" element={<ArchivedSettingsPage />} />
-          
-          <Route path="/announcements" element={<AnnouncementsPage />} />
-          <Route path="/announcements/settings" element={<AnnouncementsSettingsPage />} />
-          
-          <Route path="/settings/privacy" element={<PrivacyPage />} />
-          <Route path="/settings/appearance" element={<AppearancePage />} />
-          <Route path="/settings/help" element={<HelpPage />} />
-          <Route path="/about" element={<AboutPage />} />
-          
-          <Route path="/invite" element={<InvitePage />} />
-        </Route>
+          {/* Protected Routes inside AppShell */}
+          <Route element={<ProtectedRoute><AppShell /></ProtectedRoute>}>
+          <Route path="/chats" element={<ChatsPage />}>
+            <Route path=":id" element={<ChatScreen />} />
+          </Route>
+            <Route path="/chats/:id/info" element={<GroupInfoPage />} />
+            <Route path="/chats/:id/media" element={<GroupMediaPage />} />
+            <Route path="/chats/lists" element={<ListsPage />} />
+            
+            <Route path="/search" element={<SearchPage />} />
+            
+            <Route path="/add" element={<AddContactPage />} />
+            <Route path="/add/new-group" element={<NewGroupPage />} />
+            
+            <Route path="/profile" element={<OwnProfilePage />} />
+            <Route path="/profile/:id" element={<UserProfilePage />} />
+            
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/account" element={<AccountPage />} />
+            
+            <Route path="/archived" element={<ArchivedPage />} />
+            <Route path="/archived/settings" element={<ArchivedSettingsPage />} />
+            
+            <Route path="/announcements" element={<AnnouncementsPage />} />
+            <Route path="/announcements/settings" element={<AnnouncementsSettingsPage />} />
+            
+            <Route path="/settings/privacy" element={<PrivacyPage />} />
+            <Route path="/settings/appearance" element={<AppearancePage />} />
+            <Route path="/settings/help" element={<HelpPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            
+            <Route path="/invite" element={<InvitePage />} />
+          </Route>
 
-        {/* Admin Routes */}
-        <Route path="/admin" element={<AdminRoute><AdminShell /></AdminRoute>}>
-          <Route index element={<AdminDashboard />} />
-          <Route path="users" element={<AdminUsers />} />
-          <Route path="reports" element={<AdminReports />} />
-          <Route path="announcements" element={<AdminAnnouncements />} />
-          <Route path="chatscreen" element={<ChatScreen />} />
-          <Route path="logs" element={<AdminLogs />} />
-          <Route path="settings" element={<AdminSettings />} />
-        </Route>
+          {/* Admin Routes */}
+          <Route path="/admin" element={<AdminRoute><Suspense fallback={<PageLoader />}><AdminShell /></Suspense></AdminRoute>}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="reports" element={<AdminReports />} />
+            <Route path="announcements" element={<AdminAnnouncements />} />
+            <Route path="chatscreen" element={<ChatScreen />} />
+            <Route path="logs" element={<AdminLogs />} />
+            <Route path="settings" element={<AdminSettings />} />
+          </Route>
 
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </>
   );
 };
 
 export default App;
+

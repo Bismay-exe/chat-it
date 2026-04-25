@@ -72,7 +72,7 @@ export const GradualScroll: React.FC<GradualScrollProps> = ({
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className={cn("flex-1 overflow-y-auto no-scrollbar scroll-smooth", scrollClassName)}
+        className={cn("flex-1 overflow-y-auto no-scrollbar", scrollClassName)}
       >
         {children}
       </div>

@@ -95,7 +95,7 @@ export const AboutPage = () => {
 
         {/* Info Grid */}
         <div className="w-full max-w-sm space-y-4">
-          <div className="bg-background rounded-3xl border border-border overflow-hidden shadow-sm">
+          <div className="bg-background/70 backdrop-blur-xl rounded-3xl border border-white/30 overflow-hidden shadow-sm">
             {/* Version Info */}
             <div className="p-4 flex items-center justify-between border-b border-border">
               <span className="text-sm font-semibold">Version</span>

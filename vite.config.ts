@@ -24,4 +24,21 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    rolldownOptions: {
+      output: {
+        // Split heavy stable vendor libs into their own chunks with content hashes.
+        // Android WebView caches each chunk file independently — so if only your
+        // app code changes, users only re-download the app chunk, not all of React/Supabase.
+        manualChunks: (id) => {
+          if (id.includes('@supabase')) return 'vendor-supabase';
+          if (id.includes('motion') || id.includes('framer')) return 'vendor-motion';
+          if (id.includes('@tanstack')) return 'vendor-query';
+          if (id.includes('lucide-react')) return 'vendor-icons';
+          if (id.includes('node_modules')) return 'vendor';
+        }
+      }
+    }
+  }
 })
+
