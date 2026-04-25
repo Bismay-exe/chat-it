@@ -218,7 +218,7 @@ export const AuthPage: React.FC = () => {
           <p className="text-primary/60 font-bricolage-semi-condensed font-bold text-2xl text-center px-8 mb-8 animate-in slide-in-from-bottom-4 duration-700" style={{ animationDelay: '0.15s' }}>Signed in with Google successfully.</p>
           <button
             onClick={handleDone}
-            className="absolute md:static bottom-8 left-6 right-6 h-14 md:w-100  rounded-4xl bg-primary text-primary-foreground text-lg font-bold shadow-xl hover:shadow-[0_12px_40px_rgba(76,175,80,0.5)] transition-all active:scale-95 hover:scale-[1.02] animate-in slide-in-from-bottom-6 duration-700"
+            className="absolute md:static bottom-[calc(16px+env(safe-area-inset-bottom))] left-4 right-4 h-14 md:w-100  rounded-4xl bg-primary text-primary-foreground text-lg font-bold shadow-xl hover:shadow-[0_12px_40px_rgba(76,175,80,0.5)] transition-all active:scale-95 hover:scale-[1.02] animate-in slide-in-from-bottom-6 duration-700"
             style={{ animationDelay: '0.3s' }}
           >
             Start Chatting
@@ -283,10 +283,10 @@ export const AuthPage: React.FC = () => {
       {/* Hero Content & Login */}
       <main className="w-full max-w-sm text-center flex flex-col items-center z-10 shrink-0 mb-8 mt-auto">
         <div className="mb-10">
-          <h1 className="text-5xl font-extrabold tracking-tight leading-[1.1] mb-4">
+          <h1 className="text-[4rem] font-thunder font-extrabold leading-[1.1] mb-4">
             Stop waiting.<br />Chat It
           </h1>
-          <p className="text-[#3b3b3b] text-[1.1rem] leading-relaxed px-4">
+          <p className="text-primary/70 font-bricolage-semi-condensed text-[1.1rem] leading-relaxed px-4">
             Simple, fast, and built for real moments.
           </p>
         </div>
@@ -379,13 +379,13 @@ export const AuthPage: React.FC = () => {
           `}>
             <div className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-background/50 border-border/50 border rounded-2xl shadow-sm transition-all duration-300 ease-out ${isLogin ? 'left-1.5' : 'left-[calc(50%)]'}`} />
             <button
-              className={`flex-1 py-3 text-[0.95rem] font-semibold rounded-xl transition-all z-10 ${isLogin ? 'text-primary' : 'text-gray-500 hover:text-primary'}`}
+              className={`flex-1 py-3 text-[0.95rem] font-bold rounded-xl transition-all z-10 ${isLogin ? 'text-primary' : 'text-primary/60 hover:text-primary'}`}
               onClick={() => setIsLogin(true)}
             >
               Log In
             </button>
             <button
-              className={`flex-1 py-3 text-[0.95rem] font-semibold rounded-xl transition-all z-10 ${!isLogin ? 'text-primary' : 'text-gray-500 hover:text-primary'}`}
+              className={`flex-1 py-3 text-[0.95rem] font-bold rounded-xl transition-all z-10 ${!isLogin ? 'text-primary' : 'text-primary/60 hover:text-primary'}`}
               onClick={() => setIsLogin(false)}
             >
               Sign Up
@@ -396,7 +396,7 @@ export const AuthPage: React.FC = () => {
           <div className="relative w-full">
             {emailSuccess ? (
               /* ── Email Auth Success View (inside bottom sheet) ── */
-              <div className="flex flex-col items-center justify-center py-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="flex flex-col items-center justify-center pt-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="relative mb-6">
                   <svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 24 24" fill="#000000" stroke="#000000" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-badge-icon lucide-badge"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z" /></svg>
                   <div className='absolute inset-0 h-full w-full flex items-center justify-center'>
@@ -466,7 +466,7 @@ export const AuthPage: React.FC = () => {
                   <Input
                     type="email"
                     placeholder="Email Address"
-                    className="h-14 bg-primary/5 border-black/5 text-primary placeholder:text-gray-500 rounded-2xl px-5 text-base focus-visible:ring-1 focus-visible:ring-black/10 focus-visible:border-black/10 transition-all shadow-sm"
+                    className="h-14 bg-primary/5 border-black/5 text-primary placeholder:text-primary/60 rounded-2xl px-5 text-base focus-visible:ring-1 focus-visible:ring-black/10 focus-visible:border-black/10 transition-all shadow-sm"
                     {...loginForm.register('email')}
                   />
                   {loginForm.formState.errors.email && <p className="text-xs text-red-400 px-2">{loginForm.formState.errors.email.message}</p>}
@@ -475,7 +475,7 @@ export const AuthPage: React.FC = () => {
                   <Input
                     type="password"
                     placeholder="Password"
-                    className="h-14 bg-primary/5 border-black/5 text-primary placeholder:text-gray-500 rounded-2xl px-5 text-base focus-visible:ring-1 focus-visible:ring-black/10 focus-visible:border-black/10 transition-all shadow-sm"
+                    className="h-14 bg-primary/5 border-black/5 text-primary placeholder:text-primary/60 rounded-2xl px-5 text-base focus-visible:ring-1 focus-visible:ring-black/10 focus-visible:border-black/10 transition-all shadow-sm"
                     {...loginForm.register('password')}
                   />
                   {loginForm.formState.errors.password && <p className="text-xs text-red-400 px-2">{loginForm.formState.errors.password.message}</p>}
@@ -484,7 +484,7 @@ export const AuthPage: React.FC = () => {
                 <div className="pt-6">
                   <Button
                     type="submit"
-                    className="w-full h-14 rounded-2xl text-[1.05rem] font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-xl transition-all hover:scale-[1.01] active:scale-[0.98]"
+                    className="w-full h-14 rounded-2xl text-[1.05rem] font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-xl transition-all active:scale-[0.98]"
                     isLoading={loginForm.formState.isSubmitting}
                   >
                     Continue
@@ -497,7 +497,7 @@ export const AuthPage: React.FC = () => {
                   <Input
                     type="text"
                     placeholder="Full Name"
-                    className="h-14 bg-primary/5 border-black/5 text-primary placeholder:text-gray-500 rounded-2xl px-5 text-base focus-visible:ring-1 focus-visible:ring-black/10 focus-visible:border-black/10 transition-all shadow-sm"
+                    className="h-14 bg-primary/5 border-black/5 text-primary placeholder:text-primary/60 rounded-2xl px-5 text-base focus-visible:ring-1 focus-visible:ring-black/10 focus-visible:border-black/10 transition-all shadow-sm"
                     {...signupForm.register('fullName')}
                   />
                   {signupForm.formState.errors.fullName && <p className="text-xs text-red-400 px-2">{signupForm.formState.errors.fullName.message}</p>}
@@ -506,7 +506,7 @@ export const AuthPage: React.FC = () => {
                   <Input
                     type="text"
                     placeholder="Username"
-                    className="h-14 bg-primary/5 border-black/5 text-primary placeholder:text-gray-500 rounded-2xl px-5 text-base focus-visible:ring-1 focus-visible:ring-black/10 focus-visible:border-black/10 transition-all shadow-sm"
+                    className="h-14 bg-primary/5 border-black/5 text-primary placeholder:text-primary/60 rounded-2xl px-5 text-base focus-visible:ring-1 focus-visible:ring-black/10 focus-visible:border-black/10 transition-all shadow-sm"
                     {...signupForm.register('username')}
                   />
                   {signupForm.formState.errors.username && <p className="text-xs text-red-400 px-2">{signupForm.formState.errors.username.message}</p>}
@@ -515,7 +515,7 @@ export const AuthPage: React.FC = () => {
                   <Input
                     type="email"
                     placeholder="Email Address"
-                    className="h-14 bg-primary/5 border-black/5 text-primary placeholder:text-gray-500 rounded-2xl px-5 text-base focus-visible:ring-1 focus-visible:ring-black/10 focus-visible:border-black/10 transition-all shadow-sm"
+                    className="h-14 bg-primary/5 border-black/5 text-primary placeholder:text-primary/60 rounded-2xl px-5 text-base focus-visible:ring-1 focus-visible:ring-black/10 focus-visible:border-black/10 transition-all shadow-sm"
                     {...signupForm.register('email')}
                   />
                   {signupForm.formState.errors.email && <p className="text-xs text-red-400 px-2">{signupForm.formState.errors.email.message}</p>}
@@ -524,7 +524,7 @@ export const AuthPage: React.FC = () => {
                   <Input
                     type="password"
                     placeholder="Password (Min 8 characters)"
-                    className="h-14 bg-primary/5 border-black/5 text-primary placeholder:text-gray-500 rounded-2xl px-5 text-base focus-visible:ring-1 focus-visible:ring-black/10 focus-visible:border-black/10 transition-all shadow-sm"
+                    className="h-14 bg-primary/5 border-black/5 text-primary placeholder:text-primary/60 rounded-2xl px-5 text-base focus-visible:ring-1 focus-visible:ring-black/10 focus-visible:border-black/10 transition-all shadow-sm"
                     {...signupForm.register('password')}
                   />
                   {signupForm.formState.errors.password && <p className="text-xs text-red-400 px-2">{signupForm.formState.errors.password.message}</p>}
@@ -533,7 +533,7 @@ export const AuthPage: React.FC = () => {
                   <Input
                     type="password"
                     placeholder="Confirm Password"
-                    className="h-14 bg-primary/5 border-black/5 text-primary placeholder:text-gray-500 rounded-2xl px-5 text-base focus-visible:ring-1 focus-visible:ring-black/10 focus-visible:border-black/10 transition-all shadow-sm"
+                    className="h-14 bg-primary/5 border-black/5 text-primary placeholder:text-primary/60 rounded-2xl px-5 text-base focus-visible:ring-1 focus-visible:ring-black/10 focus-visible:border-black/10 transition-all shadow-sm"
                     {...signupForm.register('confirmPassword')}
                   />
                   {signupForm.formState.errors.confirmPassword && <p className="text-xs text-red-400 px-2">{signupForm.formState.errors.confirmPassword.message}</p>}
@@ -542,7 +542,7 @@ export const AuthPage: React.FC = () => {
                 <div className="pt-6">
                   <Button
                     type="submit"
-                    className="w-full h-14 rounded-2xl text-[1.05rem] font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-xl transition-all hover:scale-[1.01] active:scale-[0.98]"
+                    className="w-full h-14 rounded-2xl text-[1.05rem] font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-xl transition-all active:scale-[0.98]"
                     isLoading={signupForm.formState.isSubmitting}
                   >
                     Create Account

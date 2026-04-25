@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
+import bg from '/backgrounds/002.jpg';
 import { ChevronLeft, Globe, MessageCircle, ChevronRight, ShieldCheck, FileText, Loader2, Download } from 'lucide-react';
 import { TopBar } from '@/components/layout/TopBar';
 import { CURRENT_VERSION } from '@/hooks/useAutoUpdate';
@@ -67,7 +68,8 @@ export const AboutPage = () => {
   ];
 
   return (
-    <div className="flex flex-col h-full bg-secondary/10 absolute inset-0 z-50 overflow-y-auto">
+    <div className="flex flex-col bg-cover bg-no-repeat bg-center h-full absolute inset-0 z-50 overflow-y-auto"
+      style={{ backgroundImage: `url(${bg})` }}>
       <TopBar
         leftElement={
           <div className="flex items-center gap-4">
