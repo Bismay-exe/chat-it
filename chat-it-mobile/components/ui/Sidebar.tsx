@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Pressable, Dimensions, Text, StyleSheet, Platform } from "react-native";
+import { View, Pressable, Dimensions, Text, StyleSheet } from "react-native";
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSpring, runOnJS } from "react-native-reanimated";
 import { Gesture, GestureDetector, ScrollView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -9,10 +9,8 @@ import { AnimatedPressable } from "@/components/ui/AnimatedPressable";
 import { useUIStore } from "@/store/uiStore";
 import { cssInterop } from "nativewind";
 
-// Register standard Text for NativeWind interop on Android/iOS
-if (Platform.OS !== "web") {
-  cssInterop(Text, { className: "style" });
-}
+// Register standard Text for NativeWind interop on Android
+cssInterop(Text, { className: "style" });
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const SIDEBAR_WIDTH = SCREEN_WIDTH * 0.8;
@@ -37,16 +35,16 @@ export interface SidebarProps {
   swipeEnabled?: boolean;
 }
 
-export function Sidebar({ 
-  isOpen, 
-  onClose, 
-  groups, 
+export function Sidebar({
+  isOpen,
+  onClose,
+  groups,
   selectedItemIds = [],
   position = "left",
   swipeEnabled = true
 }: SidebarProps) {
   const setSidebarOpenGlobal = useUIStore((s) => s.setSidebarOpen);
-  
+
   // We use a normalized shared value: 0 means fully closed, 1 means fully open.
   const progress = useSharedValue(isOpen ? 1 : 0);
   const startProgress = useSharedValue(0);
@@ -79,10 +77,10 @@ export function Sidebar({
     // 0 = closed, 1 = open
     // Shift by 10% of the sidebar width (parallax effect) instead of 100%
     const translateAmount = SIDEBAR_WIDTH * 0.1;
-    const translateX = position === "left" 
+    const translateX = position === "left"
       ? -translateAmount * (1 - progress.value)
       : translateAmount * (1 - progress.value);
-    
+
     return {
       transform: [{ translateX }],
       opacity: progress.value,
@@ -92,7 +90,7 @@ export function Sidebar({
   const animatedContentStyle = useAnimatedStyle(() => {
     // Scale goes from 0.85 to 1 for the content only
     const scale = 0.85 + 0.15 * progress.value;
-    
+
     return {
       transform: [{ scale }],
     };
@@ -120,7 +118,7 @@ export function Sidebar({
         const currentX = startX + e.translationX;
         newProgress = Math.abs(currentX) / SIDEBAR_WIDTH;
       }
-      
+
       // clamp between 0 and 1
       progress.value = Math.max(0, Math.min(1, newProgress));
     })
@@ -145,23 +143,23 @@ export function Sidebar({
     });
 
   return (
-    <View 
-      style={[StyleSheet.absoluteFill, { zIndex: 100 }]} 
+    <View
+      style={[StyleSheet.absoluteFill, { zIndex: 100 }]}
       pointerEvents={isRendered ? "auto" : "box-none"}
     >
       <GestureDetector gesture={panGesture}>
         <View style={StyleSheet.absoluteFill} pointerEvents={isRendered ? "auto" : "box-none"}>
-          
+
           {/* Edge zone to detect swipe-to-open when closed */}
           {!isRendered && swipeEnabled && (
-            <View 
-              style={{ 
-                position: 'absolute', 
-                top: 0, 
-                bottom: 0, 
-                width: 25, 
-                [position]: 0 
-              }} 
+            <View
+              style={{
+                position: 'absolute',
+                top: 0,
+                bottom: 0,
+                width: 25,
+                [position]: 0
+              }}
             />
           )}
 
@@ -175,12 +173,12 @@ export function Sidebar({
                   end={{ x: 1, y: 0 }}
                   style={StyleSheet.absoluteFill}
                 />
-                
+
                 <SafeAreaView edges={["top", "bottom"]} style={{ flex: 1 }}>
                   <Animated.View style={[{ flex: 1, paddingHorizontal: 10 }, animatedContentStyle]}>
                     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20, paddingTop: 10 }}>
                       <AnimatedPressable onPress={handleAnimatedClose} className={cn("mb-8 w-10 h-10 items-center justify-center", position === "left" ? "-ml-2" : "self-end -mr-2")}>
-                        <Heading className="text-white text-xl">✕</Heading>
+                        <Heading className="text-white text-[20px]">✕</Heading>
                       </AnimatedPressable>
 
                       {groups.map((group, groupIdx) => (
@@ -202,7 +200,7 @@ export function Sidebar({
                               >
                                 <Text
                                   className={cn(
-                                    "text-[50px] tracking-[-3px] leading-[40px]",
+                                    "text-[50px] tracking-[-3px] leading-[44px]",
                                     isSelected ? "font-sf-pro-semibold text-white" : "font-sf-pro-medium text-white/60",
                                     position === "right" && "text-right"
                                   )}
